@@ -23,7 +23,7 @@ This library is licensed under the terms of the Boost Software License, version
 
 ## Dependencies
 
-* Boost Build for build
+* CMake for build
 * Boost libraries
 
 ## Documentation
