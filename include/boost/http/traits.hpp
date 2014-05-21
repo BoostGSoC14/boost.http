@@ -13,69 +13,31 @@ struct is_message: public std::true_type {}; //< TODO: refine concept
 
 namespace detail {
 
-template<class T, bool>
-struct has_outgoing_state_helper
-{
-    static constexpr bool value = false;
-};
+template <typename T, typename Enable = std::true_type>
+struct has_outgoing_state : std::false_type
+{};
 
-template<class T>
-struct has_outgoing_state_helper<T, true>
-{
-    static constexpr bool f(...) {return false;}
-
-    static constexpr bool f(decltype((static_cast<T const*>(0))->outgoing_state())*)
-    {
-        return std::is_same<decltype((static_cast<T*>(0))->outgoing_state()),
-                            boost::http::outgoing_state>::value;
-    }
-
-    static constexpr bool value = f(0);
-};
-
-template<class T, bool = is_class<T>::value /* TODO: make it work on is_final<T>::value */>
+template <typename T>
 struct has_outgoing_state
-{
-    static bool constexpr value = false;
-};
+<T, typename std::is_convertible<decltype(static_cast<T const*>(nullptr)
+                                          ->outgoing_state()),
+                                 boost::http::outgoing_state>::type>
+  : std::true_type
+{};
 
 template<class T>
-struct has_outgoing_state<T, true>
+constexpr bool is_http_socket_helper()
 {
-    struct Fallback {
-        int outgoing_state;
-    };
- 
-    struct Derived : T, Fallback { };
- 
-    template<typename C, C>
-    struct ChT;
- 
-    template<typename C>
-    static std::false_type f(ChT<int Fallback::*, &C::outgoing_state>*);
-
-    template<typename C>
-    static std::true_type f(...);
-
-    static bool constexpr value2 = decltype(f<Derived>(0))::value;
-
-    static bool constexpr value = value2 && has_outgoing_state_helper<T, value2>::value;
-};
-
-template<class T>
-bool constexpr is_http_socket_helper()
-{
-    return is_message<T>::value
-        && has_outgoing_state<T>::value;
+    return is_message<T>::value && has_outgoing_state<T>::value;
 }
 
 } // namespace detail
 
 template<class T>
 struct is_socket
-    : public std::conditional<detail::is_http_socket_helper<T>(),
-                              std::true_type, std::false_type>::type
+    : std::integral_constant<bool, detail::is_http_socket_helper<T>()>
 {};
 
 } // namespace http
 } // namespace boost
+
