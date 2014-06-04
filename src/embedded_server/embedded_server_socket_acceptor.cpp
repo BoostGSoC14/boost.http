@@ -10,13 +10,13 @@ namespace http {
 
 basic_socket_acceptor<embedded_server>
 ::basic_socket_acceptor(boost::asio::ip::tcp::acceptor &&acceptor) :
-    acceptor(std::move(acceptor))
+    acceptor_(std::move(acceptor))
 {}
 
 void basic_socket_acceptor<embedded_server>
 ::accept(basic_socket<protocol_type> &socket)
 {
-    acceptor.accept(socket.channel);
+    acceptor_.accept(socket.channel);
 }
 
 void basic_socket_acceptor<embedded_server>
@@ -24,7 +24,7 @@ void basic_socket_acceptor<embedded_server>
 {
     // handler could be perfect-forwarded, because it has the same signature
     // get rid of std::function<> (?) TODO
-    acceptor.async_accept(socket.channel, handler);
+    acceptor_.async_accept(socket.channel, handler);
 }
 
 template class basic_socket_acceptor<embedded_server>;

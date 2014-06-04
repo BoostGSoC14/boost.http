@@ -21,6 +21,14 @@ public:
     handler_type;
 
     basic_socket_acceptor(boost::asio::ip::tcp::acceptor &&acceptor);
+    basic_socket_acceptor(boost::asio::io_service &io_service,
+                          boost::asio::ip::tcp::endpoint
+                          = boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(),
+                                                           80));
+
+    // TODO: maybe just expose a public attribute?
+    const boost::asio::ip::tcp::acceptor &acceptor() const;
+    boost::asio::ip::tcp::acceptor &acceptor();
 
     void accept(basic_socket<protocol_type> &socket);
 
@@ -28,7 +36,7 @@ public:
                       handler_type handler);
 
 private:
-    boost::asio::ip::tcp::acceptor acceptor;
+    boost::asio::ip::tcp::acceptor acceptor_;
 };
 
 extern template class basic_socket_acceptor<embedded_server>;
