@@ -4,6 +4,7 @@
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
 #include <type_traits>
+#include <utility>
 
 namespace boost {
 namespace http {
@@ -19,7 +20,7 @@ struct has_outgoing_state : std::false_type
 
 template <typename T>
 struct has_outgoing_state
-<T, typename std::is_convertible<decltype(static_cast<T const*>(nullptr)
+<T, typename std::is_convertible<decltype(std::declval<T const*>()
                                           ->outgoing_state()),
                                  boost::http::outgoing_state>::type>
   : std::true_type
@@ -31,7 +32,7 @@ struct has_outgoing_response_native_stream: std::false_type
 
 template<typename T>
 struct has_outgoing_response_native_stream
-<T, typename std::is_convertible<decltype(static_cast<T const*>(nullptr)
+<T, typename std::is_convertible<decltype(std::declval<T const*>()
                                           ->outgoing_response_native_stream()),
                                  bool>::type>
   : std::true_type
@@ -43,7 +44,7 @@ struct has_incoming_request_continue_required: std::false_type
 
 template<typename T>
 struct has_incoming_request_continue_required
-<T, typename std::is_convertible<decltype(static_cast<T const*>(nullptr)
+<T, typename std::is_convertible<decltype(std::declval<T const*>()
                                           ->incoming_request_continue_required()),
                                  bool>::type>
   : std::true_type
@@ -55,7 +56,7 @@ struct has_incoming_request_upgrade_required: std::false_type
 
 template<typename T>
 struct has_incoming_request_upgrade_required
-<T, typename std::is_convertible<decltype(static_cast<T const*>(nullptr)
+<T, typename std::is_convertible<decltype(std::declval<T const*>()
                                           ->incoming_request_upgrade_required()),
                                  bool>::type>
   : std::true_type
@@ -67,7 +68,7 @@ struct has_outgoing_response_write_continue : std::false_type
 
 template<typename T>
 struct has_outgoing_response_write_continue
-<T, typename std::is_convertible<decltype(static_cast<T*>(nullptr)
+<T, typename std::is_convertible<decltype(std::declval<T*>()
                                           ->outgoing_response_write_continue()),
                                  bool>::type>
   : std::true_type
