@@ -30,7 +30,7 @@ std::string http_category_impl::message(int condition) const noexcept
     }
 }
 
-const std::error_category& out_of_order_category()
+const std::error_category& http_category()
 {
     static http_category_impl category;
     return category;
