@@ -1,7 +1,7 @@
 set(library_SRC
   http_category.cpp
-  embedded_server/embedded_server_socket.cpp
-  embedded_server/embedded_server_socket_acceptor.cpp
+  embedded_server_socket.cpp
+  embedded_server_socket_acceptor.cpp
 )
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../include" ${Boost_INCLUDE_DIR})

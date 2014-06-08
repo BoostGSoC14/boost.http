@@ -3,8 +3,8 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_SERVER_BASIC_MESSAGE_H
-#define BOOST_HTTP_SERVER_BASIC_MESSAGE_H
+#ifndef BOOST_HTTP_SERVER_MESSAGE_H
+#define BOOST_HTTP_SERVER_MESSAGE_H
 
 #include <cstdint>
 #include <boost/asio/buffer.hpp>
@@ -27,14 +27,17 @@ namespace http {
  *
  * @TODO: define the basic_message concept
  */
-template<class Protocol>
-struct basic_message
+struct message
 {
     /**
      * It's context dependant and have a different structure for requests and
      * responses. The object should store the start line (excluding "\r\n")
      * without trying to decode its meaning, leaving this task for a specialized
      * abstraction of the appropriate HTTP message type (request or response).
+     *
+     * @TODO: write rationable why UTF-8 and why the null terminator overhead
+     * won't matter much here. Maybe arguing using SSO as example and some
+     * benchmark too.
      */
     std::string start_line;
 
@@ -60,4 +63,4 @@ struct basic_message
 } // namespace http
 } // namespace boost
 
-#endif // BOOST_HTTP_SERVER_BASIC_MESSAGE_H
+#endif // BOOST_HTTP_SERVER_MESSAGE_H

@@ -3,21 +3,29 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_BASIC_SOCKET_H
-#define BOOST_HTTP_BASIC_SOCKET_H
+#ifndef BOOST_HTTP_EMBEDDED_SERVER_SOCKET_H
+#define BOOST_HTTP_EMBEDDED_SERVER_SOCKET_H
 
-#include <functional>
-#include "basic_message.hpp"
-#include "outgoing_state.hpp"
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/http/outgoing_state.hpp>
+#include <boost/http/message.hpp>
 
 namespace boost {
 namespace http {
 
-template<class Protocol>
-class basic_socket
+/** @TODO: design is going to be refactored later.
+    Also, the vocabulary introduced here is interesting for general
+    specializations, not only embedded_server. */
+enum embedded_server_mode_flags
+{
+    server//, client = 1 << 1
+};
+
+/** @TODO: templatize based on the callback type (currently std::function). */
+class embedded_server_socket
 {
 public:
-    typedef basic_message<Protocol> message_type;
+    typedef message message_type;
 
     // ### QUERY FUNCTIONS ###
 
@@ -26,7 +34,7 @@ public:
 
     // used to know if message is complete and what parts (body, trailers) were
     // completed.
-    boost::http::outgoing_state outgoing_state() const;
+    http::outgoing_state outgoing_state() const;
 
     /** if output support native stream or will buffer the body internally
      *
@@ -80,7 +88,7 @@ public:
      * buffering into account */
     void write(boost::asio::const_buffer &part);
 
-    void write_trailers(boost::http::headers headers);
+    void write_trailers(http::headers headers);
 
     void end();
 
@@ -96,9 +104,23 @@ public:
     bool outgoing_response_write_continue();
 
     // ### END OF WRITE FUNCTIONS ###
+
+    // ### START OF embedded_server SPECIFIC FUNCTIONS ###
+
+    embedded_server_socket(boost::asio::io_service & io_service,
+                           embedded_server_mode_flags /*mode*/) :
+        channel(io_service),
+        ostate(http::outgoing_state::empty)//, mode(mode)
+    {}
+
+    boost::asio::ip::tcp::socket channel;
+
+private:
+    http::outgoing_state ostate;
+    //embedded_server_mode_flags mode;
 };
 
 } // namespace http
 } // namespace boost
 
-#endif // BOOST_HTTP_BASIC_SOCKET_H
+#endif // BOOST_HTTP_EMBEDDED_SERVER_SOCKET_H

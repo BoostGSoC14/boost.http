@@ -7,39 +7,37 @@
 #define BOOST_HTTP_EMBEDDED_SERVER_SOCKET_ACCEPTOR_H
 
 #include "embedded_server_socket.hpp"
-#include "../basic_socket_acceptor.hpp"
 
 namespace boost {
 namespace http {
 
-template<>
-class basic_socket_acceptor<embedded_server>
+/** @TODO: templatize based on the callback type (currently std::function). */
+class embedded_server_socket_acceptor
 {
 public:
-    typedef embedded_server protocol_type;
+    typedef embedded_server_socket endpoint_type;
+
+    // TODO: only one type handler? are you sure? think further later!
     typedef std::function<void(const boost::system::error_code& error)>
     handler_type;
 
-    basic_socket_acceptor(boost::asio::ip::tcp::acceptor &&acceptor);
-    basic_socket_acceptor(boost::asio::io_service &io_service,
-                          boost::asio::ip::tcp::endpoint
-                          = boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(),
-                                                           80));
+    embedded_server_socket_acceptor(boost::asio::ip::tcp::acceptor &&acceptor);
+    embedded_server_socket_acceptor(boost::asio::io_service &io_service,
+                                    boost::asio::ip::tcp::endpoint
+                                    = boost::asio::ip::tcp
+                                    ::endpoint(boost::asio::ip::tcp::v4(), 80));
 
     // TODO: maybe just expose a public attribute?
     const boost::asio::ip::tcp::acceptor &acceptor() const;
     boost::asio::ip::tcp::acceptor &acceptor();
 
-    void accept(basic_socket<protocol_type> &socket);
+    void accept(endpoint_type &socket);
 
-    void async_accept(basic_socket<protocol_type> &socket,
-                      handler_type handler);
+    void async_accept(endpoint_type &socket, handler_type handler);
 
 private:
     boost::asio::ip::tcp::acceptor acceptor_;
 };
-
-extern template class basic_socket_acceptor<embedded_server>;
 
 } // namespace http
 } // namespace boost
