@@ -6,9 +6,10 @@
 #ifndef BOOST_HTTP_SERVER_HTTP_ERRC_H
 #define BOOST_HTTP_SERVER_HTTP_ERRC_H
 
-#include "http_category.hpp"
+#include <boost/http/http_category.hpp>
 
 namespace boost {
+
 namespace http {
 
 /**
@@ -21,29 +22,39 @@ enum class http_errc {
 /**
  * Constructs a http error_code.
  */
-inline std::error_code make_error_code(http_errc e)
+inline boost::system::error_code make_error_code(http_errc e)
 {
-    return std::error_code(static_cast<int>(e), http_category());
+    return boost::system::error_code(static_cast<int>(e), http_category());
 }
+
 /**
  * Constructs a http error_condition.
  */
-inline std::error_condition make_error_condition(http_errc e)
+inline boost::system::error_condition make_error_condition(http_errc e)
 {
-    return std::error_condition(static_cast<int>(e), http_category());
+    return boost::system::error_condition(static_cast<int>(e), http_category());
 }
 
 } // namespace http
-} // namespace boost
 
-namespace std {
+namespace system {
 
 /**
- * Extends the type trait std::is_error_code_enum to identify http error codes.
+ * Extends the type trait boost::system::is_error_code_enum to identify http
+ * error codes.
  */
 template<>
 struct is_error_code_enum<boost::http::http_errc>: public std::true_type {};
 
-} // namespace std
+/**
+ * Extends the type trait boost::system::is_error_code_enum to identify http
+ * error conditions.
+ */
+template<>
+struct is_error_condition_enum<boost::http::http_errc>: public std::true_type {};
+
+} // namespace system
+
+} // namespace boost
 
 #endif // BOOST_HTTP_SERVER_HTTP_ERRC_H

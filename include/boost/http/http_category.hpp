@@ -6,12 +6,12 @@
 #ifndef BOOST_HTTP_SERVER_HTTP_CATEGORY_H
 #define BOOST_HTTP_SERVER_HTTP_CATEGORY_H
 
-#include <system_error>
+#include <boost/system/error_code.hpp>
 
 namespace boost {
 namespace http {
 
-const std::error_category& http_category();
+const boost::system::error_category& http_category();
 
 } // namespace http
 } // namespace boost

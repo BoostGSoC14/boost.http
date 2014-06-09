@@ -8,7 +8,7 @@
 namespace boost {
 namespace http {
 
-class http_category_impl: public std::error_category
+class http_category_impl: public boost::system::error_category
 {
 public:
     const char* name() const noexcept override;
@@ -30,7 +30,7 @@ std::string http_category_impl::message(int condition) const noexcept
     }
 }
 
-const std::error_category& http_category()
+const boost::system::error_category& http_category()
 {
     static http_category_impl category;
     return category;
