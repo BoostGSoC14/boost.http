@@ -5,6 +5,7 @@ add_definitions(-DBOOST_TEST_DYN_LINK)
 set(tests
   "firsttest"
   "socket_concept"
+  "errc"
 )
 
 macro(add_test_target target)
