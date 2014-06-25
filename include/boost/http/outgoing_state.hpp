@@ -10,7 +10,8 @@ namespace boost {
 namespace http {
 
 /**
- * Represents the current state in the HTTP response.
+ * Represents the current state in the HTTP outgoing response or HTTP outgoing
+ * request.
  *
  * It has extra values that won't be used in "outgoing-request" mode.
  * Explanation focuses in "outgoing-response" mode.
