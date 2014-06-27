@@ -6,7 +6,8 @@
 #ifndef BOOST_HTTP_EMBEDDED_SERVER_SOCKET_ACCEPTOR_H
 #define BOOST_HTTP_EMBEDDED_SERVER_SOCKET_ACCEPTOR_H
 
-#include "embedded_server_socket.hpp"
+#include <utility>
+#include <boost/http/embedded_server_socket.hpp>
 
 namespace boost {
 namespace http {
@@ -16,10 +17,6 @@ class embedded_server_socket_acceptor
 {
 public:
     typedef embedded_server_socket endpoint_type;
-
-    // TODO: only one type handler? are you sure? think further later!
-    typedef std::function<void(const boost::system::error_code& error)>
-    handler_type;
 
     embedded_server_socket_acceptor(boost::asio::ip::tcp::acceptor &&acceptor);
     embedded_server_socket_acceptor(boost::asio::io_service &io_service,
@@ -33,7 +30,21 @@ public:
 
     void accept(endpoint_type &socket);
 
-    void async_accept(endpoint_type &socket, handler_type handler);
+    template<class CompletionToken>
+    typename asio::async_result<
+        typename asio::handler_type<CompletionToken,
+                                    void(system::error_code)>::type>::type
+    async_accept(endpoint_type &socket, CompletionToken &&token)
+    {
+        return acceptor_.async_accept(socket.channel,
+                                      std::forward<CompletionToken>(token));
+    }
+
+    // ### USUAL FUNCTIONS
+    asio::io_service & get_io_service()
+    {
+        return acceptor_.get_io_service();
+    }
 
 private:
     boost::asio::ip::tcp::acceptor acceptor_;

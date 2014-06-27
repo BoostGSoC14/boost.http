@@ -13,18 +13,16 @@ embedded_server_socket_acceptor
     acceptor_(std::move(acceptor))
 {}
 
+embedded_server_socket_acceptor
+::embedded_server_socket_acceptor(boost::asio::io_service &io_service,
+                                  boost::asio::ip::tcp::endpoint endpoint) :
+    acceptor_(io_service, endpoint)
+{}
+
 void embedded_server_socket_acceptor
 ::accept(endpoint_type &socket)
 {
     acceptor_.accept(socket.channel);
-}
-
-void embedded_server_socket_acceptor
-::async_accept(endpoint_type &socket, handler_type handler)
-{
-    // handler could be perfect-forwarded, because it has the same signature
-    // get rid of std::function<> (?) TODO
-    acceptor_.async_accept(socket.channel, handler);
 }
 
 } // namespace http

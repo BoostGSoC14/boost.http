@@ -58,6 +58,11 @@ struct message
      * and iterator invalidation, ...)
      */
     std::vector<uint8_t> body;
+
+    /**
+     * Extra headers issued after body is complete.
+     */
+    boost::http::headers trailers;
 };
 
 } // namespace http
