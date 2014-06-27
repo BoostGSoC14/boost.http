@@ -16,7 +16,8 @@ namespace http {
  * The standard error codes reported by HTTP message producers and consumers.
  */
 enum class http_errc {
-    out_of_order = 1
+    out_of_order = 1,
+    parsing_error
 };
 
 /**
