@@ -16,6 +16,7 @@ target_link_libraries("boost_http"
 
 enable_testing()
 add_subdirectory(tests)
+add_subdirectory(example)
 
 install(TARGETS "boost_http"
   DESTINATION "${libdir}"

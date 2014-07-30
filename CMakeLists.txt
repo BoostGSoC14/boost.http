@@ -12,6 +12,8 @@ find_package(Boost 1.55 COMPONENTS
   filesystem
   system
   unit_test_framework
+  context
+  coroutine
   REQUIRED)
 
 # Build options
