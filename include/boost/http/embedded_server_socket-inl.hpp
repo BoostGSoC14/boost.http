@@ -35,7 +35,7 @@ embedded_server_socket::async_receive_message(Message &message,
         channel.async_receive(asio::buffer(buffer + used_size),
                               [this,handler,&message]
                               (const system::error_code &ec,
-                               size_t bytes_transferred) mutable {
+                               std::size_t bytes_transferred) mutable {
             on_async_receive_message<READY>(std::move(handler), message, ec,
                                             bytes_transferred);
         });
@@ -75,7 +75,7 @@ embedded_server_socket::async_receive_some_body(Message &message,
         channel.async_receive(asio::buffer(buffer + used_size),
                               [this,handler,&message]
                               (const system::error_code &ec,
-                               size_t bytes_transferred) mutable {
+                               std::size_t bytes_transferred) mutable {
             on_async_receive_message<DATA>(std::move(handler), message, ec,
                                            bytes_transferred);
         });
@@ -118,7 +118,7 @@ embedded_server_socket::async_receive_trailers(Message &message,
         channel.async_receive(asio::buffer(buffer + used_size),
                               [this,handler,&message]
                               (const system::error_code &ec,
-                               size_t bytes_transferred) mutable {
+                               std::size_t bytes_transferred) mutable {
             on_async_receive_message<END>(std::move(handler), message, ec,
                                           bytes_transferred);
         });
@@ -188,7 +188,7 @@ embedded_server_socket::async_write_message(Message &message,
 
     asio::async_write(channel, buffers,
                       [handler]
-                      (const system::error_code &ec, size_t) mutable {
+                      (const system::error_code &ec, std::size_t) mutable {
         handler(ec);
     });
 
@@ -199,7 +199,7 @@ template<int target, class Message, class Handler>
 void embedded_server_socket
 ::on_async_receive_message(Handler handler, Message &message,
                            const system::error_code &ec,
-                           size_t bytes_transferred)
+                           std::size_t bytes_transferred)
 {
     if (ec) {
         clear_buffer();
@@ -210,7 +210,7 @@ void embedded_server_socket
     used_size += bytes_transferred;
     current_message = reinterpret_cast<void*>(&message);
     auto nparsed = execute(parser, settings<Message>(),
-                           asio::buffer_cast<const uint8_t*>(buffer),
+                           asio::buffer_cast<const std::uint8_t*>(buffer),
                            used_size);
 
     if (parser.http_errno) {
@@ -228,7 +228,7 @@ void embedded_server_socket
               "This server only supports HTTP/1.0 and HTTP/1.1\n";
             asio::async_write(channel, asio::buffer(error_message),
                               [this,handler](system::error_code ignored_ec,
-                                             size_t bytes_transferred)
+                                             std::size_t bytes_transferred)
                               mutable {
                 channel.close(ignored_ec);
                 handler(system::error_code{http_errc::parsing_error});
@@ -247,8 +247,8 @@ void embedded_server_socket
         }
     }
 
-    for (size_t i = 0;i != used_size - nparsed;++i) {
-        auto b = asio::buffer_cast<uint8_t*>(buffer) + i;
+    for (std::size_t i = 0;i != used_size - nparsed;++i) {
+        auto b = asio::buffer_cast<std::uint8_t*>(buffer) + i;
         b[i] = b[nparsed + i];
     }
 
@@ -268,7 +268,7 @@ void embedded_server_socket
         channel.async_receive(asio::buffer(buffer + used_size),
                               [this,handler,&message]
                               (const system::error_code &ec,
-                               size_t bytes_transferred) mutable {
+                               std::size_t bytes_transferred) mutable {
             on_async_receive_message<target>(std::move(handler), message,
                                              ec, bytes_transferred);
         });
@@ -302,7 +302,7 @@ int embedded_server_socket::on_message_begin(http_parser *parser)
 
 template<class Message>
 int embedded_server_socket::on_url(http_parser *parser, const char *at,
-                                   size_t size)
+                                   std::size_t size)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
@@ -352,7 +352,7 @@ int embedded_server_socket::on_url(http_parser *parser, const char *at,
 
 template<class Message>
 int embedded_server_socket::on_header_field(http_parser *parser, const char *at,
-                                            size_t size)
+                                            std::size_t size)
 {
     /* The SG4's uri library also face the problem to define a
        case-insensitive interface and the chosen solution was to convert
@@ -388,7 +388,7 @@ int embedded_server_socket::on_header_field(http_parser *parser, const char *at,
 
 template<class Message>
 int embedded_server_socket::on_header_value(http_parser *parser, const char *at,
-                                            size_t size)
+                                            std::size_t size)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto &value = socket->last_header.second;
@@ -479,11 +479,11 @@ int embedded_server_socket::on_headers_complete(http_parser *parser)
 
 template<class Message>
 int embedded_server_socket::on_body(http_parser *parser, const char *data,
-                                    size_t size)
+                                    std::size_t size)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
-    auto begin = reinterpret_cast<const uint8_t*>(data);
+    auto begin = reinterpret_cast<const std::uint8_t*>(data);
     message->body.insert(message->body.end(), begin, begin + size);
     socket->flags |= DATA;
 

@@ -16,10 +16,10 @@ extern "C" {
 enum http_parser_type { HTTP_REQUEST, HTTP_RESPONSE, HTTP_BOTH };
 
 void http_parser_init(http_parser *parser, enum http_parser_type type);
-size_t http_parser_execute(http_parser *parser,
-                           const http_parser_settings *settings,
-                           const char *data,
-                           size_t len);
+std::size_t http_parser_execute(http_parser *parser,
+                                const http_parser_settings *settings,
+                                const char *data,
+                                std::size_t len);
 int http_should_keep_alive(const http_parser *parser);
 int http_body_is_final(const http_parser *parser);
 
@@ -116,9 +116,10 @@ void embedded_server_socket::init(http_parser &parser)
                   " Ryan Dahl's HTTP parser");
 }
 
-size_t embedded_server_socket::execute(http_parser &parser,
-                                       const http_parser_settings &settings,
-                                       const uint8_t *data, size_t len)
+std::size_t embedded_server_socket::execute(http_parser &parser,
+                                            const http_parser_settings &settings,
+                                            const std::uint8_t *data,
+                                            std::size_t len)
 {
     return http_parser_execute(&parser, &settings,
                                reinterpret_cast<const char*>(data), len);

@@ -53,11 +53,11 @@ struct message
      * facts, events for each piece of body gathered should be generated, but
      * this container still could be used to buffer the data.
      *
-     * std::vector<uint8_t> is used over string, because fits the purpose better
-     * (no '\0' character terminator, well-defined behaviours of capacity, size
-     * and iterator invalidation, ...)
+     * std::vector<std::uint8_t> is used over string, because fits the purpose
+     * better (no '\0' character terminator, well-defined behaviours of
+     * capacity, size and iterator invalidation, ...)
      */
-    std::vector<uint8_t> body;
+    std::vector<std::uint8_t> body;
 
     /**
      * Extra headers issued after body is complete.

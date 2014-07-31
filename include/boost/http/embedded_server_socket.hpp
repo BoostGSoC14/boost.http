@@ -7,6 +7,8 @@
 #define BOOST_HTTP_EMBEDDED_SERVER_SOCKET_H
 
 #include <cstdint>
+#include <cstddef>
+
 #include <algorithm>
 
 #include <boost/lexical_cast.hpp>
@@ -45,8 +47,8 @@ struct http_parser
     unsigned int state : 8;
     unsigned int header_state : 8;
     unsigned int index : 8;
-    uint32_t nread;
-    uint64_t content_length;
+    std::uint32_t nread;
+    std::uint64_t content_length;
     unsigned short http_major;
     unsigned short http_minor;
     unsigned int status_code : 16;
@@ -56,7 +58,7 @@ struct http_parser
     void *data;
 };
 
-typedef int (*http_data_cb)(http_parser*, const char *at, size_t length);
+typedef int (*http_data_cb)(http_parser*, const char *at, std::size_t length);
 typedef int (*http_cb)(http_parser*);
 
 /** This **MUST** be a struct with the same properties from the
@@ -225,12 +227,12 @@ private:
     template<int target, class Message, class Handler>
     void on_async_receive_message(Handler handler, Message &message,
                                   const system::error_code &ec,
-                                  size_t bytes_transferred);
+                                  std::size_t bytes_transferred);
 
     static void init(http_parser &parser);
-    static size_t execute(http_parser &parser,
-                          const http_parser_settings &settings,
-                          const uint8_t *data, size_t len);
+    static std::size_t execute(http_parser &parser,
+                               const http_parser_settings &settings,
+                               const std::uint8_t *data, std::size_t len);
     static bool should_keep_alive(const http_parser &parser);
     static bool body_is_final(const http_parser &parser);
 
@@ -242,21 +244,21 @@ private:
     static int on_message_begin(http_parser *parser);
 
     template<class Message>
-    static int on_url(http_parser *parser, const char *at, size_t size);
+    static int on_url(http_parser *parser, const char *at, std::size_t size);
 
     template<class Message>
     static int on_header_field(http_parser *parser, const char *at,
-                               size_t size);
+                               std::size_t size);
 
     template<class Message>
     static int on_header_value(http_parser *parser, const char *at,
-                               size_t size);
+                               std::size_t size);
 
     template<class Message>
     static int on_headers_complete(http_parser *parser);
 
     template<class Message>
-    static int on_body(http_parser *parser, const char *data, size_t size);
+    static int on_body(http_parser *parser, const char *data, std::size_t size);
 
     template<class Message>
     static int on_message_complete(http_parser *parser);
@@ -272,7 +274,7 @@ private:
 
     // TODO: maybe replace by buffersequence to allow scatter-gather operations
     asio::mutable_buffer buffer;
-    size_t used_size = 0;
+    std::size_t used_size = 0;
 
     http_parser parser;
     int flags = 0;
