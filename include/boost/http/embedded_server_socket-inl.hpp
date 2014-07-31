@@ -164,6 +164,7 @@ embedded_server_socket::async_write_message(Message &message,
         // And finally, the message body
         + 1;
 
+    // TODO (C++14): replace by dynarray
     std::vector<asio::const_buffer> buffers(nbuffer_pieces);
 
     buffers.push_back(asio::buffer(message.start_line));
