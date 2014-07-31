@@ -27,6 +27,8 @@ std::string http_category_impl::message(int condition) const noexcept
         return "HTTP actions issued on the wrong order for some object";
     case static_cast<int>(http_errc::parsing_error):
         return "The parser encountered an error";
+    case static_cast<int>(http_errc::buffer_exhausted):
+        return "Need more buffer space to complete an operation";
     default:
         return "undefined";
     }

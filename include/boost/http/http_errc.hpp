@@ -17,7 +17,9 @@ namespace http {
  */
 enum class http_errc {
     out_of_order = 1,
-    parsing_error
+    parsing_error,
+    // This error should only happen if a poor parser is used
+    buffer_exhausted
 };
 
 /**
