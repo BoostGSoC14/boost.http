@@ -358,7 +358,7 @@ int embedded_server_socket::on_header_field(http_parser *parser, const char *at,
        case-insensitive interface and the chosen solution was to convert
        everything to lower case upon normalization. */
     using std::transform;
-    int (*const tolower)(int) = std::tolower;
+    auto tolower = [](int ch) -> int { return std::tolower(ch); };
 
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
