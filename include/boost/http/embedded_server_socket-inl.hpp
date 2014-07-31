@@ -247,9 +247,9 @@ void embedded_server_socket
         }
     }
 
-    for (std::size_t i = 0;i != used_size - nparsed;++i) {
-        auto b = asio::buffer_cast<std::uint8_t*>(buffer) + i;
-        b[i] = b[nparsed + i];
+    {
+        auto b = asio::buffer_cast<std::uint8_t*>(buffer);
+        std::copy_n(b + nparsed, used_size - nparsed, b);
     }
 
     used_size -= nparsed;
