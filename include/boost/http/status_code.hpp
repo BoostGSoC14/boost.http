@@ -20,7 +20,7 @@ namespace http {
 enum class status_code
 {
     // Informational (1xx)
-    continue = 100,
+    continue_ = 100,
     switching_protocols = 101,
     // Successful (2xx)
     ok = 200,
