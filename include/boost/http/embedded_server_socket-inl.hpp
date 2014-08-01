@@ -333,10 +333,8 @@ int embedded_server_socket::on_url(http_parser *parser, const char *at,
        introduced branch misprediction. It can be fixed separating url and
        verb string or replacing the parser. */
     if (message->start_line.empty()) {
-        /* TODO: Could compute the size at compile type with template magic,
-           just like how it's done with Tufão. Optimization will go away
-           with the parser replacement anyway. */
-        const char *methods[] = {
+        using detail::constchar_helper;
+        static const constchar_helper methods[] = {
             "DELETE ",
             "GET ",
             "HEAD ",
@@ -364,7 +362,8 @@ int embedded_server_socket::on_url(http_parser *parser, const char *at,
             "PATCH ",
             "PURGE "
         };
-        message->start_line = methods[parser->method];
+        const auto &m = methods[parser->method];
+        message->start_line = std::string(m.data, m.size);
     }
 
     message->start_line.append(at, size);

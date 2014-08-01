@@ -21,6 +21,7 @@
 #include <boost/http/message.hpp>
 #include <boost/http/http_errc.hpp>
 #include <boost/http/detail/outgoing_writer_helper.hpp>
+#include <boost/http/detail/constchar_helper.hpp>
 
 namespace boost {
 namespace http {
