@@ -226,6 +226,9 @@ private:
     };
 
     template<int target, class Message, class Handler>
+    void schedule_on_async_receive_message(Handler &handler, Message &message);
+
+    template<int target, class Message, class Handler>
     void on_async_receive_message(Handler handler, Message &message,
                                   const system::error_code &ec,
                                   std::size_t bytes_transferred);

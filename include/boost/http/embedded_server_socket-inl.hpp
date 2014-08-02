@@ -26,20 +26,7 @@ embedded_server_socket::async_receive_message(Message &message,
         return result.get();
     }
 
-    if (used_size) {
-        // Have cached some bytes from a previous read
-        on_async_receive_message<READY>(std::move(handler), message,
-                                        system::error_code{}, 0);
-    } else {
-        // TODO (C++14): move in lambda capture list
-        channel.async_receive(asio::buffer(buffer + used_size),
-                              [this,handler,&message]
-                              (const system::error_code &ec,
-                               std::size_t bytes_transferred) mutable {
-            on_async_receive_message<READY>(std::move(handler), message, ec,
-                                            bytes_transferred);
-        });
-    }
+    schedule_on_async_receive_message<READY>(handler, message);
 
     return result.get();
 }
@@ -63,25 +50,7 @@ embedded_server_socket::async_receive_some_body(Message &message,
         return result.get();
     }
 
-    // TODO: abstract this code away
-    // BEGINNING OF REDUNDANT CODE
-
-    if (used_size) {
-        // Have cached some bytes from a previous read
-        on_async_receive_message<DATA>(std::move(handler), message,
-                                       system::error_code{}, 0);
-    } else {
-        // TODO (C++14): move in lambda capture list
-        channel.async_receive(asio::buffer(buffer + used_size),
-                              [this,handler,&message]
-                              (const system::error_code &ec,
-                               std::size_t bytes_transferred) mutable {
-            on_async_receive_message<DATA>(std::move(handler), message, ec,
-                                           bytes_transferred);
-        });
-    }
-
-    // END OF REDUNDANT CODE
+    schedule_on_async_receive_message<DATA>(handler, message);
 
     return result.get();
 }
@@ -106,25 +75,7 @@ embedded_server_socket::async_receive_trailers(Message &message,
         return result.get();
     }
 
-    // TODO: abstract this code away
-    // BEGINNING OF REDUNDANT CODE
-
-    if (used_size) {
-        // Have cached some bytes from a previous read
-        on_async_receive_message<END>(std::move(handler), message,
-                                      system::error_code{}, 0);
-    } else {
-        // TODO (C++14): move in lambda capture list
-        channel.async_receive(asio::buffer(buffer + used_size),
-                              [this,handler,&message]
-                              (const system::error_code &ec,
-                               std::size_t bytes_transferred) mutable {
-            on_async_receive_message<END>(std::move(handler), message, ec,
-                                          bytes_transferred);
-        });
-    }
-
-    // END OF REDUNDANT CODE
+    schedule_on_async_receive_message<END>(handler, message);
 
     return result.get();
 }
@@ -194,6 +145,26 @@ embedded_server_socket::async_write_message(Message &message,
     });
 
     return result.get();
+}
+
+template<int target, class Message, class Handler>
+void embedded_server_socket::schedule_on_async_receive_message(Handler &handler,
+                                                               Message &message)
+{
+    if (used_size) {
+        // Have cached some bytes from a previous read
+        on_async_receive_message<target>(std::move(handler), message,
+                                         system::error_code{}, 0);
+    } else {
+        // TODO (C++14): move in lambda capture list
+        channel.async_receive(asio::buffer(buffer + used_size),
+                              [this,handler,&message]
+                              (const system::error_code &ec,
+                               std::size_t bytes_transferred) mutable {
+            on_async_receive_message<target>(std::move(handler), message, ec,
+                                             bytes_transferred);
+        });
+    }
 }
 
 template<int target, class Message, class Handler>
