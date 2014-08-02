@@ -5,6 +5,7 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/http/embedded_server_socket_acceptor.hpp>
+#include <boost/http/algorithm.hpp>
 
 using namespace std;
 using namespace boost;
@@ -33,6 +34,12 @@ int main()
                 cout << "About to receive a new message" << endl;
                 socket.async_receive_message(message, yield);
                 //message.body.clear(); // freeing not used resources
+
+                if (http::incoming_request_continue_required(message)) {
+                    cout << "Continue required. About to send \"100-continue\""
+                         << std::endl;
+                    socket.async_write_continue(yield);
+                }
 
                 while (socket.incoming_state() != http::incoming_state::empty) {
                     cout << "Message not fully received" << endl;
