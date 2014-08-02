@@ -29,6 +29,10 @@ namespace http {
  */
 struct message
 {
+    typedef std::string start_line_type;
+    typedef boost::http::headers headers_type;
+    typedef std::vector<std::uint8_t> body_type;
+
     /**
      * It's context dependant and have a different structure for requests and
      * responses. The object should store the start line (excluding "\r\n")
