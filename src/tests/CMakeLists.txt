@@ -6,6 +6,7 @@ set(tests
   "firsttest"
   "socket_concept"
   "errc"
+  "algorithm"
 )
 
 macro(add_test_target target)
