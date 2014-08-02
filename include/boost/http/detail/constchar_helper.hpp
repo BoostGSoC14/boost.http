@@ -6,21 +6,29 @@
 #ifndef BOOST_HTTP_DETAIL_CONSTCHAR_HELPER_H
 #define BOOST_HTTP_DETAIL_CONSTCHAR_HELPER_H
 
+#include <boost/asio/buffer.hpp>
+
 namespace boost {
 namespace http {
 namespace detail {
 
 struct constchar_helper
 {
-    template<unsigned N>
+    template<std::size_t N>
     constchar_helper(const char (&input)[N]) :
         data(input),
         size(N - 1)
     {}
 
     const char *data;
-    const unsigned size;
+    const std::size_t size;
 };
+
+template<std::size_t N>
+asio::const_buffers_1 string_literal_buffer(const char (&input)[N])
+{
+    return asio::buffer(input, N - 1);
+}
 
 } // namespace detail
 } // namespace http

@@ -87,6 +87,7 @@ typename asio::async_result<
 embedded_server_socket::async_write_message(Message &message,
                                             CompletionToken &&token)
 {
+    using detail::string_literal_buffer;
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
 
@@ -99,8 +100,8 @@ embedded_server_socket::async_write_message(Message &message,
         return result.get();
     }
 
-    auto crlf = asio::buffer("\r\n");
-    auto sep = asio::buffer(": ");
+    auto crlf = string_literal_buffer("\r\n");
+    auto sep = string_literal_buffer(": ");
 
     const auto nbuffer_pieces =
         // Start line + CRLF
@@ -131,7 +132,7 @@ embedded_server_socket::async_write_message(Message &message,
     // because we don't create multiple responses at once with HTTP/1.1
     // pipelining, it's safe to use this "shared state"
     content_length_buffer = lexical_cast<std::string>(message.body.size());
-    buffers.push_back(asio::buffer("content-length: "));
+    buffers.push_back(string_literal_buffer("content-length: "));
     buffers.push_back(asio::buffer(content_length_buffer));
     buffers.push_back(crlf);
 
@@ -165,7 +166,9 @@ embedded_server_socket::async_write_continue(CompletionToken &&token)
         return result.get();
     }
 
-    asio::async_write(channel, asio::buffer("HTTP/1.1 100 Continue\r\n\r\n"),
+    asio::async_write(channel,
+                      detail::string_literal_buffer("HTTP/1.1 100"
+                                                    " Continue\r\n\r\n"),
                       [handler]
                       (const system::error_code &ec, std::size_t) mutable {
         handler(ec);
