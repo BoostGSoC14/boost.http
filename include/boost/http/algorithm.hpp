@@ -45,13 +45,10 @@ bool header_value_any_of(const String &header_value, const Predicate &p)
 
         if (value_begin != next_comma) {
             auto value_end = std::find_if_not(reverse_iterator(next_comma),
-                                              reverse_iterator(comma),
+                                              reverse_iterator(value_begin),
                                               [](const char_type &c){
                                                   return std::isspace(c);
                                               }).base();
-            if (value_end == comma)
-                value_end = next_comma;
-
             if (value_begin != value_end && p(value_begin, value_end))
                 return true;
         }
