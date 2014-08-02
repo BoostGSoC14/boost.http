@@ -172,6 +172,12 @@ public:
 
     void write_continue();
 
+    template<class CompletionToken>
+    typename asio::async_result<
+        typename asio::handler_type<CompletionToken,
+                                    void(system::error_code)>::type>::type
+    async_write_continue(CompletionToken &&token);
+
     // write start-line and headers
     // TODO: rename to write_header (?)
     void write_metadata(const message_type &message);

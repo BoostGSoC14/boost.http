@@ -147,6 +147,33 @@ embedded_server_socket::async_write_message(Message &message,
     return result.get();
 }
 
+template<class CompletionToken>
+typename asio::async_result<
+    typename asio::handler_type<CompletionToken,
+                                void(system::error_code)>::type>::type
+embedded_server_socket::async_write_continue(CompletionToken &&token)
+{
+    typedef typename asio::handler_type<
+        CompletionToken, void(system::error_code)>::type Handler;
+
+    Handler handler(std::forward<CompletionToken>(token));
+
+    asio::async_result<Handler> result(handler);
+
+    if (!writer_helper.write_continue()) {
+        handler(system::error_code{http_errc::out_of_order});
+        return result.get();
+    }
+
+    asio::async_write(channel, asio::buffer("HTTP/1.1 100 Continue\r\n\r\n"),
+                      [handler]
+                      (const system::error_code &ec, std::size_t) mutable {
+        handler(ec);
+    });
+
+    return result.get();
+}
+
 template<int target, class Message, class Handler>
 void embedded_server_socket::schedule_on_async_receive_message(Handler &handler,
                                                                Message &message)
