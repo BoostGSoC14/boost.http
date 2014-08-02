@@ -341,18 +341,16 @@ int embedded_server_socket::on_header_field(http_parser *parser, const char *at,
     auto &field = socket->last_header.first;
     auto &value = socket->last_header.second;
 
-    if (field.empty() /* last header piece was value */) {
+    if (value.size() /* last header piece was value */) {
+        if (!socket->use_trailers)
+            message->headers.insert(socket->last_header);
+        else
+            message->trailers.insert(socket->last_header);
+        value.clear();
+
         field.replace(0, field.size(), at, size);
         transform(field.begin(), field.end(), field.begin(), tolower);
     } else {
-        if (value.size()) {
-            if (!socket->use_trailers)
-                message->headers.insert(socket->last_header);
-            else
-                message->trailers.insert(socket->last_header);
-            value.clear();
-        }
-
         auto offset = field.size();
         field.append(at, size);
         auto begin = field.begin() + offset;
@@ -473,6 +471,10 @@ template<class Message>
 int embedded_server_socket::on_message_complete(http_parser *parser)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
+    auto message = reinterpret_cast<Message*>(socket->current_message);
+    message->trailers.insert(socket->last_header);
+    socket->last_header.first.clear();
+    socket->last_header.second.clear();
     socket->istate = http::incoming_state::empty;
     socket->use_trailers = false;
     socket->flags |= END;
