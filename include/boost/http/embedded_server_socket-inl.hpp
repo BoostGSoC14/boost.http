@@ -31,11 +31,6 @@ embedded_server_socket::async_receive_message(Message &message,
         on_async_receive_message<READY>(std::move(handler), message,
                                         system::error_code{}, 0);
     } else {
-        if (used_size == asio::buffer_size(buffer)) {
-            handler(system::error_code{http_errc::buffer_exhausted});
-            return result.get();
-        }
-
         // TODO (C++14): move in lambda capture list
         channel.async_receive(asio::buffer(buffer + used_size),
                               [this,handler,&message]
@@ -76,11 +71,6 @@ embedded_server_socket::async_receive_some_body(Message &message,
         on_async_receive_message<DATA>(std::move(handler), message,
                                        system::error_code{}, 0);
     } else {
-        if (used_size == asio::buffer_size(buffer)) {
-            handler(system::error_code{http_errc::buffer_exhausted});
-            return result.get();
-        }
-
         // TODO (C++14): move in lambda capture list
         channel.async_receive(asio::buffer(buffer + used_size),
                               [this,handler,&message]
@@ -124,11 +114,6 @@ embedded_server_socket::async_receive_trailers(Message &message,
         on_async_receive_message<END>(std::move(handler), message,
                                       system::error_code{}, 0);
     } else {
-        if (used_size == asio::buffer_size(buffer)) {
-            handler(system::error_code{http_errc::buffer_exhausted});
-            return result.get();
-        }
-
         // TODO (C++14): move in lambda capture list
         channel.async_receive(asio::buffer(buffer + used_size),
                               [this,handler,&message]
