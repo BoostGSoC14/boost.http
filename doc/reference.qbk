@@ -1,0 +1,5 @@
+[chapter A chapter
+[quickbook 1.6]
+]
+
+[xinclude docbook/index.xml]
