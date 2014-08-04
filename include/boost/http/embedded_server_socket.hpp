@@ -88,9 +88,6 @@ struct http_parser_settings
 class embedded_server_socket
 {
 public:
-    // TODO: remove this typedef
-    typedef message message_type;
-
     // ### QUERY FUNCTIONS ###
 
     /* Vocabulary might be confusing here. The word "incoming" could refer to
@@ -121,7 +118,8 @@ public:
     // ### READ FUNCTIONS ###
 
     // only warns you when the message is ready (start-line and headers).
-    void receive_message(message_type &message);
+    template<class Message>
+    void receive_message(Message &message);
 
     /* \warning async_receive_message is a composed operation. It is implemented
        in terms of zero or more calls to underlying low-level operations. The
@@ -136,7 +134,8 @@ public:
 
     // body might very well not fit into memory and user might very well want to
     // save it to disk or immediately stream to somewhere else (proxy?)
-    void receive_some_body(message_type &type);
+    template<class Message>
+    void receive_some_body(Message &type);
 
     template<class Message, class CompletionToken>
     typename asio::async_result<
@@ -147,7 +146,8 @@ public:
     // it doesn't make sense to expose an interface that only feed one trailer
     // at a time, because headers and trailers are metadata about the body and
     // the user need the metadata to correctly decode/interpret the body anyway.
-    void receive_trailers(message_type &type);
+    template<class Message>
+    void receive_trailers(Message &type);
 
     template<class Message, class CompletionToken>
     typename asio::async_result<
@@ -160,7 +160,8 @@ public:
     // ### WRITE FUNCTIONS ###
 
     // write the whole message in "one phase"
-    void write_message(const message_type &message);
+    template<class Message>
+    void write_message(const Message &message);
 
     /* TODO: refactor it to allow concurrent responses being issued (no
        "iterator invalidation"). */
@@ -180,7 +181,8 @@ public:
 
     // write start-line and headers
     // TODO: rename to write_header (?)
-    void write_metadata(const message_type &message);
+    template<class Message>
+    void write_metadata(const Message &message);
 
     /** write a body part
      *
