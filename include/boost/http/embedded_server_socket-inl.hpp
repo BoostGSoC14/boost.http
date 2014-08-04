@@ -212,6 +212,24 @@ embedded_server_socket<Socket>
 }
 
 template<class Socket>
+template<class... Args>
+embedded_server_socket<Socket>
+::embedded_server_socket(boost::asio::mutable_buffer inbuffer,
+                         channel_type /*mode*/, Args&&... args)
+    : channel(std::forward<Args>(args)...)
+    , istate(http::incoming_state::empty) //mode(mode)
+    , buffer(inbuffer)
+    , writer_helper(http::outgoing_state::empty)
+{
+    // TODO: add test to this feature and document it
+    if (asio::buffer_size(buffer) == 0)
+        throw std::invalid_argument("buffers must not be 0-sized");
+
+    detail::init(parser);
+    parser.data = this;
+}
+
+template<class Socket>
 template<int target, class Message, class Handler>
 void embedded_server_socket<Socket>
 ::schedule_on_async_receive_message(Handler &handler, Message &message)

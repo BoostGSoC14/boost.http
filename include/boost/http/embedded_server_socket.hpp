@@ -223,6 +223,10 @@ public:
                            boost::asio::mutable_buffer inbuffer,
                            channel_type /*mode*/);
 
+    template<class... Args>
+    embedded_server_socket(boost::asio::mutable_buffer inbuffer,
+                           channel_type /*mode*/, Args&&... args);
+
 private:
     typedef detail::http_parser http_parser;
     typedef detail::http_parser_settings http_parser_settings;
