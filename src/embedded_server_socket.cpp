@@ -77,33 +77,6 @@ enum http_errno {
 namespace boost {
 namespace http {
 
-embedded_server_socket
-::embedded_server_socket(boost::asio::io_service &io_service,
-                         boost::asio::mutable_buffer inbuffer,
-                         channel_type /*mode*/) :
-    channel(io_service),
-    istate(http::incoming_state::empty),//mode(mode),
-    buffer(inbuffer),
-    writer_helper(http::outgoing_state::empty)
-{
-    // TODO: add test to this feature and document it
-    if (asio::buffer_size(buffer) == 0)
-        throw std::invalid_argument("buffers must not be 0-sized");
-
-    init(parser);
-    parser.data = this;
-}
-
-incoming_state embedded_server_socket::incoming_state() const
-{
-    return istate;
-}
-
-outgoing_state embedded_server_socket::outgoing_state() const
-{
-    return writer_helper.state;
-}
-
 void embedded_server_socket::init(http_parser &parser)
 {
     http_parser_init(&parser, HTTP_REQUEST);

@@ -2,6 +2,18 @@ namespace boost {
 namespace http {
 
 inline
+incoming_state embedded_server_socket::incoming_state() const
+{
+    return istate;
+}
+
+inline
+outgoing_state embedded_server_socket::outgoing_state() const
+{
+    return writer_helper.state;
+}
+
+inline
 bool embedded_server_socket::outgoing_response_native_stream() const
 {
     return flags & HTTP_1_1;
@@ -175,6 +187,24 @@ embedded_server_socket::async_write_continue(CompletionToken &&token)
     });
 
     return result.get();
+}
+
+inline
+embedded_server_socket
+::embedded_server_socket(boost::asio::io_service &io_service,
+                         boost::asio::mutable_buffer inbuffer,
+                         channel_type /*mode*/) :
+    channel(io_service),
+    istate(http::incoming_state::empty),//mode(mode),
+    buffer(inbuffer),
+    writer_helper(http::outgoing_state::empty)
+{
+    // TODO: add test to this feature and document it
+    if (asio::buffer_size(buffer) == 0)
+        throw std::invalid_argument("buffers must not be 0-sized");
+
+    init(parser);
+    parser.data = this;
 }
 
 template<int target, class Message, class Handler>
