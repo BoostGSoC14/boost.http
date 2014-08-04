@@ -203,7 +203,7 @@ embedded_server_socket
     if (asio::buffer_size(buffer) == 0)
         throw std::invalid_argument("buffers must not be 0-sized");
 
-    init(parser);
+    detail::init(parser);
     parser.data = this;
 }
 
@@ -241,14 +241,16 @@ void embedded_server_socket
 
     used_size += bytes_transferred;
     current_message = reinterpret_cast<void*>(&message);
-    auto nparsed = execute(parser, settings<Message>(),
-                           asio::buffer_cast<const std::uint8_t*>(buffer),
-                           used_size);
+    auto nparsed = detail::execute(parser, settings<Message>(),
+                                   asio::buffer_cast<const std::uint8_t*>
+                                   (buffer),
+                                   used_size);
 
     if (parser.http_errno) {
         system::error_code ignored_ec;
 
-        if (parser.http_errno == int(parser_error::cb_headers_complete)) {
+        if (parser.http_errno
+            == int(detail::parser_error::cb_headers_complete)) {
             clear_buffer();
             clear_message(message);
 
@@ -267,10 +269,10 @@ void embedded_server_socket
             });
             return;
         } else if (parser.http_errno
-                   == int(parser_error::cb_message_complete)) {
+                   == int(detail::parser_error::cb_message_complete)) {
             /* After an error is set, http_parser enter in an invalid state
                and needs to be reset. */
-            init(parser);
+            detail::init(parser);
         } else {
             clear_buffer();
             channel.close(ignored_ec);
@@ -505,7 +507,7 @@ int embedded_server_socket::on_headers_complete(http_parser *parser)
     socket->istate = http::incoming_state::message_ready;
     socket->flags |= READY;
 
-    if (should_keep_alive(*parser))
+    if (detail::should_keep_alive(*parser))
         socket->flags |= KEEP_ALIVE;
 
     return 0;
@@ -521,7 +523,7 @@ int embedded_server_socket::on_body(http_parser *parser, const char *data,
     message->body.insert(message->body.end(), begin, begin + size);
     socket->flags |= DATA;
 
-    if (body_is_final(*parser))
+    if (detail::body_is_final(*parser))
         socket->istate = http::incoming_state::body_ready;
 
     return 0;
@@ -551,7 +553,7 @@ void embedded_server_socket::clear_buffer()
     writer_helper.state = http::outgoing_state::empty;
     used_size = 0;
     flags = 0;
-    init(parser);
+    detail::init(parser);
 }
 
 template<class Message>

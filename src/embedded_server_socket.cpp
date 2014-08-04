@@ -76,8 +76,9 @@ enum http_errno {
 
 namespace boost {
 namespace http {
+namespace detail {
 
-void embedded_server_socket::init(http_parser &parser)
+void init(http_parser &parser)
 {
     http_parser_init(&parser, HTTP_REQUEST);
 
@@ -89,7 +90,7 @@ void embedded_server_socket::init(http_parser &parser)
                   " Ryan Dahl's HTTP parser");
 }
 
-std::size_t embedded_server_socket::execute(http_parser &parser,
+std::size_t execute(http_parser &parser,
                                             const http_parser_settings &settings,
                                             const std::uint8_t *data,
                                             std::size_t len)
@@ -98,15 +99,16 @@ std::size_t embedded_server_socket::execute(http_parser &parser,
                                reinterpret_cast<const char*>(data), len);
 }
 
-bool embedded_server_socket::should_keep_alive(const http_parser &parser)
+bool should_keep_alive(const http_parser &parser)
 {
     return http_should_keep_alive(&parser);
 }
 
-bool embedded_server_socket::body_is_final(const http_parser &parser)
+bool body_is_final(const http_parser &parser)
 {
     return http_body_is_final(&parser);
 }
 
+} // namespace detail
 } // namespace http
 } // namespace boost

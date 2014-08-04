@@ -79,6 +79,19 @@ struct http_parser_settings
 
 } // extern "C"
 
+enum class parser_error
+{
+    cb_headers_complete = 5, // HPE_CB_headers_complete
+    cb_message_complete = 7  // HPE_CB_message_complete
+};
+
+void init(http_parser &parser);
+std::size_t execute(http_parser &parser,
+                    const http_parser_settings &settings,
+                    const std::uint8_t *data, std::size_t len);
+bool should_keep_alive(const http_parser &parser);
+bool body_is_final(const http_parser &parser);
+
 } // namespace detail
 
 /* TODO: templatize based on buffer and socket (TCP and SSL implementation are
@@ -227,12 +240,6 @@ private:
         KEEP_ALIVE = 1 << 4
     };
 
-    enum class parser_error
-    {
-        cb_headers_complete = 5, // HPE_CB_headers_complete
-        cb_message_complete = 7  // HPE_CB_message_complete
-    };
-
     template<int target, class Message, class Handler>
     void schedule_on_async_receive_message(Handler &handler, Message &message);
 
@@ -240,13 +247,6 @@ private:
     void on_async_receive_message(Handler handler, Message &message,
                                   const system::error_code &ec,
                                   std::size_t bytes_transferred);
-
-    static void init(http_parser &parser);
-    static std::size_t execute(http_parser &parser,
-                               const http_parser_settings &settings,
-                               const std::uint8_t *data, std::size_t len);
-    static bool should_keep_alive(const http_parser &parser);
-    static bool body_is_final(const http_parser &parser);
 
     template</*class Buffer, */class Message>
     static http_parser_settings settings();
