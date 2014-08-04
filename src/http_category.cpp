@@ -25,6 +25,9 @@ std::string http_category_impl::message(int condition) const noexcept
     switch (condition) {
     case static_cast<int>(http_errc::out_of_order):
         return "HTTP actions issued on the wrong order for some object";
+    case static_cast<int>(http_errc::native_stream_unsupported):
+        return "The underlying communication channel doesn't support native"
+            " streaming. Use write_message instead.";
     case static_cast<int>(http_errc::parsing_error):
         return "The parser encountered an error";
     case static_cast<int>(http_errc::buffer_exhausted):

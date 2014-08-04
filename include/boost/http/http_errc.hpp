@@ -17,6 +17,7 @@ namespace http {
  */
 enum class http_errc {
     out_of_order = 1,
+    native_stream_unsupported,
     parsing_error,
     // This error should only happen if a poor parser is used
     buffer_exhausted
