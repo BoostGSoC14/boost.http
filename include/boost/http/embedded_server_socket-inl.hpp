@@ -24,8 +24,8 @@ template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket<Socket>::async_receive_message(Message &message,
-                                                      CompletionToken &&token)
+embedded_server_socket<Socket>::async_read_message(Message &message,
+                                                   CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -39,7 +39,7 @@ embedded_server_socket<Socket>::async_receive_message(Message &message,
         return result.get();
     }
 
-    schedule_on_async_receive_message<READY>(handler, message);
+    schedule_on_async_read_message<READY>(handler, message);
 
     return result.get();
 }
@@ -49,8 +49,8 @@ template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket<Socket>::async_receive_some_body(Message &message,
-                                                        CompletionToken &&token)
+embedded_server_socket<Socket>::async_read_some_body(Message &message,
+                                                     CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -64,7 +64,7 @@ embedded_server_socket<Socket>::async_receive_some_body(Message &message,
         return result.get();
     }
 
-    schedule_on_async_receive_message<DATA>(handler, message);
+    schedule_on_async_read_message<DATA>(handler, message);
 
     return result.get();
 }
@@ -74,8 +74,8 @@ template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket<Socket>::async_receive_trailers(Message &message,
-                                                       CompletionToken &&token)
+embedded_server_socket<Socket>::async_read_trailers(Message &message,
+                                                    CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -89,7 +89,7 @@ embedded_server_socket<Socket>::async_receive_trailers(Message &message,
         return result.get();
     }
 
-    schedule_on_async_receive_message<END>(handler, message);
+    schedule_on_async_read_message<END>(handler, message);
 
     return result.get();
 }
@@ -232,20 +232,20 @@ embedded_server_socket<Socket>
 template<class Socket>
 template<int target, class Message, class Handler>
 void embedded_server_socket<Socket>
-::schedule_on_async_receive_message(Handler &handler, Message &message)
+::schedule_on_async_read_message(Handler &handler, Message &message)
 {
     if (used_size) {
         // Have cached some bytes from a previous read
-        on_async_receive_message<target>(std::move(handler), message,
+        on_async_read_message<target>(std::move(handler), message,
                                          system::error_code{}, 0);
     } else {
         // TODO (C++14): move in lambda capture list
-        channel.async_receive(asio::buffer(buffer + used_size),
-                              [this,handler,&message]
-                              (const system::error_code &ec,
-                               std::size_t bytes_transferred) mutable {
-            on_async_receive_message<target>(std::move(handler), message, ec,
-                                             bytes_transferred);
+        channel.async_read_some(asio::buffer(buffer + used_size),
+                                [this,handler,&message]
+                                (const system::error_code &ec,
+                                 std::size_t bytes_transferred) mutable {
+            on_async_read_message<target>(std::move(handler), message, ec,
+                                          bytes_transferred);
         });
     }
 }
@@ -253,9 +253,9 @@ void embedded_server_socket<Socket>
 template<class Socket>
 template<int target, class Message, class Handler>
 void embedded_server_socket<Socket>
-::on_async_receive_message(Handler handler, Message &message,
-                           const system::error_code &ec,
-                           std::size_t bytes_transferred)
+::on_async_read_message(Handler handler, Message &message,
+                        const system::error_code &ec,
+                        std::size_t bytes_transferred)
 {
     if (ec) {
         clear_buffer();
@@ -328,12 +328,12 @@ void embedded_server_socket<Socket>
         }
 
         // TODO (C++14): move in lambda capture list
-        channel.async_receive(asio::buffer(buffer + used_size),
-                              [this,handler,&message]
-                              (const system::error_code &ec,
-                               std::size_t bytes_transferred) mutable {
-            on_async_receive_message<target>(std::move(handler), message,
-                                             ec, bytes_transferred);
+        channel.async_read_some(asio::buffer(buffer + used_size),
+                                [this,handler,&message]
+                                (const system::error_code &ec,
+                                 std::size_t bytes_transferred) mutable {
+            on_async_read_message<target>(std::move(handler), message,
+                                          ec, bytes_transferred);
         });
     }
 }

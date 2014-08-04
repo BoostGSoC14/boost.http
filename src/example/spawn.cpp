@@ -32,7 +32,7 @@ int main()
                 acceptor.async_accept(socket, yield);
 
                 cout << "About to receive a new message" << endl;
-                socket.async_receive_message(message, yield);
+                socket.async_read_message(message, yield);
                 //message.body.clear(); // freeing not used resources
 
                 if (http::incoming_request_continue_required(message)) {
@@ -46,11 +46,11 @@ int main()
                     switch (socket.incoming_state()) {
                     case http::incoming_state::message_ready:
                         cout << "About to receive some body" << endl;
-                        socket.async_receive_some_body(message, yield);
+                        socket.async_read_some_body(message, yield);
                         break;
                     case http::incoming_state::body_ready:
                         cout << "About to receive trailers" << endl;
-                        socket.async_receive_trailers(message, yield);
+                        socket.async_read_trailers(message, yield);
                     }
                 }
 

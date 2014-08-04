@@ -129,9 +129,9 @@ public:
 
     // only warns you when the message is ready (start-line and headers).
     template<class Message>
-    void receive_message(Message &message);
+    void read_message(Message &message);
 
-    /* \warning async_receive_message is a composed operation. It is implemented
+    /* \warning async_read_message is a composed operation. It is implemented
        in terms of zero or more calls to underlying low-level operations. The
        program must ensure that no other operation is performed on the
        embedded_server_socket until this operation completes (the user handler
@@ -140,30 +140,30 @@ public:
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_receive_message(Message &message, CompletionToken &&token);
+    async_read_message(Message &message, CompletionToken &&token);
 
     // body might very well not fit into memory and user might very well want to
     // save it to disk or immediately stream to somewhere else (proxy?)
     template<class Message>
-    void receive_some_body(Message &type);
+    void read_some_body(Message &type);
 
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_receive_some_body(Message &message, CompletionToken &&token);
+    async_read_some_body(Message &message, CompletionToken &&token);
 
     // it doesn't make sense to expose an interface that only feed one trailer
     // at a time, because headers and trailers are metadata about the body and
     // the user need the metadata to correctly decode/interpret the body anyway.
     template<class Message>
-    void receive_trailers(Message &type);
+    void read_trailers(Message &type);
 
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_receive_trailers(Message &message, CompletionToken &&token);
+    async_read_trailers(Message &message, CompletionToken &&token);
 
     // ### END OF READ FUNCTIONS ###
 
@@ -242,12 +242,12 @@ private:
     };
 
     template<int target, class Message, class Handler>
-    void schedule_on_async_receive_message(Handler &handler, Message &message);
+    void schedule_on_async_read_message(Handler &handler, Message &message);
 
     template<int target, class Message, class Handler>
-    void on_async_receive_message(Handler handler, Message &message,
-                                  const system::error_code &ec,
-                                  std::size_t bytes_transferred);
+    void on_async_read_message(Handler handler, Message &message,
+                               const system::error_code &ec,
+                               std::size_t bytes_transferred);
 
     template</*class Buffer, */class Message>
     static http_parser_settings settings();
