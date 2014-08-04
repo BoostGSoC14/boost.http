@@ -27,47 +27,52 @@ namespace http {
  *
  * @TODO: define the basic_message concept
  */
-struct message
+template<class StartLine, class Headers, class Body>
+struct basic_message
 {
-    typedef std::string start_line_type;
-    typedef boost::http::headers headers_type;
-    typedef std::vector<std::uint8_t> body_type;
+    typedef StartLine start_line_type;
+    typedef Headers headers_type;
+    typedef Body body_type;
 
     /**
      * It's context dependant and have a different structure for requests and
      * responses. The object should store the start line (excluding "\r\n")
      * without trying to decode its meaning, leaving this task for a specialized
      * abstraction of the appropriate HTTP message type (request or response).
-     *
-     * @TODO: write rationable why UTF-8 and why the null terminator overhead
-     * won't matter much here. Maybe arguing using SSO as example and some
-     * benchmark too.
      */
-    std::string start_line;
+    start_line_type start_line;
 
     /**
      * The metadata about the message. The user will need this info to handle
      * the message appropriately.
      */
-    boost::http::headers headers;
+    headers_type headers;
 
     /**
      * Its size may not fit into memory. Also, the user might be able to handle
      * parts of its contents (in-place, processing while receiving). Given these
      * facts, events for each piece of body gathered should be generated, but
      * this container still could be used to buffer the data.
-     *
-     * std::vector<std::uint8_t> is used over string, because fits the purpose
-     * better (no '\0' character terminator, well-defined behaviours of
-     * capacity, size and iterator invalidation, ...)
      */
-    std::vector<std::uint8_t> body;
+    body_type body;
 
     /**
      * Extra headers issued after body is complete.
      */
-    boost::http::headers trailers;
+    headers_type trailers;
 };
+
+/**
+ * @TODO: write rationable why UTF-8 and why the null terminator overhead won't
+ * matter much here. Maybe arguing using SSO as example and some benchmark too.
+ *
+ * std::vector<std::uint8_t> is used over string, because fits the purpose
+ * better (no '\0' character terminator, well-defined behaviours of capacity,
+ * size and iterator invalidation, ...)
+ */
+typedef basic_message<std::string, boost::http::headers,
+                      std::vector<std::uint8_t>>
+    message;
 
 } // namespace http
 } // namespace boost
