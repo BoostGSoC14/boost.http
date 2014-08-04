@@ -288,6 +288,12 @@ private:
     asio::mutable_buffer buffer;
     std::size_t used_size = 0;
 
+    /* pimpl is not used to avoid the extra level of indirection and the extra
+       allocation. Also, related objects that are closer together are more cache
+       friendly. It is not ideal, but Ryan Dahl's HTTP parser don't support
+       arbitrary HTTP verbs and it will have to be replaced anyway later, then
+       I'm prioritizing header/interface isolation and a reason for people to
+       use this wrapper (performance). */
     http_parser parser;
     int flags = 0;
 
