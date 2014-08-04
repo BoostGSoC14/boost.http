@@ -16,7 +16,7 @@ namespace http {
 class embedded_server_socket_acceptor
 {
 public:
-    typedef embedded_server_socket endpoint_type;
+    typedef embedded_server_socket<> endpoint_type;
 
     embedded_server_socket_acceptor(boost::asio::ip::tcp::acceptor &&acceptor);
     embedded_server_socket_acceptor(boost::asio::io_service &io_service,

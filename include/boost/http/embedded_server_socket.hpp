@@ -94,10 +94,7 @@ bool body_is_final(const http_parser &parser);
 
 } // namespace detail
 
-/* TODO: templatize based on buffer and socket (TCP and SSL implementation are
-   identical). There is no need to templatize based on message type here,
-   because there is not a member of embedded_server_socket that depends on
-   message type. */
+template<class Socket = boost::asio::ip::tcp::socket>
 class embedded_server_socket
 {
 public:
@@ -280,7 +277,7 @@ private:
     template<class Message>
     static void clear_message(Message &message);
 
-    boost::asio::ip::tcp::socket channel;
+    Socket channel;
     http::incoming_state istate;
     //channel_type mode;
 

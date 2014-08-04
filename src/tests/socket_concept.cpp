@@ -67,5 +67,5 @@ BOOST_AUTO_TEST_CASE(Simple_attributes) {
     BOOST_CHECK(!is_socket<D>::value);
     BOOST_CHECK(!is_socket<E>::value);
     BOOST_CHECK(is_socket<F>::value);
-    BOOST_CHECK(is_socket<embedded_server_socket>::value);
+    BOOST_CHECK(is_socket<embedded_server_socket<>>::value);
 }

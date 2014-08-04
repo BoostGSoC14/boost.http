@@ -1,30 +1,31 @@
 namespace boost {
 namespace http {
 
-inline
-incoming_state embedded_server_socket::incoming_state() const
+template<class Socket>
+incoming_state embedded_server_socket<Socket>::incoming_state() const
 {
     return istate;
 }
 
-inline
-outgoing_state embedded_server_socket::outgoing_state() const
+template<class Socket>
+outgoing_state embedded_server_socket<Socket>::outgoing_state() const
 {
     return writer_helper.state;
 }
 
-inline
-bool embedded_server_socket::outgoing_response_native_stream() const
+template<class Socket>
+bool embedded_server_socket<Socket>::outgoing_response_native_stream() const
 {
     return flags & HTTP_1_1;
 }
 
+template<class Socket>
 template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket::async_receive_message(Message &message,
-                                              CompletionToken &&token)
+embedded_server_socket<Socket>::async_receive_message(Message &message,
+                                                      CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -43,12 +44,13 @@ embedded_server_socket::async_receive_message(Message &message,
     return result.get();
 }
 
+template<class Socket>
 template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket::async_receive_some_body(Message &message,
-                                                CompletionToken &&token)
+embedded_server_socket<Socket>::async_receive_some_body(Message &message,
+                                                        CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -67,13 +69,13 @@ embedded_server_socket::async_receive_some_body(Message &message,
     return result.get();
 }
 
-
+template<class Socket>
 template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket::async_receive_trailers(Message &message,
-                                               CompletionToken &&token)
+embedded_server_socket<Socket>::async_receive_trailers(Message &message,
+                                                       CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -92,12 +94,13 @@ embedded_server_socket::async_receive_trailers(Message &message,
     return result.get();
 }
 
+template<class Socket>
 template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket::async_write_message(Message &message,
-                                            CompletionToken &&token)
+embedded_server_socket<Socket>::async_write_message(Message &message,
+                                                    CompletionToken &&token)
 {
     using detail::string_literal_buffer;
     typedef typename asio::handler_type<
@@ -160,11 +163,12 @@ embedded_server_socket::async_write_message(Message &message,
     return result.get();
 }
 
+template<class Socket>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket::async_write_continue(CompletionToken &&token)
+embedded_server_socket<Socket>::async_write_continue(CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -189,8 +193,8 @@ embedded_server_socket::async_write_continue(CompletionToken &&token)
     return result.get();
 }
 
-inline
-embedded_server_socket
+template<class Socket>
+embedded_server_socket<Socket>
 ::embedded_server_socket(boost::asio::io_service &io_service,
                          boost::asio::mutable_buffer inbuffer,
                          channel_type /*mode*/) :
@@ -207,9 +211,10 @@ embedded_server_socket
     parser.data = this;
 }
 
+template<class Socket>
 template<int target, class Message, class Handler>
-void embedded_server_socket::schedule_on_async_receive_message(Handler &handler,
-                                                               Message &message)
+void embedded_server_socket<Socket>
+::schedule_on_async_receive_message(Handler &handler, Message &message)
 {
     if (used_size) {
         // Have cached some bytes from a previous read
@@ -227,8 +232,9 @@ void embedded_server_socket::schedule_on_async_receive_message(Handler &handler,
     }
 }
 
+template<class Socket>
 template<int target, class Message, class Handler>
-void embedded_server_socket
+void embedded_server_socket<Socket>
 ::on_async_receive_message(Handler handler, Message &message,
                            const system::error_code &ec,
                            std::size_t bytes_transferred)
@@ -314,8 +320,9 @@ void embedded_server_socket
     }
 }
 
+template<class Socket>
 template</*class Buffer, */class Message>
-detail::http_parser_settings embedded_server_socket::settings()
+detail::http_parser_settings embedded_server_socket<Socket>::settings()
 {
     http_parser_settings settings;
 
@@ -330,8 +337,9 @@ detail::http_parser_settings embedded_server_socket::settings()
     return settings;
 }
 
+template<class Socket>
 template<class Message>
-int embedded_server_socket::on_message_begin(http_parser *parser)
+int embedded_server_socket<Socket>::on_message_begin(http_parser *parser)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
@@ -339,9 +347,10 @@ int embedded_server_socket::on_message_begin(http_parser *parser)
     return 0;
 }
 
+template<class Socket>
 template<class Message>
-int embedded_server_socket::on_url(http_parser *parser, const char *at,
-                                   std::size_t size)
+int embedded_server_socket<Socket>::on_url(http_parser *parser, const char *at,
+                                           std::size_t size)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
@@ -388,9 +397,10 @@ int embedded_server_socket::on_url(http_parser *parser, const char *at,
     return 0;
 }
 
+template<class Socket>
 template<class Message>
-int embedded_server_socket::on_header_field(http_parser *parser, const char *at,
-                                            std::size_t size)
+int embedded_server_socket<Socket>
+::on_header_field(http_parser *parser, const char *at, std::size_t size)
 {
     /* The SG4's uri library also face the problem to define a
        case-insensitive interface and the chosen solution was to convert
@@ -422,9 +432,10 @@ int embedded_server_socket::on_header_field(http_parser *parser, const char *at,
     return 0;
 }
 
+template<class Socket>
 template<class Message>
-int embedded_server_socket::on_header_value(http_parser *parser, const char *at,
-                                            std::size_t size)
+int embedded_server_socket<Socket>
+::on_header_value(http_parser *parser, const char *at, std::size_t size)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto &value = socket->last_header.second;
@@ -432,8 +443,9 @@ int embedded_server_socket::on_header_value(http_parser *parser, const char *at,
     return 0;
 }
 
+template<class Socket>
 template<class Message>
-int embedded_server_socket::on_headers_complete(http_parser *parser)
+int embedded_server_socket<Socket>::on_headers_complete(http_parser *parser)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
@@ -513,9 +525,10 @@ int embedded_server_socket::on_headers_complete(http_parser *parser)
     return 0;
 }
 
+template<class Socket>
 template<class Message>
-int embedded_server_socket::on_body(http_parser *parser, const char *data,
-                                    std::size_t size)
+int embedded_server_socket<Socket>
+::on_body(http_parser *parser, const char *data, std::size_t size)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
@@ -529,8 +542,9 @@ int embedded_server_socket::on_body(http_parser *parser, const char *data,
     return 0;
 }
 
+template<class Socket>
 template<class Message>
-int embedded_server_socket::on_message_complete(http_parser *parser)
+int embedded_server_socket<Socket>::on_message_complete(http_parser *parser)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
@@ -546,8 +560,8 @@ int embedded_server_socket::on_message_complete(http_parser *parser)
     return parser->upgrade ? -1 : 0;
 }
 
-inline
-void embedded_server_socket::clear_buffer()
+template<class Socket>
+void embedded_server_socket<Socket>::clear_buffer()
 {
     istate = http::incoming_state::empty;
     writer_helper.state = http::outgoing_state::empty;
@@ -556,8 +570,9 @@ void embedded_server_socket::clear_buffer()
     detail::init(parser);
 }
 
+template<class Socket>
 template<class Message>
-void embedded_server_socket::clear_message(Message &message)
+void embedded_server_socket<Socket>::clear_message(Message &message)
 {
     message.start_line.clear();
     message.headers.clear();

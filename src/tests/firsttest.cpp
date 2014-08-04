@@ -6,7 +6,7 @@
 BOOST_AUTO_TEST_CASE(Simple_attributes) {
     boost::asio::io_service ios;
     char buffer[1];
-    boost::http::embedded_server_socket
+    boost::http::embedded_server_socket<>
         socket(ios, boost::asio::buffer(buffer),
                boost::http::channel_type::server);
     BOOST_CHECK(boost::http::outgoing_state::empty
