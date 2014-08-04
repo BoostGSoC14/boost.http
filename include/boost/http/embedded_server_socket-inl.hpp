@@ -99,7 +99,7 @@ template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket<Socket>::async_write_message(Message &message,
+embedded_server_socket<Socket>::async_write_message(const Message &message,
                                                     CompletionToken &&token)
 {
     using detail::string_literal_buffer;

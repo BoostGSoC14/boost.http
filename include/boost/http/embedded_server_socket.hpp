@@ -179,7 +179,7 @@ public:
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write_message(Message &message, CompletionToken &&token);
+    async_write_message(const Message &message, CompletionToken &&token);
 
     void write_continue();
 
