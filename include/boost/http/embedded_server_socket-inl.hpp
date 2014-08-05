@@ -99,8 +99,11 @@ template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket<Socket>::async_write_message(const Message &message,
-                                                    CompletionToken &&token)
+embedded_server_socket<Socket>
+::async_outgoing_response_write_message(std::uint_fast16_t status_code,
+                                        const boost::string_ref &reason_phrase,
+                                        const Message &message,
+                                        CompletionToken &&token)
 {
     using detail::string_literal_buffer;
     typedef typename asio::handler_type<
@@ -118,9 +121,18 @@ embedded_server_socket<Socket>::async_write_message(const Message &message,
     auto crlf = string_literal_buffer("\r\n");
     auto sep = string_literal_buffer(": ");
 
+    // because we don't create multiple responses at once with HTTP/1.1
+    // pipelining, it's safe to use this "shared state"
+    content_length_buffer = std::to_string(status_code) + ' ';
+    std::string::size_type content_length_delim = content_length_buffer.size();
+
+    // because we don't create multiple responses at once with HTTP/1.1
+    // pipelining, it's safe to use this "shared state"
+    content_length_buffer += std::to_string(message.body.size());
+
     const auto nbuffer_pieces =
-        // Start line + CRLF
-        2
+        // Start line (http version + status code + reason phrase) + CRLF
+        4
         // Headers
         // Each header is 4 buffer pieces: key + sep + value + crlf
         + 4 * message.headers.size()
@@ -134,7 +146,11 @@ embedded_server_socket<Socket>::async_write_message(const Message &message,
     // TODO (C++14): replace by dynarray
     std::vector<asio::const_buffer> buffers(nbuffer_pieces);
 
-    buffers.push_back(asio::buffer(message.start_line));
+    buffers.push_back(string_literal_buffer((flags & HTTP_1_1)
+                                            ? "HTTP/1.1 " : "HTTP/1.0 "));
+    buffers.push_back(asio::buffer(content_length_buffer.data(),
+                                   content_length_delim));
+    buffers.push_back(asio::buffer(reason_phrase.data(), reason_phrase.size()));
     buffers.push_back(crlf);
 
     for (const auto &header: message.headers) {
@@ -144,16 +160,11 @@ embedded_server_socket<Socket>::async_write_message(const Message &message,
         buffers.push_back(crlf);
     }
 
-    {
-        std::ostringstream ostr;
-        ostr << message.body.size();
-        // because we don't create multiple responses at once with HTTP/1.1
-        // pipelining, it's safe to use this "shared state"
-        content_length_buffer = ostr.str();
-    }
-
     buffers.push_back(string_literal_buffer("content-length: "));
-    buffers.push_back(asio::buffer(content_length_buffer));
+    buffers.push_back(asio::buffer(content_length_buffer.data()
+                                   + content_length_delim,
+                                   content_length_buffer.size()
+                                   - content_length_delim));
     buffers.push_back(crlf);
 
     buffers.push_back(crlf);

@@ -72,12 +72,12 @@ int main()
                 cout << "About to send a reply" << endl;
 
                 http::message reply;
-                reply.start_line = "HTTP/1.1 200 OK";
                 const char body[] = "Foobar";
                 std::copy(body, body + sizeof(body) - 1,
                           std::back_inserter(reply.body));
 
-                socket.async_write_message(reply, yield);
+                socket.async_outgoing_response_write_message(200, "OK", reply,
+                                                             yield);
             } catch (std::exception &e) {
                 cerr << "Aborting on exception: " << e.what() << endl;
                 std::exit(1);

@@ -13,6 +13,7 @@
 #include <sstream>
 #include <array>
 
+#include <boost/utility/string_ref.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
@@ -173,13 +174,15 @@ public:
     template<class Message>
     void write_message(const Message &message);
 
-    /* TODO: refactor it to allow concurrent responses being issued (no
-       "iterator invalidation"). */
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write_message(const Message &message, CompletionToken &&token);
+    async_outgoing_response_write_message(std::uint_fast16_t status_code,
+                                          const boost::string_ref
+                                          &reason_phrase,
+                                          const Message &message,
+                                          CompletionToken &&token);
 
     void write_continue();
 
