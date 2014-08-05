@@ -72,8 +72,8 @@ int main()
                 cout << "About to send the reply's metadata" << endl;
 
                 http::message reply;
-                reply.start_line = "HTTP/1.1 200 OK";
-                socket.async_write_metadata(reply, yield);
+                socket.async_outgoing_response_write_metadata(200, "OK", reply,
+                                                              yield);
 
                 std::cout << "Outgoing state = " << int(socket.outgoing_state())
                 << std::endl;

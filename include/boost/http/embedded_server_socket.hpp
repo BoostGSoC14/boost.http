@@ -209,7 +209,11 @@ public:
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write_metadata(const Message &message, CompletionToken &&token);
+    async_outgoing_response_write_metadata(std::uint_fast16_t status_code,
+                                           const boost::string_ref
+                                           &reason_phrase,
+                                           const Message &message,
+                                           CompletionToken &&token);
 
     /** write a body part
      *
