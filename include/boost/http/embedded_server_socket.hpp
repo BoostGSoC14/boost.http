@@ -10,8 +10,8 @@
 #include <cstddef>
 
 #include <algorithm>
-
-#include <boost/lexical_cast.hpp>
+#include <sstream>
+#include <array>
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
@@ -190,9 +190,14 @@ public:
     async_write_continue(CompletionToken &&token);
 
     // write start-line and headers
-    // TODO: rename to write_header (?)
     template<class Message>
     void write_metadata(const Message &message);
+
+    template<class Message, class CompletionToken>
+    typename asio::async_result<
+        typename asio::handler_type<CompletionToken,
+                                    void(system::error_code)>::type>::type
+    async_write_metadata(const Message &message, CompletionToken &&token);
 
     /** write a body part
      *
@@ -200,9 +205,27 @@ public:
      * buffering into account */
     void write(boost::asio::const_buffer &part);
 
+    template<class Message, class CompletionToken>
+    typename asio::async_result<
+        typename asio::handler_type<CompletionToken,
+                                    void(system::error_code)>::type>::type
+    async_write(const Message &message, CompletionToken &&token);
+
     void write_trailers(http::headers headers);
 
+    template<class Message, class CompletionToken>
+    typename asio::async_result<
+        typename asio::handler_type<CompletionToken,
+                                    void(system::error_code)>::type>::type
+    async_write_trailers(const Message &message, CompletionToken &&token);
+
     void end();
+
+    template<class CompletionToken>
+    typename asio::async_result<
+        typename asio::handler_type<CompletionToken,
+                                    void(system::error_code)>::type>::type
+    async_write_end_of_message(CompletionToken &&token);
 
     /**
      * Write the 100-continue status that must be written before the client

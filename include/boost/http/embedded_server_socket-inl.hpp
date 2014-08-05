@@ -144,9 +144,14 @@ embedded_server_socket<Socket>::async_write_message(const Message &message,
         buffers.push_back(crlf);
     }
 
-    // because we don't create multiple responses at once with HTTP/1.1
-    // pipelining, it's safe to use this "shared state"
-    content_length_buffer = lexical_cast<std::string>(message.body.size());
+    {
+        std::ostringstream ostr;
+        ostr << message.body.size();
+        // because we don't create multiple responses at once with HTTP/1.1
+        // pipelining, it's safe to use this "shared state"
+        content_length_buffer = ostr.str();
+    }
+
     buffers.push_back(string_literal_buffer("content-length: "));
     buffers.push_back(asio::buffer(content_length_buffer));
     buffers.push_back(crlf);
@@ -185,6 +190,210 @@ embedded_server_socket<Socket>::async_write_continue(CompletionToken &&token)
     asio::async_write(channel,
                       detail::string_literal_buffer("HTTP/1.1 100"
                                                     " Continue\r\n\r\n"),
+                      [handler]
+                      (const system::error_code &ec, std::size_t) mutable {
+        handler(ec);
+    });
+
+    return result.get();
+}
+
+template<class Socket>
+template<class Message, class CompletionToken>
+typename asio::async_result<
+    typename asio::handler_type<CompletionToken,
+                                void(system::error_code)>::type>::type
+embedded_server_socket<Socket>::async_write_metadata(const Message &message,
+                                                     CompletionToken &&token)
+{
+    using detail::string_literal_buffer;
+    typedef typename asio::handler_type<
+        CompletionToken, void(system::error_code)>::type Handler;
+
+    Handler handler(std::forward<CompletionToken>(token));
+
+    asio::async_result<Handler> result(handler);
+
+    if (!writer_helper.write_metadata()) {
+        handler(system::error_code{http_errc::out_of_order});
+        return result.get();
+    }
+
+    if (flags & HTTP_1_1 == 0) {
+        handler(system::error_code{http_errc::native_stream_unsupported});
+        return result.get();
+    }
+
+    auto crlf = string_literal_buffer("\r\n");
+    auto sep = string_literal_buffer(": ");
+
+    const auto nbuffer_pieces =
+        // Start line + CRLF
+        2
+        // Headers
+        // Each header is 4 buffer pieces: key + sep + value + crlf
+        + 4 * message.headers.size()
+        // Extra transfer-encoding header and extra CRLF for end of headers
+        + 1;
+
+    // TODO (C++14): replace by dynarray
+    std::vector<asio::const_buffer> buffers(nbuffer_pieces);
+
+    buffers.push_back(asio::buffer(message.start_line));
+    buffers.push_back(crlf);
+
+    for (const auto &header: message.headers) {
+        buffers.push_back(asio::buffer(header.first));
+        buffers.push_back(sep);
+        buffers.push_back(asio::buffer(header.second));
+        buffers.push_back(crlf);
+    }
+
+    buffers.push_back(string_literal_buffer("transfer-encoding: chunked\r\n"
+                                            "\r\n"));
+
+    asio::async_write(channel, buffers,
+                      [handler]
+                      (const system::error_code &ec, std::size_t) mutable {
+        handler(ec);
+    });
+
+    return result.get();
+}
+
+template<class Socket>
+template<class Message, class CompletionToken>
+typename asio::async_result<
+    typename asio::handler_type<CompletionToken,
+                                void(system::error_code)>::type>::type
+embedded_server_socket<Socket>::async_write(const Message &message,
+                                            CompletionToken &&token)
+{
+    using detail::string_literal_buffer;
+    typedef typename asio::handler_type<
+        CompletionToken, void(system::error_code)>::type Handler;
+
+    Handler handler(std::forward<CompletionToken>(token));
+
+    asio::async_result<Handler> result(handler);
+
+    if (!writer_helper.write()) {
+        handler(system::error_code{http_errc::out_of_order});
+        return result.get();
+    }
+
+    if (message.body.size() == 0) {
+        handler(system::error_code{});
+        return result.get();
+    }
+
+    auto crlf = string_literal_buffer("\r\n");
+
+    {
+        std::ostringstream ostr;
+        ostr << std::hex << message.body.size();
+        // because we don't create multiple responses at once with HTTP/1.1
+        // pipelining, it's safe to use this "shared state"
+        content_length_buffer = ostr.str();
+    }
+
+    std::array<boost::asio::const_buffer, 4> buffers = {
+        asio::buffer(content_length_buffer),
+        crlf,
+        asio::buffer(message.body),
+        crlf
+    };
+
+    asio::async_write(channel, buffers,
+                      [handler]
+                      (const system::error_code &ec, std::size_t) mutable {
+        handler(ec);
+    });
+
+    return result.get();
+}
+
+template<class Socket>
+template<class Message, class CompletionToken>
+typename asio::async_result<
+    typename asio::handler_type<CompletionToken,
+                                void(system::error_code)>::type>::type
+embedded_server_socket<Socket>::async_write_trailers(const Message &message,
+                                                     CompletionToken &&token)
+{
+    using detail::string_literal_buffer;
+    typedef typename asio::handler_type<
+        CompletionToken, void(system::error_code)>::type Handler;
+
+    Handler handler(std::forward<CompletionToken>(token));
+
+    asio::async_result<Handler> result(handler);
+
+    if (!writer_helper.write_trailers()) {
+        handler(system::error_code{http_errc::out_of_order});
+        return result.get();
+    }
+
+    auto last_chunk = string_literal_buffer("0\r\n");
+    auto crlf = string_literal_buffer("\r\n");
+    auto sep = string_literal_buffer(": ");
+
+    const auto nbuffer_pieces =
+        // last_chunk
+        1
+        // Trailers
+        // Each header is 4 buffer pieces: key + sep + value + crlf
+        + 4 * message.trailers.size()
+        // Final CRLF for end of trailers
+        + 1;
+
+    // TODO (C++14): replace by dynarray
+    std::vector<asio::const_buffer> buffers(nbuffer_pieces);
+
+    buffers.push_back(last_chunk);
+
+    for (const auto &header: message.trailers) {
+        buffers.push_back(asio::buffer(header.first));
+        buffers.push_back(sep);
+        buffers.push_back(asio::buffer(header.second));
+        buffers.push_back(crlf);
+    }
+
+    buffers.push_back(crlf);
+
+    asio::async_write(channel, buffers,
+                      [handler]
+                      (const system::error_code &ec, std::size_t) mutable {
+        handler(ec);
+    });
+
+    return result.get();
+}
+
+template<class Socket>
+template<class CompletionToken>
+typename asio::async_result<
+    typename asio::handler_type<CompletionToken,
+                                void(system::error_code)>::type>::type
+embedded_server_socket<Socket>
+::async_write_end_of_message(CompletionToken &&token)
+{
+    using detail::string_literal_buffer;
+    typedef typename asio::handler_type<
+        CompletionToken, void(system::error_code)>::type Handler;
+
+    Handler handler(std::forward<CompletionToken>(token));
+
+    asio::async_result<Handler> result(handler);
+
+    if (!writer_helper.end()) {
+        handler(system::error_code{http_errc::out_of_order});
+        return result.get();
+    }
+
+    auto last_chunk = string_literal_buffer("0\r\n\r\n");
+
+    asio::async_write(channel, last_chunk,
                       [handler]
                       (const system::error_code &ec, std::size_t) mutable {
         handler(ec);
