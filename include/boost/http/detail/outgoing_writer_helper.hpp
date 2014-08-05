@@ -57,37 +57,31 @@ inline bool outgoing_writer_helper::write_metadata()
         return false;
     }
 
-    state = outgoing_state::headers_issued;
+    state = outgoing_state::metadata_issued;
     return true;
 }
 
 inline bool outgoing_writer_helper::write()
 {
-    if (state != outgoing_state::start_line_issued
-        && state != outgoing_state::headers_issued) {
+    if (state != outgoing_state::metadata_issued)
         return false;
-    }
 
-    state = outgoing_state::headers_issued;
     return true;
 }
 
 inline bool outgoing_writer_helper::write_trailers()
 {
-    if (state != outgoing_state::headers_issued)
+    if (state != outgoing_state::metadata_issued)
         return false;
 
-    state = outgoing_state::body_issued;
+    state = outgoing_state::finished;
     return true;
 }
 
 inline bool outgoing_writer_helper::end()
 {
-    if (state != outgoing_state::start_line_issued
-        && state != outgoing_state::headers_issued
-        && state != outgoing_state::body_issued) {
+    if (state != outgoing_state::metadata_issued)
         return false;
-    }
 
     state = outgoing_state::finished;
     return true;
