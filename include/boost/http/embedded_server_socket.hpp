@@ -183,11 +183,20 @@ public:
 
     void write_continue();
 
+    /**
+     * Write the 100-continue status that must be written before the client
+     * proceed to feed body of the request.
+     *
+     * \warning If `incoming_request_continue_required` returns true, you
+     * **MUST** call this function to let the remote client to send the body. If
+     * your handler can give an appropriate answer without the body, just reply
+     * as usual.
+     */
     template<class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write_continue(CompletionToken &&token);
+    async_outgoing_response_write_continue(CompletionToken &&token);
 
     // write start-line and headers
     template<class Message>
@@ -226,17 +235,6 @@ public:
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
     async_write_end_of_message(CompletionToken &&token);
-
-    /**
-     * Write the 100-continue status that must be written before the client
-     * proceed to feed body of the request.
-     *
-     * \warning If `incoming_request_continue_required` returns true, you
-     * **MUST** call this function (before open) to allow the remote client to
-     * send the body. If your handler can give an appropriate answer without the
-     * body, just reply as usual.
-     */
-    bool outgoing_response_write_continue();
 
     // ### END OF WRITE FUNCTIONS ###
 

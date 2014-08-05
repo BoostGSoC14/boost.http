@@ -173,7 +173,8 @@ template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket<Socket>::async_write_continue(CompletionToken &&token)
+embedded_server_socket<Socket>
+::async_outgoing_response_write_continue(CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;

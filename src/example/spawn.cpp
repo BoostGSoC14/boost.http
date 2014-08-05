@@ -38,7 +38,7 @@ int main()
                 if (http::incoming_request_continue_required(message)) {
                     cout << "Continue required. About to send \"100-continue\""
                          << std::endl;
-                    socket.async_write_continue(yield);
+                    socket.async_outgoing_response_write_continue(yield);
                 }
 
                 while (socket.incoming_state() != http::incoming_state::empty) {
