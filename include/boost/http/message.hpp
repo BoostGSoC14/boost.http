@@ -27,20 +27,11 @@ namespace http {
  *
  * @TODO: define the basic_message concept
  */
-template<class StartLine, class Headers, class Body>
+template<class Headers, class Body>
 struct basic_message
 {
-    typedef StartLine start_line_type;
     typedef Headers headers_type;
     typedef Body body_type;
-
-    /**
-     * It's context dependant and have a different structure for requests and
-     * responses. The object should store the start line (excluding "\r\n")
-     * without trying to decode its meaning, leaving this task for a specialized
-     * abstraction of the appropriate HTTP message type (request or response).
-     */
-    start_line_type start_line;
 
     /**
      * The metadata about the message. The user will need this info to handle
@@ -63,16 +54,11 @@ struct basic_message
 };
 
 /**
- * @TODO: write rationable why UTF-8 and why the null terminator overhead won't
- * matter much here. Maybe arguing using SSO as example and some benchmark too.
- *
  * std::vector<std::uint8_t> is used over string, because fits the purpose
  * better (no '\0' character terminator, well-defined behaviours of capacity,
  * size and iterator invalidation, ...)
  */
-typedef basic_message<std::string, boost::http::headers,
-                      std::vector<std::uint8_t>>
-    message;
+typedef basic_message<boost::http::headers, std::vector<std::uint8_t>> message;
 
 } // namespace http
 } // namespace boost
