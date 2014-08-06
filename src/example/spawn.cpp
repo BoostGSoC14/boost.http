@@ -26,13 +26,16 @@ int main()
                 http_socket socket(acceptor.get_io_service(),
                                    asio::buffer(buffer),
                                    http::channel_type::server);
+                std::string method;
+                std::string path;
                 http::message message;
 
                 cout << "About to accept a new connection" << endl;
                 acceptor.async_accept(socket, yield);
 
                 cout << "About to receive a new message" << endl;
-                socket.async_read_message(message, yield);
+                socket.async_incoming_request_read_message(method, path,
+                                                           message, yield);
                 //message.body.clear(); // freeing not used resources
 
                 if (http::incoming_request_continue_required(message)) {
@@ -62,7 +65,8 @@ int main()
 
                 cout << "Message received. State = "
                      << int(socket.incoming_state()) << endl;
-                cout << "Start line: " << message.start_line << endl;
+                cout << "Method: " << method << endl;
+                cout << "Path: " << path << endl;
                 cout << "Host header: "
                      << message.headers.find("host")->second << endl;
 

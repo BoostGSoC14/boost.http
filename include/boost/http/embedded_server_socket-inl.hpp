@@ -20,12 +20,13 @@ bool embedded_server_socket<Socket>::outgoing_response_native_stream() const
 }
 
 template<class Socket>
-template<class Message, class CompletionToken>
+template<class String, class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket<Socket>::async_read_message(Message &message,
-                                                   CompletionToken &&token)
+embedded_server_socket<Socket>
+::async_incoming_request_read_message(String &method, String &path,
+                                      Message &message, CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -39,7 +40,9 @@ embedded_server_socket<Socket>::async_read_message(Message &message,
         return result.get();
     }
 
-    schedule_on_async_read_message<READY>(handler, message);
+    method.clear();
+    path.clear();
+    schedule_on_async_read_message<READY>(handler, message, &method, &path);
 
     return result.get();
 }
@@ -461,31 +464,32 @@ embedded_server_socket<Socket>
 }
 
 template<class Socket>
-template<int target, class Message, class Handler>
+template<int target, class Message, class Handler, class String>
 void embedded_server_socket<Socket>
-::schedule_on_async_read_message(Handler &handler, Message &message)
+::schedule_on_async_read_message(Handler &handler, Message &message,
+                                 String *method, String *path)
 {
     if (used_size) {
         // Have cached some bytes from a previous read
-        on_async_read_message<target>(std::move(handler), message,
+        on_async_read_message<target>(std::move(handler), method, path, message,
                                          system::error_code{}, 0);
     } else {
         // TODO (C++14): move in lambda capture list
         channel.async_read_some(asio::buffer(buffer + used_size),
-                                [this,handler,&message]
+                                [this,handler,method,path,&message]
                                 (const system::error_code &ec,
                                  std::size_t bytes_transferred) mutable {
-            on_async_read_message<target>(std::move(handler), message, ec,
-                                          bytes_transferred);
+            on_async_read_message<target>(std::move(handler), method, path,
+                                          message, ec, bytes_transferred);
         });
     }
 }
 
 template<class Socket>
-template<int target, class Message, class Handler>
+template<int target, class Message, class Handler, class String>
 void embedded_server_socket<Socket>
-::on_async_read_message(Handler handler, Message &message,
-                        const system::error_code &ec,
+::on_async_read_message(Handler handler, String *method, String *path,
+                        Message &message, const system::error_code &ec,
                         std::size_t bytes_transferred)
 {
     if (ec) {
@@ -495,8 +499,10 @@ void embedded_server_socket<Socket>
     }
 
     used_size += bytes_transferred;
+    current_method = reinterpret_cast<void*>(method);
+    current_path = reinterpret_cast<void*>(path);
     current_message = reinterpret_cast<void*>(&message);
-    auto nparsed = detail::execute(parser, settings<Message>(),
+    auto nparsed = detail::execute(parser, settings<Message, String>(),
                                    asio::buffer_cast<const std::uint8_t*>
                                    (buffer),
                                    used_size);
@@ -560,26 +566,26 @@ void embedded_server_socket<Socket>
 
         // TODO (C++14): move in lambda capture list
         channel.async_read_some(asio::buffer(buffer + used_size),
-                                [this,handler,&message]
+                                [this,handler,method,path,&message]
                                 (const system::error_code &ec,
                                  std::size_t bytes_transferred) mutable {
-            on_async_read_message<target>(std::move(handler), message,
-                                          ec, bytes_transferred);
+            on_async_read_message<target>(std::move(handler), method, path,
+                                          message, ec, bytes_transferred);
         });
     }
 }
 
 template<class Socket>
-template</*class Buffer, */class Message>
+template</*class Buffer, */class Message, class String>
 detail::http_parser_settings embedded_server_socket<Socket>::settings()
 {
     http_parser_settings settings;
 
     settings.on_message_begin = on_message_begin<Message>;
-    settings.on_url = on_url<Message>;
+    settings.on_url = on_url<Message, String>;
     settings.on_header_field = on_header_field<Message>;
     settings.on_header_value = on_header_value<Message>;
-    settings.on_headers_complete = on_headers_complete<Message>;
+    settings.on_headers_complete = on_headers_complete<Message, String>;
     settings.on_body = on_body<Message>;
     settings.on_message_complete = on_message_complete<Message>;
 
@@ -597,52 +603,13 @@ int embedded_server_socket<Socket>::on_message_begin(http_parser *parser)
 }
 
 template<class Socket>
-template<class Message>
+template<class Message, class String>
 int embedded_server_socket<Socket>::on_url(http_parser *parser, const char *at,
                                            std::size_t size)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
-    auto message = reinterpret_cast<Message*>(socket->current_message);
-
-    /* Preferably, it should be on the on_headers_complete callback, but I
-       want to avoid move operations inside the string. The tradeoff is the
-       introduced branch misprediction. It can be fixed separating url and
-       verb string or replacing the parser. */
-    if (message->start_line.empty()) {
-        using detail::constchar_helper;
-        static const constchar_helper methods[] = {
-            "DELETE ",
-            "GET ",
-            "HEAD ",
-            "POST ",
-            "PUT ",
-            "CONNECT ",
-            "OPTIONS ",
-            "TRACE ",
-            "COPY ",
-            "LOCK ",
-            "MKCOL ",
-            "MOVE ",
-            "PROPFIND ",
-            "PROPPATCH ",
-            "SEARCH ",
-            "UNLOCK ",
-            "REPORT ",
-            "MKACTIVITY ",
-            "CHECKOUT ",
-            "MERGE ",
-            "M-SEARCH ",
-            "NOTIFY ",
-            "SUBSCRIBE ",
-            "UNSUBSCRIBE ",
-            "PATCH ",
-            "PURGE "
-        };
-        const auto &m = methods[parser->method];
-        message->start_line = std::string(m.data, m.size);
-    }
-
-    message->start_line.append(at, size);
+    auto path = reinterpret_cast<String*>(socket->current_path);
+    path->append(at, size);
     return 0;
 }
 
@@ -693,11 +660,46 @@ int embedded_server_socket<Socket>
 }
 
 template<class Socket>
-template<class Message>
+template<class Message, class String>
 int embedded_server_socket<Socket>::on_headers_complete(http_parser *parser)
 {
     auto socket = reinterpret_cast<embedded_server_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
+
+    {
+        auto method = reinterpret_cast<String*>(socket->current_method);
+        using detail::constchar_helper;
+        static const constchar_helper methods[] = {
+            "DELETE",
+            "GET",
+            "HEAD",
+            "POST",
+            "PUT",
+            "CONNECT",
+            "OPTIONS",
+            "TRACE",
+            "COPY",
+            "LOCK",
+            "MKCOL",
+            "MOVE",
+            "PROPFIND",
+            "PROPPATCH",
+            "SEARCH",
+            "UNLOCK",
+            "REPORT",
+            "MKACTIVITY",
+            "CHECKOUT",
+            "MERGE",
+            "M-SEARCH",
+            "NOTIFY",
+            "SUBSCRIBE",
+            "UNSUBSCRIBE",
+            "PATCH",
+            "PURGE"
+        };
+        const auto &m = methods[parser->method];
+        method->append(m.data, m.size);
+    }
 
     {
         auto handle_error = [](){
@@ -744,17 +746,9 @@ int embedded_server_socket<Socket>::on_headers_complete(http_parser *parser)
         };
         switch (parser->http_major) {
         case 1:
-            switch (parser->http_minor) {
-            case 0:
-                message->start_line += " HTTP/1.0";
-                break;
-            case 1:
-                message->start_line += " HTTP/1.1";
+            if (parser->http_minor != 0)
                 socket->flags |= HTTP_1_1;
-                break;
-            default:
-                return handle_error();
-            }
+
             break;
         default:
             return handle_error();
@@ -823,7 +817,6 @@ template<class Socket>
 template<class Message>
 void embedded_server_socket<Socket>::clear_message(Message &message)
 {
-    message.start_line.clear();
     message.headers.clear();
     message.body.clear();
     message.trailers.clear();

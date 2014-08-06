@@ -137,11 +137,13 @@ public:
        program must ensure that no other operation is performed on the
        embedded_server_socket until this operation completes (the user handler
        is called, either with or without an error code set). */
-    template<class Message, class CompletionToken>
+    template<class String, class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_read_message(Message &message, CompletionToken &&token);
+    async_incoming_request_read_message(String &method, String &path,
+                                        Message &message,
+                                        CompletionToken &&token);
 
     // body might very well not fit into memory and user might very well want to
     // save it to disk or immediately stream to somewhere else (proxy?)
@@ -269,22 +271,26 @@ private:
         KEEP_ALIVE = 1 << 4
     };
 
-    template<int target, class Message, class Handler>
-    void schedule_on_async_read_message(Handler &handler, Message &message);
+    template<int target, class Message, class Handler,
+             class String = std::string>
+    void schedule_on_async_read_message(Handler &handler, Message &message,
+                                        String *method = NULL,
+                                        String *path = NULL);
 
-    template<int target, class Message, class Handler>
-    void on_async_read_message(Handler handler, Message &message,
-                               const system::error_code &ec,
+    template<int target, class Message, class Handler,
+             class String = std::string>
+    void on_async_read_message(Handler handler, String *method, String *path,
+                               Message &message, const system::error_code &ec,
                                std::size_t bytes_transferred);
 
-    template</*class Buffer, */class Message>
+    template</*class Buffer, */class Message, class String>
     static http_parser_settings settings();
 
     // templatize callbacks (plural) below based on Buffer type too
     template<class Message>
     static int on_message_begin(http_parser *parser);
 
-    template<class Message>
+    template<class Message, class String>
     static int on_url(http_parser *parser, const char *at, std::size_t size);
 
     template<class Message>
@@ -295,7 +301,7 @@ private:
     static int on_header_value(http_parser *parser, const char *at,
                                std::size_t size);
 
-    template<class Message>
+    template<class Message, class String>
     static int on_headers_complete(http_parser *parser);
 
     template<class Message>
@@ -329,6 +335,8 @@ private:
     /* Thanks to current HTTP parser, I need to resort to this technique of
        storing the current message as a "global"-like pointer as opposed to keep
        it within the handler. */
+    void *current_method;
+    void *current_path;
     void *current_message;
 
     std::pair<std::string, std::string> last_header;
