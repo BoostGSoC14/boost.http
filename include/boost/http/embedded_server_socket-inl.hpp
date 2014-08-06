@@ -464,6 +464,18 @@ embedded_server_socket<Socket>
 }
 
 template<class Socket>
+Socket &embedded_server_socket<Socket>::next_layer()
+{
+    return channel;
+}
+
+template<class Socket>
+const Socket &embedded_server_socket<Socket>::next_layer() const
+{
+    return channel;
+}
+
+template<class Socket>
 template<int target, class Message, class Handler, class String>
 void embedded_server_socket<Socket>
 ::schedule_on_async_read_message(Handler &handler, Message &message,

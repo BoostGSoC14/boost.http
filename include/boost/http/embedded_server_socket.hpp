@@ -99,6 +99,8 @@ template<class Socket = boost::asio::ip::tcp::socket>
 class embedded_server_socket
 {
 public:
+    typedef Socket next_layer_type;
+
     // ### QUERY FUNCTIONS ###
 
     /* Vocabulary might be confusing here. The word "incoming" could refer to
@@ -256,6 +258,12 @@ public:
     template<class... Args>
     embedded_server_socket(boost::asio::mutable_buffer inbuffer,
                            channel_type /*mode*/, Args&&... args);
+
+    /**
+     * Returns a reference to the underlying stream
+     */
+    next_layer_type &next_layer();
+    const next_layer_type &next_layer() const;
 
 private:
     typedef detail::http_parser http_parser;
