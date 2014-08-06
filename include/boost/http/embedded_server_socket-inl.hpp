@@ -537,7 +537,7 @@ void embedded_server_socket<Socket>
                               [this,handler](system::error_code ignored_ec,
                                              std::size_t bytes_transferred)
                               mutable {
-                channel.close(ignored_ec);
+                detail::close_socket(channel, ignored_ec);
                 handler(system::error_code{http_errc::parsing_error});
             });
             return;
@@ -548,7 +548,7 @@ void embedded_server_socket<Socket>
             detail::init(parser);
         } else {
             clear_buffer();
-            channel.close(ignored_ec);
+            detail::close_socket(channel, ignored_ec);
             handler(system::error_code(http_errc::parsing_error));
             return;
         }

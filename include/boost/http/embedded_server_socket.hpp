@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <sstream>
 #include <array>
+#include <type_traits>
+#include <utility>
 
 #include <boost/utility/string_ref.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -92,6 +94,21 @@ std::size_t execute(http_parser &parser,
                     const std::uint8_t *data, std::size_t len);
 bool should_keep_alive(const http_parser &parser);
 bool body_is_final(const http_parser &parser);
+
+template <typename T, typename Enable = std::true_type>
+void close_socket(T &socket, system::error_code &ec)
+{
+    socket.lowest_layer().close(ec);
+}
+
+template<class T,
+         typename std::is_same<decltype(std::declval<T*>()->close
+                                        (std::declval<system::error_code&>())),
+         void>::type>
+void close_socket(T &socket, system::error_code &ec)
+{
+    socket.close(ec);
+}
 
 } // namespace detail
 
