@@ -31,7 +31,7 @@ namespace http {
 
 /** @TODO: design is going to be refactored later.
     Also, the vocabulary introduced here is interesting for general
-    specializations, not only embedded_server. */
+    specializations, not only basic_server. */
 enum class channel_type
 {
     server = 1//, client = 1 << 1
@@ -112,8 +112,8 @@ void close_socket(T &socket, system::error_code &ec)
 
 } // namespace detail
 
-template<class Socket = boost::asio::ip::tcp::socket>
-class embedded_server_socket
+template<class Socket>
+class basic_socket
 {
 public:
     typedef Socket next_layer_type;
@@ -151,11 +151,11 @@ public:
     template<class Message>
     void read_message(Message &message);
 
-    /* \warning async_read_message is a composed operation. It is implemented
-       in terms of zero or more calls to underlying low-level operations. The
+    /* \warning async_read_message is a composed operation. It is implemented in
+       terms of zero or more calls to underlying low-level operations. The
        program must ensure that no other operation is performed on the
-       embedded_server_socket until this operation completes (the user handler
-       is called, either with or without an error code set). */
+       basic_socket until this operation completes (the user handler is called,
+       either with or without an error code set). */
     template<class String, class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -262,15 +262,14 @@ public:
 
     // ### END OF WRITE FUNCTIONS ###
 
-    // ### START OF embedded_server SPECIFIC FUNCTIONS ###
+    // ### START OF basic_server SPECIFIC FUNCTIONS ###
 
-    embedded_server_socket(boost::asio::io_service &io_service,
-                           boost::asio::mutable_buffer inbuffer,
-                           channel_type /*mode*/);
+    basic_socket(boost::asio::io_service &io_service,
+                 boost::asio::mutable_buffer inbuffer, channel_type /*mode*/);
 
     template<class... Args>
-    embedded_server_socket(boost::asio::mutable_buffer inbuffer,
-                           channel_type /*mode*/, Args&&... args);
+    basic_socket(boost::asio::mutable_buffer inbuffer, channel_type /*mode*/,
+                 Args&&... args);
 
     /**
      * Returns a reference to the underlying stream
@@ -368,9 +367,11 @@ private:
     std::string content_length_buffer;
 };
 
+typedef basic_socket<boost::asio::ip::tcp::socket> socket;
+
 } // namespace http
 } // namespace boost
 
-#include "embedded_server_socket-inl.hpp"
+#include "socket-inl.hpp"
 
 #endif // BOOST_HTTP_EMBEDDED_SERVER_SOCKET_H

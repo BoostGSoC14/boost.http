@@ -4,7 +4,7 @@
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
-#include <boost/http/embedded_server_socket.hpp>
+#include <boost/http/socket.hpp>
 #include <boost/http/algorithm.hpp>
 
 using namespace std;
@@ -20,9 +20,8 @@ int main()
     auto work = [&acceptor](asio::yield_context yield) {
         while (true) {
             try {
-                typedef http::embedded_server_socket<> http_socket;
                 char buffer[4];
-                http_socket socket(acceptor.get_io_service(),
+                http::socket socket(acceptor.get_io_service(),
                                    asio::buffer(buffer),
                                    http::channel_type::server);
                 std::string method;
