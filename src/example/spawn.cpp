@@ -4,7 +4,7 @@
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
-#include <boost/http/embedded_server_socket_acceptor.hpp>
+#include <boost/http/embedded_server_socket.hpp>
 #include <boost/http/algorithm.hpp>
 
 using namespace std;
@@ -14,9 +14,8 @@ int main()
 {
     asio::io_service ios;
 
-    http::embedded_server_socket_acceptor acceptor(ios, asio::ip::tcp
-                                                   ::endpoint(asio::ip::tcp
-                                                              ::v6(), 8080));
+    asio::ip::tcp::acceptor acceptor(ios, asio::ip::tcp
+                                     ::endpoint(asio::ip::tcp::v6(), 8080));
 
     auto work = [&acceptor](asio::yield_context yield) {
         while (true) {
@@ -31,7 +30,7 @@ int main()
                 http::message message;
 
                 cout << "About to accept a new connection" << endl;
-                acceptor.async_accept(socket, yield);
+                acceptor.async_accept(socket.next_layer(), yield);
 
                 cout << "About to receive a new message" << endl;
                 socket.async_read_request(method, path, message, yield);

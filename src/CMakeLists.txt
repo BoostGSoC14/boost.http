@@ -1,7 +1,6 @@
 set(library_SRC
   http_category.cpp
   embedded_server_socket.cpp
-  embedded_server_socket_acceptor.cpp
   http_parser.c
 )
 
