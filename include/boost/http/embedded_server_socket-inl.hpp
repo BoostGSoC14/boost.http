@@ -2,19 +2,19 @@ namespace boost {
 namespace http {
 
 template<class Socket>
-incoming_state embedded_server_socket<Socket>::incoming_state() const
+read_state embedded_server_socket<Socket>::read_state() const
 {
     return istate;
 }
 
 template<class Socket>
-outgoing_state embedded_server_socket<Socket>::outgoing_state() const
+write_state embedded_server_socket<Socket>::write_state() const
 {
     return writer_helper.state;
 }
 
 template<class Socket>
-bool embedded_server_socket<Socket>::outgoing_response_native_stream() const
+bool embedded_server_socket<Socket>::write_response_native_stream() const
 {
     return flags & HTTP_1_1;
 }
@@ -25,8 +25,8 @@ typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
 embedded_server_socket<Socket>
-::async_incoming_request_read_message(String &method, String &path,
-                                      Message &message, CompletionToken &&token)
+::async_read_request(String &method, String &path, Message &message,
+                     CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -35,7 +35,7 @@ embedded_server_socket<Socket>
 
     asio::async_result<Handler> result(handler);
 
-    if (istate != http::incoming_state::empty) {
+    if (istate != http::read_state::empty) {
         handler(system::error_code{http_errc::out_of_order});
         return result.get();
     }
@@ -52,8 +52,8 @@ template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-embedded_server_socket<Socket>::async_read_some_body(Message &message,
-                                                     CompletionToken &&token)
+embedded_server_socket<Socket>::async_read_some(Message &message,
+                                                CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -62,7 +62,7 @@ embedded_server_socket<Socket>::async_read_some_body(Message &message,
 
     asio::async_result<Handler> result(handler);
 
-    if (istate != http::incoming_state::message_ready) {
+    if (istate != http::read_state::message_ready) {
         handler(system::error_code{http_errc::out_of_order});
         return result.get();
     }
@@ -87,7 +87,7 @@ embedded_server_socket<Socket>::async_read_trailers(Message &message,
 
     asio::async_result<Handler> result(handler);
 
-    if (istate != http::incoming_state::body_ready) {
+    if (istate != http::read_state::body_ready) {
         handler(system::error_code{http_errc::out_of_order});
         return result.get();
     }
@@ -103,10 +103,9 @@ typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
 embedded_server_socket<Socket>
-::async_outgoing_response_write_message(std::uint_fast16_t status_code,
-                                        const boost::string_ref &reason_phrase,
-                                        const Message &message,
-                                        CompletionToken &&token)
+::async_write_response(std::uint_fast16_t status_code,
+                       const boost::string_ref &reason_phrase,
+                       const Message &message, CompletionToken &&token)
 {
     using detail::string_literal_buffer;
     typedef typename asio::handler_type<
@@ -188,7 +187,7 @@ typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
 embedded_server_socket<Socket>
-::async_outgoing_response_write_continue(CompletionToken &&token)
+::async_write_response_continue(CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -219,10 +218,9 @@ typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
 embedded_server_socket<Socket>
-::async_outgoing_response_write_metadata(std::uint_fast16_t status_code,
-                                         const boost::string_ref &reason_phrase,
-                                         const Message &message,
-                                         CompletionToken &&token)
+::async_write_response_metadata(std::uint_fast16_t status_code,
+                                const boost::string_ref &reason_phrase,
+                                const Message &message, CompletionToken &&token)
 {
     using detail::string_literal_buffer;
     typedef typename asio::handler_type<
@@ -433,9 +431,9 @@ embedded_server_socket<Socket>
                          boost::asio::mutable_buffer inbuffer,
                          channel_type /*mode*/) :
     channel(io_service),
-    istate(http::incoming_state::empty),//mode(mode),
+    istate(http::read_state::empty),//mode(mode),
     buffer(inbuffer),
-    writer_helper(http::outgoing_state::empty)
+    writer_helper(http::write_state::empty)
 {
     // TODO: add test to this feature and document it
     if (asio::buffer_size(buffer) == 0)
@@ -451,9 +449,9 @@ embedded_server_socket<Socket>
 ::embedded_server_socket(boost::asio::mutable_buffer inbuffer,
                          channel_type /*mode*/, Args&&... args)
     : channel(std::forward<Args>(args)...)
-    , istate(http::incoming_state::empty) //mode(mode)
+    , istate(http::read_state::empty) //mode(mode)
     , buffer(inbuffer)
-    , writer_helper(http::outgoing_state::empty)
+    , writer_helper(http::write_state::empty)
 {
     // TODO: add test to this feature and document it
     if (asio::buffer_size(buffer) == 0)
@@ -771,7 +769,7 @@ int embedded_server_socket<Socket>::on_headers_complete(http_parser *parser)
     socket->last_header.first.clear();
     socket->last_header.second.clear();
     socket->use_trailers = true;
-    socket->istate = http::incoming_state::message_ready;
+    socket->istate = http::read_state::message_ready;
     socket->flags |= READY;
 
     if (detail::should_keep_alive(*parser))
@@ -792,7 +790,7 @@ int embedded_server_socket<Socket>
     socket->flags |= DATA;
 
     if (detail::body_is_final(*parser))
-        socket->istate = http::incoming_state::body_ready;
+        socket->istate = http::read_state::body_ready;
 
     return 0;
 }
@@ -806,7 +804,7 @@ int embedded_server_socket<Socket>::on_message_complete(http_parser *parser)
     message->trailers.insert(socket->last_header);
     socket->last_header.first.clear();
     socket->last_header.second.clear();
-    socket->istate = http::incoming_state::empty;
+    socket->istate = http::read_state::empty;
     socket->use_trailers = false;
     socket->flags |= END;
 
@@ -818,8 +816,8 @@ int embedded_server_socket<Socket>::on_message_complete(http_parser *parser)
 template<class Socket>
 void embedded_server_socket<Socket>::clear_buffer()
 {
-    istate = http::incoming_state::empty;
-    writer_helper.state = http::outgoing_state::empty;
+    istate = http::read_state::empty;
+    writer_helper.state = http::write_state::empty;
     used_size = 0;
     flags = 0;
     detail::init(parser);

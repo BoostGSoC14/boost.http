@@ -19,11 +19,11 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
-#include <boost/http/incoming_state.hpp>
-#include <boost/http/outgoing_state.hpp>
+#include <boost/http/read_state.hpp>
+#include <boost/http/write_state.hpp>
 #include <boost/http/message.hpp>
 #include <boost/http/http_errc.hpp>
-#include <boost/http/detail/outgoing_writer_helper.hpp>
+#include <boost/http/detail/writer_helper.hpp>
 #include <boost/http/detail/constchar_helper.hpp>
 
 namespace boost {
@@ -120,26 +120,26 @@ public:
 
     // ### QUERY FUNCTIONS ###
 
-    /* Vocabulary might be confusing here. The word "incoming" could refer to
+    /* Vocabulary might be confusing here. The word "read" could refer to
        request if in server-mode or to response if in client-mode. */
 
-    http::incoming_state incoming_state() const;
+    http::read_state read_state() const;
 
     /* used to know if message is complete and what parts (body, trailers) were
        completed. */
-    http::outgoing_state outgoing_state() const;
+    http::write_state write_state() const;
 
     /** If output support native stream or will buffer the body internally.
      *
      * This query is only available after the message is ready (e.g. on the
      * async_receive_message handler).
      *
-     * outgoing_response prefix is used instead plain outgoing, because it's not
+     * write_response prefix is used instead plain write, because it's not
      * possible to query capabilities information w/o communication with the
      * other peer, then this query is only available in server-mode. clients can
      * just issue a request and try again later if not supported. design may be
      * refined later. */
-    bool outgoing_response_native_stream() const;
+    bool write_response_native_stream() const;
 
     // The following two algorithms should be moved to reusable free functions:
 
@@ -160,9 +160,8 @@ public:
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_incoming_request_read_message(String &method, String &path,
-                                        Message &message,
-                                        CompletionToken &&token);
+    async_read_request(String &method, String &path, Message &message,
+                       CompletionToken &&token);
 
     // body might very well not fit into memory and user might very well want to
     // save it to disk or immediately stream to somewhere else (proxy?)
@@ -173,7 +172,7 @@ public:
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_read_some_body(Message &message, CompletionToken &&token);
+    async_read_some(Message &message, CompletionToken &&token);
 
     // it doesn't make sense to expose an interface that only feed one trailer
     // at a time, because headers and trailers are metadata about the body and
@@ -199,11 +198,9 @@ public:
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_outgoing_response_write_message(std::uint_fast16_t status_code,
-                                          const boost::string_ref
-                                          &reason_phrase,
-                                          const Message &message,
-                                          CompletionToken &&token);
+    async_write_response(std::uint_fast16_t status_code,
+                         const boost::string_ref &reason_phrase,
+                         const Message &message, CompletionToken &&token);
 
     void write_continue();
 
@@ -211,7 +208,7 @@ public:
      * Write the 100-continue status that must be written before the client
      * proceed to feed body of the request.
      *
-     * \warning If `incoming_request_continue_required` returns true, you
+     * \warning If `read_request_continue_required` returns true, you
      * **MUST** call this function to let the remote client to send the body. If
      * your handler can give an appropriate answer without the body, just reply
      * as usual.
@@ -220,7 +217,7 @@ public:
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_outgoing_response_write_continue(CompletionToken &&token);
+    async_write_response_continue(CompletionToken &&token);
 
     // write start-line and headers
     template<class Message>
@@ -230,11 +227,10 @@ public:
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_outgoing_response_write_metadata(std::uint_fast16_t status_code,
-                                           const boost::string_ref
-                                           &reason_phrase,
-                                           const Message &message,
-                                           CompletionToken &&token);
+    async_write_response_metadata(std::uint_fast16_t status_code,
+                                  const boost::string_ref &reason_phrase,
+                                  const Message &message,
+                                  CompletionToken &&token);
 
     /** write a body part
      *
@@ -341,7 +337,7 @@ private:
     static void clear_message(Message &message);
 
     Socket channel;
-    http::incoming_state istate;
+    http::read_state istate;
     //channel_type mode;
 
     // TODO: maybe replace by buffersequence to allow scatter-gather operations
@@ -368,10 +364,8 @@ private:
     bool use_trailers = false;
 
     // Output state
-    detail::outgoing_writer_helper writer_helper;
+    detail::writer_helper writer_helper;
     std::string content_length_buffer;
-
-    friend class embedded_server_socket_acceptor;
 };
 
 } // namespace http

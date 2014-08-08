@@ -22,7 +22,7 @@ embedded_server_socket_acceptor
 void embedded_server_socket_acceptor
 ::accept(endpoint_type &socket)
 {
-    acceptor_.accept(socket.channel);
+    acceptor_.accept(socket.next_layer());
 }
 
 } // namespace http

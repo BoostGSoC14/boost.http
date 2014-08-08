@@ -36,7 +36,7 @@ public:
                                     void(system::error_code)>::type>::type
     async_accept(endpoint_type &socket, CompletionToken &&token)
     {
-        return acceptor_.async_accept(socket.channel,
+        return acceptor_.async_accept(socket.next_layer(),
                                       std::forward<CompletionToken>(token));
     }
 

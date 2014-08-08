@@ -18,7 +18,7 @@ namespace http {
  *
  * The picture response_state.png can help you understand this file.
  */
-enum class outgoing_state
+enum class write_state
 {
     /**
      * This is the initial state.

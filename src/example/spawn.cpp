@@ -34,24 +34,23 @@ int main()
                 acceptor.async_accept(socket, yield);
 
                 cout << "About to receive a new message" << endl;
-                socket.async_incoming_request_read_message(method, path,
-                                                           message, yield);
+                socket.async_read_request(method, path, message, yield);
                 //message.body.clear(); // freeing not used resources
 
-                if (http::incoming_request_continue_required(message)) {
+                if (http::request_continue_required(message)) {
                     cout << "Continue required. About to send \"100-continue\""
                          << std::endl;
-                    socket.async_outgoing_response_write_continue(yield);
+                    socket.async_write_response_continue(yield);
                 }
 
-                while (socket.incoming_state() != http::incoming_state::empty) {
+                while (socket.read_state() != http::read_state::empty) {
                     cout << "Message not fully received" << endl;
-                    switch (socket.incoming_state()) {
-                    case http::incoming_state::message_ready:
+                    switch (socket.read_state()) {
+                    case http::read_state::message_ready:
                         cout << "About to receive some body" << endl;
-                        socket.async_read_some_body(message, yield);
+                        socket.async_read_some(message, yield);
                         break;
-                    case http::incoming_state::body_ready:
+                    case http::read_state::body_ready:
                         cout << "About to receive trailers" << endl;
                         socket.async_read_trailers(message, yield);
                     }
@@ -64,13 +63,13 @@ int main()
                 //cout << "==" << endl;
 
                 cout << "Message received. State = "
-                     << int(socket.incoming_state()) << endl;
+                     << int(socket.read_state()) << endl;
                 cout << "Method: " << method << endl;
                 cout << "Path: " << path << endl;
                 cout << "Host header: "
                      << message.headers.find("host")->second << endl;
 
-                std::cout << "Outgoing state = " << int(socket.outgoing_state())
+                std::cout << "Write state = " << int(socket.write_state())
                 << std::endl;
 
                 cout << "About to send a reply" << endl;
@@ -80,8 +79,7 @@ int main()
                 std::copy(body, body + sizeof(body) - 1,
                           std::back_inserter(reply.body));
 
-                socket.async_outgoing_response_write_message(200, "OK", reply,
-                                                             yield);
+                socket.async_write_response(200, "OK", reply, yield);
             } catch (std::exception &e) {
                 cerr << "Aborting on exception: " << e.what() << endl;
                 std::exit(1);

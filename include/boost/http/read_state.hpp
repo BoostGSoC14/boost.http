@@ -19,7 +19,7 @@ namespace http {
  * embedded server) is not allowed to change the state from `empty` to
  * `request_ready` without another iteraction from the library user.
  */
-enum class incoming_state
+enum class read_state
 {
     /**
      * This is the initial state.

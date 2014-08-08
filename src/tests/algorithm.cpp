@@ -160,32 +160,32 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
     BOOST_REQUIRE(ret == true);
 }
 
-BOOST_AUTO_TEST_CASE(incoming_request_continue_required) {
+BOOST_AUTO_TEST_CASE(request_continue_required) {
     boost::http::message m;
     m.headers.emplace("expect", "100-continue");
-    BOOST_CHECK(boost::http::incoming_request_continue_required(m) == true);
+    BOOST_CHECK(boost::http::request_continue_required(m) == true);
     m.headers.clear();
-    BOOST_CHECK(boost::http::incoming_request_continue_required(m) == false);
+    BOOST_CHECK(boost::http::request_continue_required(m) == false);
     m.headers.emplace("expect", "100-CoNtInUe");
-    BOOST_CHECK(boost::http::incoming_request_continue_required(m) == true);
+    BOOST_CHECK(boost::http::request_continue_required(m) == true);
     m.headers.clear();
     m.headers.emplace("expect", "element,100-continue");
-    BOOST_CHECK(boost::http::incoming_request_continue_required(m) == false);
+    BOOST_CHECK(boost::http::request_continue_required(m) == false);
     m.headers.emplace("expect", "100-continue");
-    BOOST_CHECK(boost::http::incoming_request_continue_required(m) == true);
+    BOOST_CHECK(boost::http::request_continue_required(m) == true);
 }
 
-BOOST_AUTO_TEST_CASE(incoming_request_upgrade_desired) {
+BOOST_AUTO_TEST_CASE(request_upgrade_desired) {
     boost::http::message m;
     m.headers.emplace("upgrade", "websocket");
-    BOOST_CHECK(boost::http::incoming_request_upgrade_desired(m) == false);
+    BOOST_CHECK(boost::http::request_upgrade_desired(m) == false);
     m.headers.emplace("connection", "close");
-    BOOST_CHECK(boost::http::incoming_request_upgrade_desired(m) == false);
+    BOOST_CHECK(boost::http::request_upgrade_desired(m) == false);
     m.headers.emplace("connection", "uPgRaDe");
-    BOOST_CHECK(boost::http::incoming_request_upgrade_desired(m) == true);
+    BOOST_CHECK(boost::http::request_upgrade_desired(m) == true);
     m.headers.clear();
     m.headers.emplace("connection", "close,uPgRaDe");
-    BOOST_CHECK(boost::http::incoming_request_upgrade_desired(m) == false);
+    BOOST_CHECK(boost::http::request_upgrade_desired(m) == false);
     m.headers.emplace("upgrade", "websocket");
-    BOOST_CHECK(boost::http::incoming_request_upgrade_desired(m) == true);
+    BOOST_CHECK(boost::http::request_upgrade_desired(m) == true);
 }

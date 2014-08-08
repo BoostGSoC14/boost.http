@@ -72,7 +72,7 @@ bool header_value_any_of(const String &header_value, const Predicate &p)
  * status require action from the server.
  */
 template<class Message>
-bool incoming_request_continue_required(const Message &message)
+bool request_continue_required(const Message &message)
 {
     typedef decltype(*message.headers.begin()) value_type;
     auto values = message.headers.equal_range("expect");
@@ -91,7 +91,7 @@ bool incoming_request_continue_required(const Message &message)
  * The upgrade can always be safely ignored.
  */
 template<class Message>
-bool incoming_request_upgrade_desired(const Message &message)
+bool request_upgrade_desired(const Message &message)
 {
     typedef typename Message::headers_type::value_type header_type;
     typedef typename header_type::second_type field_value_type; // a string
