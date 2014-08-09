@@ -500,6 +500,8 @@ void basic_socket<Socket>
                         Message &message, const system::error_code &ec,
                         std::size_t bytes_transferred)
 {
+    using detail::string_literal_buffer;
+
     if (ec) {
         clear_buffer();
         handler(ec);
@@ -523,12 +525,14 @@ void basic_socket<Socket>
             clear_buffer();
             clear_message(message);
 
-            const char error_message[]
-            = "HTTP/1.1 505 HTTP Version Not Supported\r\n"
-              "Content-Length: 48\r\n"
-              "Connection: close\r\n"
-              "\r\n"
-              "This server only supports HTTP/1.0 and HTTP/1.1\n";
+            auto error_message
+                = string_literal_buffer("HTTP/1.1 505 HTTP Version Not"
+                                        " Supported\r\n"
+                                        "Content-Length: 48\r\n"
+                                        "Connection: close\r\n"
+                                        "\r\n"
+                                        "This server only supports HTTP/1.0 and"
+                                        " HTTP/1.1\n");
             asio::async_write(channel, asio::buffer(error_message),
                               [this,handler](system::error_code ignored_ec,
                                              std::size_t bytes_transferred)
