@@ -533,7 +533,6 @@ void basic_socket<Socket>
                               [this,handler](system::error_code ignored_ec,
                                              std::size_t bytes_transferred)
                               mutable {
-                detail::close_socket(channel, ignored_ec);
                 handler(system::error_code{http_errc::parsing_error});
             });
             return;
@@ -544,7 +543,6 @@ void basic_socket<Socket>
             detail::init(parser);
         } else {
             clear_buffer();
-            detail::close_socket(channel, ignored_ec);
             handler(system::error_code(http_errc::parsing_error));
             return;
         }
