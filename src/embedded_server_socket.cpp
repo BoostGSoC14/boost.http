@@ -4,7 +4,7 @@
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
 #include <stdexcept>
-#include <boost/http/embedded_server_socket.hpp>
+#include <boost/http/socket.hpp>
 
 using boost::http::detail::http_parser;
 using boost::http::detail::http_parser_settings;
