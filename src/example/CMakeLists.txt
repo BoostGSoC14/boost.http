@@ -1,6 +1,7 @@
 set(examples
   "spawn"
   "spawn-chunked"
+  "spawn-with-runtime"
 )
 
 macro(add_example_target target)
