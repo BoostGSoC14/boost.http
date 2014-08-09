@@ -427,9 +427,9 @@ basic_socket<Socket>
 template<class Socket>
 basic_socket<Socket>
 ::basic_socket(boost::asio::io_service &io_service,
-               boost::asio::mutable_buffer inbuffer, channel_type /*mode*/) :
+               boost::asio::mutable_buffer inbuffer) :
     channel(io_service),
-    istate(http::read_state::empty),//mode(mode),
+    istate(http::read_state::empty),
     buffer(inbuffer),
     writer_helper(http::write_state::empty)
 {
@@ -444,10 +444,9 @@ basic_socket<Socket>
 template<class Socket>
 template<class... Args>
 basic_socket<Socket>
-::basic_socket(boost::asio::mutable_buffer inbuffer, channel_type /*mode*/,
-               Args&&... args)
+::basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args)
     : channel(std::forward<Args>(args)...)
-    , istate(http::read_state::empty) //mode(mode)
+    , istate(http::read_state::empty)
     , buffer(inbuffer)
     , writer_helper(http::write_state::empty)
 {

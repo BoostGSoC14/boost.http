@@ -22,8 +22,7 @@ int main()
             try {
                 char buffer[4];
                 http::socket socket(acceptor.get_io_service(),
-                                   asio::buffer(buffer),
-                                   http::channel_type::server);
+                                   asio::buffer(buffer));
                 std::string method;
                 std::string path;
                 http::message message;

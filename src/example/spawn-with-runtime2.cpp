@@ -23,8 +23,7 @@ int main()
             try {
                 char buffer[4];
                 http::socket underlying_socket(acceptor.get_io_service(),
-                                               asio::buffer(buffer),
-                                               http::channel_type::server);
+                                               asio::buffer(buffer));
                 http::server_socket_reference_adaptor<http::socket>
                 adaptor(underlying_socket);
                 http::polymorphic_server_socket &socket = adaptor;

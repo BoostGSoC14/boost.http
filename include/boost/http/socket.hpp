@@ -29,14 +29,6 @@
 namespace boost {
 namespace http {
 
-/** @TODO: design is going to be refactored later.
-    Also, the vocabulary introduced here is interesting for general
-    specializations, not only basic_server. */
-enum class channel_type
-{
-    server = 1//, client = 1 << 1
-};
-
 namespace detail {
 
 extern "C" {
@@ -250,11 +242,10 @@ public:
     // ### START OF basic_server SPECIFIC FUNCTIONS ###
 
     basic_socket(boost::asio::io_service &io_service,
-                 boost::asio::mutable_buffer inbuffer, channel_type /*mode*/);
+                 boost::asio::mutable_buffer inbuffer);
 
     template<class... Args>
-    basic_socket(boost::asio::mutable_buffer inbuffer, channel_type /*mode*/,
-                 Args&&... args);
+    basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args);
 
     /**
      * Returns a reference to the underlying stream
@@ -322,7 +313,6 @@ private:
 
     Socket channel;
     http::read_state istate;
-    //channel_type mode;
 
     // TODO: maybe replace by buffersequence to allow scatter-gather operations
     asio::mutable_buffer buffer;

@@ -24,8 +24,7 @@ int main()
                 char buffer[4];
                 http::server_socket_adaptor<http::socket>
                 underlying_socket(acceptor.get_io_service(),
-                                  asio::buffer(buffer),
-                                  http::channel_type::server);
+                                  asio::buffer(buffer));
                 http::polymorphic_server_socket &socket = underlying_socket;
                 std::string method;
                 std::string path;
