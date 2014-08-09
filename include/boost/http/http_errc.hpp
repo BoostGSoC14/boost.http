@@ -20,7 +20,9 @@ enum class http_errc {
     native_stream_unsupported,
     parsing_error,
     // This error should only happen if a poor parser is used
-    buffer_exhausted
+    buffer_exhausted,
+    // For flexible sockets that select the channel type upon the first use
+    wrong_direction
 };
 
 /**
