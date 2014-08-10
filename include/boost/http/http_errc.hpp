@@ -3,8 +3,8 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_SERVER_HTTP_ERRC_H
-#define BOOST_HTTP_SERVER_HTTP_ERRC_H
+#ifndef BOOST_HTTP_HTTP_ERRC_HPP
+#define BOOST_HTTP_HTTP_ERRC_HPP
 
 #include <boost/http/http_category.hpp>
 
@@ -68,4 +68,4 @@ struct is_error_condition_enum<boost::http::http_errc>: public std::true_type {}
 
 } // namespace boost
 
-#endif // BOOST_HTTP_SERVER_HTTP_ERRC_H
+#endif // BOOST_HTTP_HTTP_ERRC_HPP

@@ -3,8 +3,8 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_DETAIL_CONSTCHAR_HELPER_H
-#define BOOST_HTTP_DETAIL_CONSTCHAR_HELPER_H
+#ifndef BOOST_HTTP_DETAIL_CONSTCHAR_HELPER_HPP
+#define BOOST_HTTP_DETAIL_CONSTCHAR_HELPER_HPP
 
 #include <boost/asio/buffer.hpp>
 
@@ -34,4 +34,4 @@ asio::const_buffers_1 string_literal_buffer(const char (&input)[N])
 } // namespace http
 } // namespace boost
 
-#endif // BOOST_HTTP_DETAIL_CONSTCHAR_HELPER_H
+#endif // BOOST_HTTP_DETAIL_CONSTCHAR_HELPER_HPP

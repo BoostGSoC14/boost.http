@@ -3,8 +3,8 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_INCOMING_STATE_H
-#define BOOST_HTTP_INCOMING_STATE_H
+#ifndef BOOST_HTTP_READ_STATE_HPP
+#define BOOST_HTTP_READ_STATE_HPP
 
 namespace boost {
 namespace http {
@@ -78,4 +78,4 @@ enum class read_state
 } // namespace http
 } // namespace boost
 
-#endif // BOOST_HTTP_INCOMING_STATE_H
+#endif // BOOST_HTTP_READ_STATE_HPP

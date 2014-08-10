@@ -3,8 +3,8 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_SERVER_MESSAGE_H
-#define BOOST_HTTP_SERVER_MESSAGE_H
+#ifndef BOOST_HTTP_MESSAGE_HPP
+#define BOOST_HTTP_MESSAGE_HPP
 
 #include <cstdint>
 #include <boost/asio/buffer.hpp>
@@ -63,4 +63,4 @@ typedef basic_message<boost::http::headers, std::vector<std::uint8_t>> message;
 } // namespace http
 } // namespace boost
 
-#endif // BOOST_HTTP_SERVER_MESSAGE_H
+#endif // BOOST_HTTP_MESSAGE_HPP

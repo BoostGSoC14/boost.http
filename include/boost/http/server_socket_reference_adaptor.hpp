@@ -3,8 +3,8 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_SERVER_SOCKET_REFERENCE_ADAPTOR_H
-#define BOOST_HTTP_SERVER_SOCKET_REFERENCE_ADAPTOR_H
+#ifndef BOOST_HTTP_SERVER_SOCKET_REFERENCE_ADAPTOR_HPP
+#define BOOST_HTTP_SERVER_SOCKET_REFERENCE_ADAPTOR_HPP
 
 #include <boost/http/polymorphic_server_socket.hpp>
 
@@ -73,4 +73,4 @@ private:
 
 #include "server_socket_reference_adaptor-inl.hpp"
 
-#endif // BOOST_HTTP_SERVER_SOCKET_REFERENCE_ADAPTOR_H
+#endif // BOOST_HTTP_SERVER_SOCKET_REFERENCE_ADAPTOR_HPP

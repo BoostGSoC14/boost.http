@@ -3,8 +3,8 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_POLYMORPHIC_SERVER_SOCKET_H
-#define BOOST_HTTP_POLYMORPHIC_SERVER_SOCKET_H
+#ifndef BOOST_HTTP_POLYMORPHIC_SERVER_SOCKET_HPP
+#define BOOST_HTTP_POLYMORPHIC_SERVER_SOCKET_HPP
 
 #include <cstdint>
 
@@ -90,4 +90,4 @@ public:
 
 #include "polymorphic_server_socket-inl.hpp"
 
-#endif // BOOST_HTTP_POLYMORPHIC_SERVER_SOCKET_H
+#endif // BOOST_HTTP_POLYMORPHIC_SERVER_SOCKET_HPP

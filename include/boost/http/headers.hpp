@@ -3,8 +3,8 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_HEADERS_H
-#define BOOST_HTTP_HEADERS_H
+#ifndef BOOST_HTTP_HEADERS_HPP
+#define BOOST_HTTP_HEADERS_HPP
 
 #include <boost/container/flat_map.hpp>
 #include <string>
@@ -21,4 +21,4 @@ typedef boost::container::flat_multimap<std::string, std::string> headers;
 } // namespace http
 } // namespace boost
 
-#endif // BOOST_HTTP_HEADERS_H
+#endif // BOOST_HTTP_HEADERS_HPP

@@ -3,8 +3,8 @@
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
-#ifndef BOOST_HTTP_SERVER_HTTP_CATEGORY_H
-#define BOOST_HTTP_SERVER_HTTP_CATEGORY_H
+#ifndef BOOST_HTTP_HTTP_CATEGORY_HPP
+#define BOOST_HTTP_HTTP_CATEGORY_HPP
 
 #include <boost/system/error_code.hpp>
 
@@ -16,4 +16,4 @@ const boost::system::error_category& http_category();
 } // namespace http
 } // namespace boost
 
-#endif // BOOST_HTTP_SERVER_HTTP_CATEGORY_H
+#endif // BOOST_HTTP_HTTP_CATEGORY_HPP
