@@ -3,6 +3,7 @@
 
 #include <boost/http/algorithm.hpp>
 #include <boost/http/message.hpp>
+#include <boost/http/socket.hpp>
 
 BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     using boost::http::header_value_any_of;
@@ -176,4 +177,17 @@ BOOST_AUTO_TEST_CASE(request_upgrade_desired) {
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == false);
     m.headers.emplace("upgrade", "websocket");
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == true);
+}
+
+/* This test is pretty much just to ensure that these functions compile and
+   don't try very hard to enforce the Socket concept. */
+BOOST_AUTO_TEST_CASE(write_without_reason_phrase) {
+    boost::asio::io_service ios;
+    char buffer[1];
+    boost::http::socket socket(ios, boost::asio::buffer(buffer));
+    boost::http::message m;
+    async_write_response(socket, boost::http::status_code::ok, m,
+                         [](boost::system::error_code) {});
+    async_write_response_metadata(socket, boost::http::status_code::ok, m,
+                                  [](boost::system::error_code) {});
 }
