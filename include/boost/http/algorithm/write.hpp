@@ -8,8 +8,7 @@
 
 #include <cstdint>
 
-#include <string>
-
+#include <boost/utility/string_ref.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/asio/async_result.hpp>
 
@@ -19,7 +18,7 @@
 namespace boost {
 namespace http {
 
-template<class String = std::string, class Socket, class Message,
+template<class String = string_ref, class Socket, class Message,
          class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
@@ -32,7 +31,7 @@ async_write_response(Socket &socket, status_code sc, const Message &message,
                                        std::forward<CompletionToken>(token));
 }
 
-template<class String = std::string, class Socket, class Message,
+template<class String = string_ref, class Socket, class Message,
          class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
