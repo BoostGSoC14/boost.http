@@ -324,7 +324,7 @@ private:
        I'm prioritizing header/interface isolation and a reason for people to
        use this wrapper (performance). */
     http_parser parser;
-    int flags = 0;
+    int flags;
 
     /* Thanks to current HTTP parser, I need to resort to this technique of
        storing the current message as a "global"-like pointer as opposed to keep
@@ -334,7 +334,7 @@ private:
     void *current_message;
 
     std::pair<std::string, std::string> last_header;
-    bool use_trailers = false;
+    bool use_trailers;
 
     // Output state
     detail::writer_helper writer_helper;

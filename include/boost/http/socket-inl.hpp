@@ -607,6 +607,8 @@ int basic_socket<Socket>::on_message_begin(http_parser *parser)
 {
     auto socket = reinterpret_cast<basic_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
+    socket->flags = 0;
+    socket->use_trailers = false;
     clear_message(*message);
     return 0;
 }
@@ -818,7 +820,6 @@ void basic_socket<Socket>::clear_buffer()
     istate = http::read_state::empty;
     writer_helper.state = http::write_state::empty;
     used_size = 0;
-    flags = 0;
     detail::init(parser);
 }
 
