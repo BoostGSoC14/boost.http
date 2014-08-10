@@ -11,21 +11,16 @@
 #include <algorithm>
 
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/range/iterator_range.hpp>
+#include <boost/utility/string_ref.hpp>
 
 #include <boost/http/message.hpp>
 
 namespace boost {
 namespace http {
 
-namespace detail {
-
 /**
  * \p's signature MUST be:
- * bool(String::const_iterator begin, String::const_iterator end);
- *
- * This function should only be "updated" to the public interface after
- * string_view is available and the function is updated to make use of it.
+ * bool(boost::string_ref value);
  */
 template<class String, class Predicate>
 bool header_value_any_of(const String &header_value, const Predicate &p)
@@ -49,7 +44,8 @@ bool header_value_any_of(const String &header_value, const Predicate &p)
                                               [](const char_type &c){
                                                   return std::isspace(c);
                                               }).base();
-            if (value_begin != value_end && p(value_begin, value_end))
+            if (value_begin != value_end
+                && p(string_ref(&*value_begin, value_end - value_begin)))
                 return true;
         }
 
@@ -62,8 +58,6 @@ bool header_value_any_of(const String &header_value, const Predicate &p)
     } while (comma != header_value.end());
     return false;
 }
-
-} // namespace detail
 
 /**
  * Check if received headers include `100-continue` in the _Expect_ header.
@@ -94,15 +88,11 @@ template<class Message>
 bool request_upgrade_desired(const Message &message)
 {
     typedef typename Message::headers_type::value_type header_type;
-    typedef typename header_type::second_type field_value_type; // a string
-    typedef typename field_value_type::const_iterator field_value_iterator;
-    using detail::header_value_any_of;
 
     auto connection_headers = message.headers.equal_range("connection");
 
-    auto contains_upgrade = [](const field_value_iterator &begin,
-                               const field_value_iterator &end) {
-        return iequals(make_iterator_range(begin, end), "upgrade");
+    auto contains_upgrade = [](const string_ref &value) {
+        return iequals(value, "upgrade");
     };
 
     return std::any_of(connection_headers.first, connection_headers.second,

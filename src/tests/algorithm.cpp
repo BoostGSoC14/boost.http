@@ -5,15 +5,15 @@
 #include <boost/http/message.hpp>
 
 BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
-    using boost::http::detail::header_value_any_of;
+    using boost::http::header_value_any_of;
+    using boost::string_ref;
     using std::string;
-    typedef string::const_iterator iterator;
     using std::vector;
 
     int counter = 0;
     string connection;
     bool ret;
-    ret = header_value_any_of(connection, [&counter](iterator, iterator) {
+    ret = header_value_any_of(connection, [&counter](string_ref) {
             ++counter;
             return true;
         });
@@ -21,9 +21,8 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
-                                  BOOST_REQUIRE(string(begin, end) == "upgrade");
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+                                  BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
         });
@@ -31,9 +30,8 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade,";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
-                                  BOOST_REQUIRE(string(begin, end) == "upgrade");
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+                                  BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return true;
         });
@@ -41,9 +39,8 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = ",upgrade";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
-                                  BOOST_REQUIRE(string(begin, end) == "upgrade");
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+                                  BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
         });
@@ -51,9 +48,8 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade   ,";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
-                                  BOOST_REQUIRE(string(begin, end) == "upgrade");
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+                                  BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
         });
@@ -61,9 +57,8 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",    upgrade";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
-                                  BOOST_REQUIRE(string(begin, end) == "upgrade");
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+                                  BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
         });
@@ -71,10 +66,9 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade,close";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
                                   vector<string> v = {"upgrade", "close"};
-                                  BOOST_REQUIRE(string(begin, end) == v[counter-5]);
+                                  BOOST_REQUIRE(value == v[counter-5]);
                                   ++counter;
             return false;
         });
@@ -82,10 +76,9 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade   ,close";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
             vector<string> v = {"upgrade", "close"};
-            BOOST_REQUIRE(string(begin, end) == v[counter-7]);
+            BOOST_REQUIRE(value == v[counter-7]);
             ++counter;
             return false;
         });
@@ -93,10 +86,9 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade,   close";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
                                   vector<string> v = {"upgrade", "close"};
-                                  BOOST_REQUIRE(string(begin, end) == v[counter-9]);
+                                  BOOST_REQUIRE(value == v[counter-9]);
                                   ++counter;
                                   return false;
         });
@@ -104,10 +96,9 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade    ,    close";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
                                   vector<string> v = {"upgrade", "close"};
-                                  BOOST_REQUIRE(string(begin, end) == v[counter-11]);
+                                  BOOST_REQUIRE(value == v[counter-11]);
                                   ++counter;
                                   return false;
         });
@@ -116,16 +107,16 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
 }
 
 BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
-    using boost::http::detail::header_value_any_of;
+    using boost::http::header_value_any_of;
+    using boost::string_ref;
     using std::string;
-    typedef string::const_iterator iterator;
     using std::vector;
 
     int counter = 0;
     string connection;
     bool ret;
 
-    ret = header_value_any_of(connection, [&counter](iterator, iterator) {
+    ret = header_value_any_of(connection, [&counter](string_ref) {
             ++counter;
             return true;
         });
@@ -133,28 +124,25 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",,test, test2,,test4";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
                                   ++counter;
-                                  return string(begin, end) == "test";
+                                  return value == "test";
         });
     BOOST_REQUIRE(counter == 1);
     BOOST_REQUIRE(ret == true);
 
     connection = "test ,test2  ,,test4 ,  ,";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
                                   ++counter;
-                                  return string(begin, end) == "test2";
+                                  return value == "test2";
         });
     BOOST_REQUIRE(counter == 3);
     BOOST_REQUIRE(ret == true);
 
     connection = ",   ,  test, test2 ,test4 ,,";
-    ret = header_value_any_of(connection, [&counter](iterator begin,
-                                                     iterator end) {
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
                                   ++counter;
-                                  return string(begin, end) == "test4";
+                                  return value == "test4";
         });
     BOOST_REQUIRE(counter == 6);
     BOOST_REQUIRE(ret == true);
