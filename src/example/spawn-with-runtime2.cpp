@@ -6,7 +6,7 @@
 #include <boost/asio/spawn.hpp>
 #include <boost/http/socket.hpp>
 #include <boost/http/algorithm.hpp>
-#include <boost/http/server_socket_reference_adaptor.hpp>
+#include <boost/http/server_socket_adaptor.hpp>
 
 using namespace std;
 using namespace boost;
@@ -24,7 +24,8 @@ int main()
                 char buffer[4];
                 http::socket underlying_socket(acceptor.get_io_service(),
                                                asio::buffer(buffer));
-                http::server_socket_reference_adaptor<http::socket>
+                http::server_socket_adaptor<
+                    std::reference_wrapper<http::socket>>
                 adaptor(underlying_socket);
                 http::polymorphic_server_socket &socket = adaptor;
                 std::string method;
