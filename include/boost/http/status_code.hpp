@@ -94,7 +94,12 @@ inline bool operator==(int lhs, status_code rhs)
     return lhs == static_cast<int>(rhs);
 }
 
+template<class String>
+String to_string(status_code sc);
+
 } // namespace http
 } // namespace boost
+
+#include "status_code-inl.hpp"
 
 #endif // BOOST_HTTP_STATUS_CODE_HPP
