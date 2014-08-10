@@ -55,6 +55,8 @@ int main()
                     case http::read_state::body_ready:
                         cout << "About to receive trailers" << endl;
                         socket.async_read_trailers(message, yield);
+                        break;
+                    default:;
                     }
                 }
 
