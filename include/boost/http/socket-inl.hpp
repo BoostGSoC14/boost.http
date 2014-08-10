@@ -773,9 +773,6 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
     socket->istate = http::read_state::message_ready;
     socket->flags |= READY;
 
-    if (detail::should_keep_alive(*parser))
-        socket->flags |= KEEP_ALIVE;
-
     return 0;
 }
 
@@ -808,6 +805,9 @@ int basic_socket<Socket>::on_message_complete(http_parser *parser)
     socket->istate = http::read_state::empty;
     socket->use_trailers = false;
     socket->flags |= END;
+
+    if (detail::should_keep_alive(*parser))
+        socket->flags |= KEEP_ALIVE;
 
     /* To avoid passively parsing pipelined message ahead-of-asked, we
        signalize error to stop parsing. */
