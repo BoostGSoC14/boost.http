@@ -585,7 +585,7 @@ void basic_socket<Socket>
 }
 
 template<class Socket>
-template</*class Buffer, */class Message, class String>
+template<class Message, class String>
 detail::http_parser_settings basic_socket<Socket>::settings()
 {
     http_parser_settings settings;

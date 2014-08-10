@@ -279,10 +279,9 @@ private:
                                Message &message, const system::error_code &ec,
                                std::size_t bytes_transferred);
 
-    template</*class Buffer, */class Message, class String>
+    template<class Message, class String>
     static http_parser_settings settings();
 
-    // templatize callbacks (plural) below based on Buffer type too
     template<class Message>
     static int on_message_begin(http_parser *parser);
 
