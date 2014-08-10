@@ -34,7 +34,7 @@ public:
                                       callback_type handler) = 0;
     virtual void async_write_end_of_message(callback_type handler) = 0;
 
-    virtual ~polymorphic_socket_base() = default;
+    virtual ~polymorphic_socket_base() = 0;
 
     // ### wrappers for the ASIO's extensible model ###
     template<class CompletionToken>

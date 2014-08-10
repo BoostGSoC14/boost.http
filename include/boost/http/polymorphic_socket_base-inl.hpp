@@ -6,6 +6,8 @@
 namespace boost {
 namespace http {
 
+inline polymorphic_socket_base::~polymorphic_socket_base() = default;
+
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
