@@ -22,7 +22,12 @@ enum class http_errc {
     // This error should only happen if a poor parser is used
     buffer_exhausted,
     // For flexible sockets that select the channel type upon the first use
-    wrong_direction
+    wrong_direction,
+    /* MUST NOT be used if the operations didn't properly completed
+
+       The user should free the resources after getting this error
+       (SSL::shutdown, TCP::shutdown, TCP::close...). */
+    stream_finished
 };
 
 /**
