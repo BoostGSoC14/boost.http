@@ -28,7 +28,7 @@ template<class Socket>
 class server_socket_reference_adaptor: public polymorphic_server_socket
 {
 public:
-    typedef Socket socket_type;
+    typedef Socket next_layer_type;
 
     server_socket_reference_adaptor(Socket &socket);
 
@@ -38,9 +38,9 @@ public:
      * The name socket is not used because both (the wrapped object and this
      * object itself) are sockets and it would be confusing.
      */
-    socket_type &next_layer();
+    next_layer_type &next_layer();
 
-    const socket_type &next_layer() const;
+    const next_layer_type &next_layer() const;
 
     // ### polymorphic_socket INTERFACE IMPLEMENTATION ###
     http::read_state read_state() const override;
