@@ -125,9 +125,6 @@ public:
     // ### READ FUNCTIONS ###
 
     // only warns you when the message is ready (start-line and headers).
-    template<class Message>
-    void read_message(Message &message);
-
     /* \warning async_read_message is a composed operation. It is implemented in
        terms of zero or more calls to underlying low-level operations. The
        program must ensure that no other operation is performed on the
@@ -142,9 +139,6 @@ public:
 
     // body might very well not fit into memory and user might very well want to
     // save it to disk or immediately stream to somewhere else (proxy?)
-    template<class Message>
-    void read_some_body(Message &type);
-
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -154,9 +148,6 @@ public:
     // it doesn't make sense to expose an interface that only feed one trailer
     // at a time, because headers and trailers are metadata about the body and
     // the user need the metadata to correctly decode/interpret the body anyway.
-    template<class Message>
-    void read_trailers(Message &type);
-
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -168,9 +159,6 @@ public:
     // ### WRITE FUNCTIONS ###
 
     // write the whole message in "one phase"
-    template<class Message>
-    void write_message(const Message &message);
-
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -178,8 +166,6 @@ public:
     async_write_response(std::uint_fast16_t status_code,
                          const boost::string_ref &reason_phrase,
                          const Message &message, CompletionToken &&token);
-
-    void write_continue();
 
     /**
      * Write the 100-continue status that must be written before the client
@@ -197,9 +183,6 @@ public:
     async_write_response_continue(CompletionToken &&token);
 
     // write start-line and headers
-    template<class Message>
-    void write_metadata(const Message &message);
-
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -209,27 +192,17 @@ public:
                                   const Message &message,
                                   CompletionToken &&token);
 
-    /** write a body part
-     *
-     * this function already requires "polymorphic" behaviour to take HTTP/1.0
-     * buffering into account */
-    void write(boost::asio::const_buffer &part);
-
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
     async_write(const Message &message, CompletionToken &&token);
 
-    void write_trailers(http::headers headers);
-
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
     async_write_trailers(const Message &message, CompletionToken &&token);
-
-    void end();
 
     template<class CompletionToken>
     typename asio::async_result<
