@@ -65,7 +65,7 @@ enum class status_code
     expectation_failed = 417,
     unprocessable_entity = 422,
     locked = 423,
-    failed_dependencey = 424,
+    failed_dependency = 424,
     upgrade_required = 426,
     precondition_required = 428,
     too_many_requests = 429,
