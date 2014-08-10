@@ -171,10 +171,14 @@ basic_socket<Socket>
     buffers.push_back(crlf);
     buffers.push_back(asio::buffer(message.body));
 
+    auto flags = this->flags;
     asio::async_write(channel, buffers,
-                      [handler]
+                      [handler,flags]
                       (const system::error_code &ec, std::size_t) mutable {
-        handler(ec);
+        if (ec || flags & KEEP_ALIVE)
+            handler(ec);
+        else
+            handler(system::error_code{http_errc::stream_finished});
     });
 
     return result.get();
@@ -383,10 +387,14 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
 
     buffers.push_back(crlf);
 
+    auto flags = this->flags;
     asio::async_write(channel, buffers,
-                      [handler]
+                      [handler,flags]
                       (const system::error_code &ec, std::size_t) mutable {
-        handler(ec);
+        if (ec || flags & KEEP_ALIVE)
+            handler(ec);
+        else
+            handler(system::error_code{http_errc::stream_finished});
     });
 
     return result.get();
@@ -415,10 +423,14 @@ basic_socket<Socket>
 
     auto last_chunk = string_literal_buffer("0\r\n\r\n");
 
+    auto flags = this->flags;
     asio::async_write(channel, last_chunk,
-                      [handler]
+                      [handler,flags]
                       (const system::error_code &ec, std::size_t) mutable {
-        handler(ec);
+        if (ec || flags & KEEP_ALIVE)
+            handler(ec);
+        else
+            handler(system::error_code{http_errc::stream_finished});
     });
 
     return result.get();
