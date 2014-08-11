@@ -32,7 +32,7 @@ int main()
 
                 cout << "About to receive a new message" << endl;
                 socket.async_read_request(method, path, message, yield);
-                //message.body.clear(); // freeing not used resources
+                //message.body().clear(); // freeing not used resources
 
                 if (http::request_continue_required(message)) {
                     cout << "Continue required. About to send \"100-continue\""
@@ -56,7 +56,7 @@ int main()
                 }
 
                 //cout << "BODY:==";
-                //for (const auto &e: message.body) {
+                //for (const auto &e: message.body()) {
                 //    cout << char(e);
                 //}
                 //cout << "==" << endl;
@@ -66,7 +66,7 @@ int main()
                 cout << "Method: " << method << endl;
                 cout << "Path: " << path << endl;
                 cout << "Host header: "
-                     << message.headers.find("host")->second << endl;
+                     << message.headers().find("host")->second << endl;
 
                 std::cout << "Outgoing state = " << int(socket.write_state())
                 << std::endl;
@@ -84,7 +84,7 @@ int main()
 
                 const char body[] = "Foo";
                 std::copy(body, body + sizeof(body) - 1,
-                          std::back_inserter(reply.body));
+                          std::back_inserter(reply.body()));
                 socket.async_write(reply, yield);
 
                 std::cout << "Outgoing state = " << int(socket.write_state())
@@ -93,9 +93,9 @@ int main()
                 std::cout << "About to send the reply's body second part"
                 << std::endl;
 
-                reply.body[0] = 'b';
-                reply.body[1] = 'a';
-                reply.body[2] = 'r';
+                reply.body()[0] = 'b';
+                reply.body()[1] = 'a';
+                reply.body()[2] = 'r';
                 socket.async_write(reply, yield);
 
                 std::cout << "Outgoing state = " << int(socket.write_state())
@@ -103,8 +103,8 @@ int main()
 
                 std::cout << "About to send the trailers" << std::endl;
 
-                reply.trailers.emplace("content-md5",
-                                       "89d5739baabbbe65be35cbe61c88e06d");
+                reply.trailers().emplace("content-md5",
+                                         "89d5739baabbbe65be35cbe61c88e06d");
                 socket.async_write_trailers(reply, yield);
 
                 std::cout << "Outgoing state = " << int(socket.write_state())

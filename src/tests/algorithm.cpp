@@ -151,31 +151,31 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
 
 BOOST_AUTO_TEST_CASE(request_continue_required) {
     boost::http::message m;
-    m.headers.emplace("expect", "100-continue");
+    m.headers().emplace("expect", "100-continue");
     BOOST_CHECK(boost::http::request_continue_required(m) == true);
-    m.headers.clear();
+    m.headers().clear();
     BOOST_CHECK(boost::http::request_continue_required(m) == false);
-    m.headers.emplace("expect", "100-CoNtInUe");
+    m.headers().emplace("expect", "100-CoNtInUe");
     BOOST_CHECK(boost::http::request_continue_required(m) == true);
-    m.headers.clear();
-    m.headers.emplace("expect", "element,100-continue");
+    m.headers().clear();
+    m.headers().emplace("expect", "element,100-continue");
     BOOST_CHECK(boost::http::request_continue_required(m) == false);
-    m.headers.emplace("expect", "100-continue");
+    m.headers().emplace("expect", "100-continue");
     BOOST_CHECK(boost::http::request_continue_required(m) == true);
 }
 
 BOOST_AUTO_TEST_CASE(request_upgrade_desired) {
     boost::http::message m;
-    m.headers.emplace("upgrade", "websocket");
+    m.headers().emplace("upgrade", "websocket");
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == false);
-    m.headers.emplace("connection", "close");
+    m.headers().emplace("connection", "close");
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == false);
-    m.headers.emplace("connection", "uPgRaDe");
+    m.headers().emplace("connection", "uPgRaDe");
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == true);
-    m.headers.clear();
-    m.headers.emplace("connection", "close,uPgRaDe");
+    m.headers().clear();
+    m.headers().emplace("connection", "close,uPgRaDe");
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == false);
-    m.headers.emplace("upgrade", "websocket");
+    m.headers().emplace("upgrade", "websocket");
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == true);
 }
 

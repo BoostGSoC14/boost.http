@@ -23,8 +23,8 @@ namespace http {
 template<class Message>
 bool request_continue_required(const Message &message)
 {
-    typedef decltype(*message.headers.begin()) value_type;
-    auto values = message.headers.equal_range("expect");
+    typedef decltype(*message.headers().begin()) value_type;
+    auto values = message.headers().equal_range("expect");
 
     return std::any_of(values.first, values.second, [](const value_type &v) {
         return iequals(v.second, "100-continue");
@@ -44,7 +44,7 @@ bool request_upgrade_desired(const Message &message)
 {
     typedef typename Message::headers_type::value_type header_type;
 
-    auto connection_headers = message.headers.equal_range("connection");
+    auto connection_headers = message.headers().equal_range("connection");
 
     auto contains_upgrade = [](const string_ref &value) {
         return iequals(value, "upgrade");
@@ -55,7 +55,7 @@ bool request_upgrade_desired(const Message &message)
                            return header_value_any_of(v.second,
                                                       contains_upgrade);
                        })
-        && message.headers.find("upgrade") != message.headers.end();
+        && message.headers().find("upgrade") != message.headers().end();
 }
 
 } // namespace http

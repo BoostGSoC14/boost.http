@@ -129,14 +129,14 @@ basic_socket<Socket>
 
     // because we don't create multiple responses at once with HTTP/1.1
     // pipelining, it's safe to use this "shared state"
-    content_length_buffer += std::to_string(message.body.size());
+    content_length_buffer += std::to_string(message.body().size());
 
     const auto nbuffer_pieces =
         // Start line (http version + status code + reason phrase) + CRLF
         4
         // Headers
         // Each header is 4 buffer pieces: key + sep + value + crlf
-        + 4 * message.headers.size()
+        + 4 * message.headers().size()
         // Extra content-length header uses 3 pieces
         + 3
         // Extra CRLF for end of headers
@@ -154,7 +154,7 @@ basic_socket<Socket>
     buffers.push_back(asio::buffer(reason_phrase.data(), reason_phrase.size()));
     buffers.push_back(crlf);
 
-    for (const auto &header: message.headers) {
+    for (const auto &header: message.headers()) {
         buffers.push_back(asio::buffer(header.first));
         buffers.push_back(sep);
         buffers.push_back(asio::buffer(header.second));
@@ -169,7 +169,7 @@ basic_socket<Socket>
     buffers.push_back(crlf);
 
     buffers.push_back(crlf);
-    buffers.push_back(asio::buffer(message.body));
+    buffers.push_back(asio::buffer(message.body()));
 
     auto flags = this->flags;
     asio::async_write(channel, buffers,
@@ -255,7 +255,7 @@ basic_socket<Socket>
         4
         // Headers
         // Each header is 4 buffer pieces: key + sep + value + crlf
-        + 4 * message.headers.size()
+        + 4 * message.headers().size()
         // Extra transfer-encoding header and extra CRLF for end of headers
         + 1;
 
@@ -268,7 +268,7 @@ basic_socket<Socket>
     buffers.push_back(asio::buffer(reason_phrase.data(), reason_phrase.size()));
     buffers.push_back(crlf);
 
-    for (const auto &header: message.headers) {
+    for (const auto &header: message.headers()) {
         buffers.push_back(asio::buffer(header.first));
         buffers.push_back(sep);
         buffers.push_back(asio::buffer(header.second));
@@ -308,7 +308,7 @@ basic_socket<Socket>::async_write(const Message &message,
         return result.get();
     }
 
-    if (message.body.size() == 0) {
+    if (message.body().size() == 0) {
         handler(system::error_code{});
         return result.get();
     }
@@ -317,7 +317,7 @@ basic_socket<Socket>::async_write(const Message &message,
 
     {
         std::ostringstream ostr;
-        ostr << std::hex << message.body.size();
+        ostr << std::hex << message.body().size();
         // because we don't create multiple responses at once with HTTP/1.1
         // pipelining, it's safe to use this "shared state"
         content_length_buffer = ostr.str();
@@ -326,7 +326,7 @@ basic_socket<Socket>::async_write(const Message &message,
     std::array<boost::asio::const_buffer, 4> buffers = {
         asio::buffer(content_length_buffer),
         crlf,
-        asio::buffer(message.body),
+        asio::buffer(message.body()),
         crlf
     };
 
@@ -369,7 +369,7 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
         1
         // Trailers
         // Each header is 4 buffer pieces: key + sep + value + crlf
-        + 4 * message.trailers.size()
+        + 4 * message.trailers().size()
         // Final CRLF for end of trailers
         + 1;
 
@@ -378,7 +378,7 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
 
     buffers.push_back(last_chunk);
 
-    for (const auto &header: message.trailers) {
+    for (const auto &header: message.trailers()) {
         buffers.push_back(asio::buffer(header.first));
         buffers.push_back(sep);
         buffers.push_back(asio::buffer(header.second));
@@ -654,9 +654,9 @@ int basic_socket<Socket>
 
     if (value.size() /* last header piece was value */) {
         if (!socket->use_trailers)
-            message->headers.insert(socket->last_header);
+            message->headers().insert(socket->last_header);
         else
-            message->trailers.insert(socket->last_header);
+            message->trailers().insert(socket->last_header);
         value.clear();
 
         field.replace(0, field.size(), at, size);
@@ -778,7 +778,7 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
         }
     }
 
-    message->headers.insert(socket->last_header);
+    message->headers().insert(socket->last_header);
     socket->last_header.first.clear();
     socket->last_header.second.clear();
     socket->use_trailers = true;
@@ -796,7 +796,7 @@ int basic_socket<Socket>
     auto socket = reinterpret_cast<basic_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
     auto begin = reinterpret_cast<const std::uint8_t*>(data);
-    message->body.insert(message->body.end(), begin, begin + size);
+    message->body().insert(message->body().end(), begin, begin + size);
     socket->flags |= DATA;
 
     if (detail::body_is_final(*parser))
@@ -811,7 +811,7 @@ int basic_socket<Socket>::on_message_complete(http_parser *parser)
 {
     auto socket = reinterpret_cast<basic_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
-    message->trailers.insert(socket->last_header);
+    message->trailers().insert(socket->last_header);
     socket->last_header.first.clear();
     socket->last_header.second.clear();
     socket->istate = http::read_state::empty;
@@ -839,9 +839,9 @@ template<class Socket>
 template<class Message>
 void basic_socket<Socket>::clear_message(Message &message)
 {
-    message.headers.clear();
-    message.body.clear();
-    message.trailers.clear();
+    message.headers().clear();
+    message.body().clear();
+    message.trailers().clear();
 }
 
 } // namespace boost

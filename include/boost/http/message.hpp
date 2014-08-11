@@ -33,11 +33,15 @@ struct basic_message
     typedef Headers headers_type;
     typedef Body body_type;
 
+    // The accessors methods always MUST return a reference to the same object
+
     /**
      * The metadata about the message. The user will need this info to handle
      * the message appropriately.
      */
-    headers_type headers;
+    headers_type &headers();
+
+    const headers_type &headers() const;
 
     /**
      * Its size may not fit into memory. Also, the user might be able to handle
@@ -45,12 +49,21 @@ struct basic_message
      * facts, events for each piece of body gathered should be generated, but
      * this container still could be used to buffer the data.
      */
-    body_type body;
+    body_type &body();
+
+    const body_type &body() const;
 
     /**
      * Extra headers issued after body is complete.
      */
-    headers_type trailers;
+    headers_type &trailers();
+
+    const headers_type &trailers() const;
+
+private:
+    headers_type headers_;
+    body_type body_;
+    headers_type trailers_;
 };
 
 /**
@@ -62,5 +75,7 @@ typedef basic_message<boost::http::headers, std::vector<std::uint8_t>> message;
 
 } // namespace http
 } // namespace boost
+
+#include "message-inl.hpp"
 
 #endif // BOOST_HTTP_MESSAGE_HPP
