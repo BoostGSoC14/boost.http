@@ -94,6 +94,10 @@ BOOST_AUTO_TEST_CASE(rfc1123_rfc1036_asctime) {
     BOOST_REQUIRE(datetime == make_datetime(1903, 12, 1, 0, 0, 0));
 
     // "negative" (invalid input is rejected) tests
+    BOOST_CHECK(!rfc1123(string_ref("Sun, 06 Nov 0001 08:49:37 GMT"),
+                         datetime)); // boost::date range limitation
+    BOOST_CHECK(!rfc1123(string_ref("Thu, 31 Nov 1994 08:49:37 GMT"),
+                         datetime));
     BOOST_CHECK(!rfc1123(string_ref("Sun, 06 Nov 1994 24:49:37 GMT"),
                          datetime));
     BOOST_CHECK(!rfc1123(string_ref("Sun, 06 Nov 1994 08:60:37 GMT"),
@@ -109,6 +113,8 @@ BOOST_AUTO_TEST_CASE(rfc1123_rfc1036_asctime) {
     BOOST_CHECK(!rfc1123(string_ref("All your base are belong to us"),
                          datetime));
 
+    BOOST_CHECK(!rfc1036(string_ref("Thursday, 31-Nov-94 08:49:37 GMT"),
+                         datetime));
     BOOST_CHECK(!rfc1036(string_ref("Sunday, 06-Nov-94 24:49:37 GMT"),
                          datetime));
     BOOST_CHECK(!rfc1036(string_ref("Sunday, 06-Nov-94 08:60:37 GMT"),
@@ -124,6 +130,10 @@ BOOST_AUTO_TEST_CASE(rfc1123_rfc1036_asctime) {
     BOOST_CHECK(!rfc1036(string_ref("All your base are belong to us"),
                          datetime));
 
+    BOOST_CHECK(!asctime(string_ref("Sun Dec  1 00:00:00 0001"),
+                          datetime)); // boost::date range limitation
+    BOOST_CHECK(!asctime(string_ref("Thu Nov 31 08:49:37 1994"),
+                          datetime));
     BOOST_CHECK(!asctime(string_ref("Tue Dec  1 24:00:00 1903"),
                           datetime));
     BOOST_CHECK(!asctime(string_ref("Tue Dec  1 00:60:00 1903"),

@@ -127,10 +127,15 @@ bool rfc1123(const String &value, posix_time::ptime &datetime)
     if (hour > 23 || min > 59 || sec > 60)
         return false;
 
-    datetime = ptime(date(from_decimal_submatch<year_type>(matches[3]),
-                          from_submatch_to_month<month_type>(matches[2]),
-                          from_decimal_submatch<day_type>(matches[1])),
-                     time_duration(hour, min, sec));
+    try {
+        datetime = ptime(date(from_decimal_submatch<year_type>(matches[3]),
+                              from_submatch_to_month<month_type>(matches[2]),
+                              from_decimal_submatch<day_type>(matches[1])),
+                         time_duration(hour, min, sec));
+    } catch(std::out_of_range&) {
+        return false;
+    }
+
     return true;
 }
 
@@ -168,10 +173,16 @@ bool rfc1036(const String &value, posix_time::ptime &datetime)
     if (hour > 23 || min > 59 || sec > 60)
         return false;
 
-    datetime = ptime(date(from_decimal_submatch<year_type>(matches[3]) + 1900,
-                          from_submatch_to_month<month_type>(matches[2]),
-                          from_decimal_submatch<day_type>(matches[1])),
-                     time_duration(hour, min, sec));
+    try {
+        datetime = ptime(date(from_decimal_submatch<year_type>(matches[3])
+                              + 1900,
+                              from_submatch_to_month<month_type>(matches[2]),
+                              from_decimal_submatch<day_type>(matches[1])),
+                         time_duration(hour, min, sec));
+    } catch(std::out_of_range&) {
+        return false;
+    }
+
     return true;
 }
 
@@ -209,17 +220,20 @@ bool asctime(const String &value, posix_time::ptime &datetime)
     if (hour > 23 || min > 59 || sec > 60)
         return false;
 
-    datetime = ptime(date(from_decimal_submatch<year_type>(matches[6]),
-                          from_submatch_to_month<month_type>(matches[1]),
-                          [&matches]() {
-                              using detail::from_decimal_string;
-                              auto m = matches[2];
-                              if (*m.first == ' ')
-                                  ++m.first;
-                              return from_decimal_string<day_type>(m.first,
-                                                                   m.second);
-                          }()),
-                     time_duration(hour, min, sec));
+    try {
+        datetime = ptime(date(from_decimal_submatch<year_type>(matches[6]),
+                              from_submatch_to_month<month_type>(matches[1]),
+                              [&matches]() {
+                                  auto m = matches[2];
+                                  if (*m.first == ' ')
+                                      ++m.first;
+                                  return from_decimal_submatch<day_type>(m);
+                              }()),
+                         time_duration(hour, min, sec));
+    } catch(std::out_of_range&) {
+        return false;
+    }
+
     return true;
 }
 
