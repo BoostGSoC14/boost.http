@@ -5,6 +5,7 @@ add_definitions(-DBOOST_TEST_DYN_LINK)
 set(tests
   "errc"
   "algorithm"
+  "datetime"
 )
 
 macro(add_test_target target)
