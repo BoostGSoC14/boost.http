@@ -3,8 +3,6 @@
 
 #include <boost/http/algorithm/header.hpp>
 
-#include <iostream>
-
 template<class Target, class String>
 Target from_decimal_string(const String &value)
 {
@@ -175,4 +173,53 @@ BOOST_AUTO_TEST_CASE(header_to_ptime_case) {
 
     BOOST_CHECK(header_to_ptime(string_ref("All your base are belong to us"))
                 .is_not_a_date_time());
+}
+
+BOOST_AUTO_TEST_CASE(append_number_case) {
+    using std::string;
+    using boost::http::detail::append_number;
+
+    string buffer;
+
+    append_number<string, 0>(buffer, 1);
+    BOOST_REQUIRE(buffer.size() == 0);
+
+    append_number<string, 8>(buffer, 12345678);
+    BOOST_REQUIRE(buffer == "12345678");
+
+    append_number<string, 8>(buffer, 0);
+    BOOST_REQUIRE(buffer == "12345678"
+                  "00000000");
+
+    append_number<string, 3>(buffer, 1002);
+    BOOST_REQUIRE(buffer == "12345678"
+                  "00000000"
+                  "002");
+
+    append_number<string, 3>(buffer, 1);
+    BOOST_REQUIRE(buffer == "12345678"
+                  "00000000"
+                  "002"
+                  "001");
+}
+
+BOOST_AUTO_TEST_CASE(to_http_date_case) {
+    using std::string;
+    using boost::http::to_http_date;
+
+    BOOST_CHECK(to_http_date<string>(make_datetime(1994, 11, 6, 8, 49, 37))
+                == "Sun, 06 Nov 1994 08:49:37 GMT");
+    BOOST_CHECK(to_http_date<string>(make_datetime(1903, 12, 1, 0, 0, 0))
+                == "Tue, 01 Dec 1903 00:00:00 GMT");
+
+    const boost::posix_time::ptime invalid_ptime;
+    bool exception_throw = false;
+
+    try {
+        to_http_date<string>(boost::posix_time::ptime{});
+    } catch(std::out_of_range&) {
+        exception_throw = true;
+    }
+
+    BOOST_CHECK(exception_throw);
 }

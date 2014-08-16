@@ -237,6 +237,17 @@ bool asctime(const String &value, posix_time::ptime &datetime)
     return true;
 }
 
+template<class String, unsigned N, class Unsigned>
+void append_number(String &string, Unsigned value)
+{
+    char buffer[N];
+    for (auto i = N;i;--i) {
+        buffer[i-1] = '0' + (value % 10);
+        value /= 10;
+    }
+    string.append(buffer, N);
+}
+
 } // namespace detail
 
 /**
@@ -252,6 +263,74 @@ posix_time::ptime header_to_ptime(const String &value)
         if (!detail::rfc1036(value, ret))
             detail::asctime(value, ret);
     }
+    return ret;
+}
+
+/**
+ * This function considers \p datetime is given in UTC timezone.
+ *
+ * Will throw std::out_of_range if invalid \p datetime is given.
+ */
+template<class String>
+String to_http_date(const posix_time::ptime &datetime)
+{
+    using detail::append_number;
+
+    typedef gregorian::date::ymd_type::year_type::value_type year_type;
+    typedef gregorian::date::ymd_type::day_type::value_type day_type;
+
+    String ret;
+    ret.reserve(29);
+    ret.append([&datetime]() {
+            using namespace gregorian;
+            switch(datetime.date().day_of_week()) {
+            case Monday: return "Mon, ";
+            case Tuesday: return "Tue, ";
+            case Wednesday: return "Wed, ";
+            case Thursday: return "Thu, ";
+            case Friday: return "Fri, ";
+            case Saturday: return "Sat, ";
+            case Sunday: return "Sun, ";
+            default:
+                throw std::out_of_range("bad day of week");
+            }
+        }(), 5);
+
+    {
+        gregorian::date::ymd_type ymd = datetime.date().year_month_day();
+
+        append_number<String, 2, day_type>(ret, ymd.day);
+        ret.push_back(' ');
+
+        switch (ymd.month) {
+        case 1: ret.append("Jan ", 4); break;
+        case 2: ret.append("Feb ", 4); break;
+        case 3: ret.append("Mar ", 4); break;
+        case 4: ret.append("Apr ", 4); break;
+        case 5: ret.append("May ", 4); break;
+        case 6: ret.append("Jun ", 4); break;
+        case 7: ret.append("Jul ", 4); break;
+        case 8: ret.append("Aug ", 4); break;
+        case 9: ret.append("Sep ", 4); break;
+        case 10: ret.append("Oct ", 4); break;
+        case 11: ret.append("Nov ", 4); break;
+        case 12: ret.append("Dec ", 4); break;
+        default:
+            throw std::out_of_range("bad month");
+        }
+
+        append_number<String, 4, year_type>(ret, ymd.year);
+    }
+    {
+        auto time = datetime.time_of_day();
+        ret.push_back(' ');
+        append_number<String, 2>(ret, time.hours());
+        ret.push_back(':');
+        append_number<String, 2>(ret, time.minutes());
+        ret.push_back(':');
+        append_number<String, 2>(ret, time.seconds());
+    }
+    ret.append(" GMT", 4);
     return ret;
 }
 
