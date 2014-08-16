@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 
+#include <boost/utility/string_ref.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/http/socket.hpp>
@@ -78,7 +79,8 @@ int main()
                 std::copy(body, body + sizeof(body) - 1,
                           std::back_inserter(reply.body()));
 
-                socket.async_write_response(200, "OK", reply, yield);
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
             } catch (std::exception &e) {
                 cerr << "Aborting on exception: " << e.what() << endl;
                 std::exit(1);

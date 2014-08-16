@@ -6,6 +6,7 @@
 #ifndef BOOST_HTTP_ALGORITHM_QUERY_HPP
 #define BOOST_HTTP_ALGORITHM_QUERY_HPP
 
+#include <boost/utility/string_ref.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <boost/http/message.hpp>
@@ -39,14 +40,16 @@ bool request_continue_required(const Message &message)
  *
  * The upgrade can always be safely ignored.
  */
-template<class Message>
+template<class Message,
+         class StringRef = boost::basic_string_ref<
+             typename Message::headers_type::mapped_type::value_type>>
 bool request_upgrade_desired(const Message &message)
 {
     typedef typename Message::headers_type::value_type header_type;
 
     auto connection_headers = message.headers().equal_range("connection");
 
-    auto contains_upgrade = [](const string_ref &value) {
+    auto contains_upgrade = [](const StringRef &value) {
         return iequals(value, "upgrade");
     };
 

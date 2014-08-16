@@ -15,7 +15,6 @@
 #include <type_traits>
 #include <utility>
 
-#include <boost/utility/string_ref.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
@@ -166,13 +165,13 @@ public:
      * "content-length" header, we'll use it. It's undefined behaviour to
      * provide this header in others writing functions.
      */
-    template<class Message, class CompletionToken>
+    template<class StringRef, class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
     async_write_response(std::uint_fast16_t status_code,
-                         const boost::string_ref &reason_phrase,
-                         const Message &message, CompletionToken &&token);
+                         const StringRef &reason_phrase, const Message &message,
+                         CompletionToken &&token);
 
     /**
      * Write the 100-continue status that must be written before the client
@@ -190,12 +189,12 @@ public:
     async_write_response_continue(CompletionToken &&token);
 
     // write start-line and headers
-    template<class Message, class CompletionToken>
+    template<class StringRef, class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
     async_write_response_metadata(std::uint_fast16_t status_code,
-                                  const boost::string_ref &reason_phrase,
+                                  const StringRef &reason_phrase,
                                   const Message &message,
                                   CompletionToken &&token);
 

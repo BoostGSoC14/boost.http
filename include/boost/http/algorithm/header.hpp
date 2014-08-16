@@ -12,7 +12,6 @@
 #include <regex>
 #include <type_traits>
 
-#include <boost/utility/string_ref.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
 namespace boost {
@@ -93,8 +92,8 @@ Target from_submatch_to_month(std::sub_match<BidirIt> m)
     }
 }
 
-template<class String>
-bool rfc1123(const String &value, posix_time::ptime &datetime)
+template<class StringRef>
+bool rfc1123(const StringRef &value, posix_time::ptime &datetime)
 {
     using namespace gregorian;
     using namespace posix_time;
@@ -106,7 +105,7 @@ bool rfc1123(const String &value, posix_time::ptime &datetime)
     typedef time_duration::min_type min_type;
     typedef time_duration::sec_type sec_type;
 
-    static const std::basic_regex<typename String::value_type>
+    static const std::basic_regex<typename StringRef::value_type>
         regex("(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), " // day
               "(\\d{2}) " // day-1
               "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) " // month-2
@@ -116,7 +115,7 @@ bool rfc1123(const String &value, posix_time::ptime &datetime)
               "(\\d{2}) " // seconds-6
               "GMT");
 
-    std::match_results<typename String::const_iterator> matches;
+    std::match_results<typename StringRef::const_iterator> matches;
     if (!std::regex_match(value.begin(), value.end(), matches, regex))
         return false;
 
@@ -139,8 +138,8 @@ bool rfc1123(const String &value, posix_time::ptime &datetime)
     return true;
 }
 
-template<class String>
-bool rfc1036(const String &value, posix_time::ptime &datetime)
+template<class StringRef>
+bool rfc1036(const StringRef &value, posix_time::ptime &datetime)
 {
     using namespace gregorian;
     using namespace posix_time;
@@ -152,7 +151,7 @@ bool rfc1036(const String &value, posix_time::ptime &datetime)
     typedef time_duration::min_type min_type;
     typedef time_duration::sec_type sec_type;
 
-    static const std::basic_regex<typename String::value_type>
+    static const std::basic_regex<typename StringRef::value_type>
         regex("(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), " // day
               "(\\d{2})-" // day-1
               "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-" // month-2
@@ -162,7 +161,7 @@ bool rfc1036(const String &value, posix_time::ptime &datetime)
               "(\\d{2}) " // seconds-6
               "GMT");
 
-    std::match_results<typename String::const_iterator> matches;
+    std::match_results<typename StringRef::const_iterator> matches;
     if (!std::regex_match(value.begin(), value.end(), matches, regex))
         return false;
 
@@ -186,8 +185,8 @@ bool rfc1036(const String &value, posix_time::ptime &datetime)
     return true;
 }
 
-template<class String>
-bool asctime(const String &value, posix_time::ptime &datetime)
+template<class StringRef>
+bool asctime(const StringRef &value, posix_time::ptime &datetime)
 {
     using namespace gregorian;
     using namespace posix_time;
@@ -199,7 +198,7 @@ bool asctime(const String &value, posix_time::ptime &datetime)
     typedef time_duration::min_type min_type;
     typedef time_duration::sec_type sec_type;
 
-    static const std::basic_regex<typename String::value_type>
+    static const std::basic_regex<typename StringRef::value_type>
         regex("(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) " // day
               "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) " // month-1
               "((?:\\d| )\\d) " // day-2
@@ -209,7 +208,7 @@ bool asctime(const String &value, posix_time::ptime &datetime)
               "(\\d{4})" // year-6
               );
 
-    std::match_results<typename String::const_iterator> matches;
+    std::match_results<typename StringRef::const_iterator> matches;
     if (!std::regex_match(value.begin(), value.end(), matches, regex))
         return false;
 
@@ -253,8 +252,8 @@ void append_number(String &string, Unsigned value)
 /**
  * Use is_not_a_date_time() to check if the conversion failed.
  */
-template<class String>
-posix_time::ptime header_to_ptime(const String &value)
+template<class StringRef>
+posix_time::ptime header_to_ptime(const StringRef &value)
 {
     using namespace gregorian;
     using namespace posix_time;
@@ -336,13 +335,13 @@ String to_http_date(const posix_time::ptime &datetime)
 
 /**
  * \p p's signature MUST be:
- * bool(boost::string_ref value);
+ * bool(StringRef value);
  */
-template<class String, class Predicate>
-bool header_value_any_of(const String &header_value, const Predicate &p)
+template<class StringRef, class Predicate>
+bool header_value_any_of(const StringRef &header_value, const Predicate &p)
 {
-    typedef typename String::value_type char_type;
-    typedef typename String::const_reverse_iterator reverse_iterator;
+    typedef typename StringRef::value_type char_type;
+    typedef typename StringRef::const_reverse_iterator reverse_iterator;
 
     auto comma = header_value.begin();
     decltype(comma) next_comma;
@@ -361,8 +360,10 @@ bool header_value_any_of(const String &header_value, const Predicate &p)
                                                   return std::isspace(c);
                                               }).base();
             if (value_begin != value_end
-                && p(string_ref(&*value_begin, value_end - value_begin)))
+                && p(header_value.substr(value_begin - header_value.begin(),
+                                         value_end - value_begin))) {
                 return true;
+            }
         }
 
         comma = next_comma;
@@ -377,12 +378,12 @@ bool header_value_any_of(const String &header_value, const Predicate &p)
 
 /**
  * \p f's signature MUST be:
- * void(boost::string_ref value);
+ * void(StringRef value);
  */
-template<class String, class F>
-void header_value_for_each(const String &header_value, const F &f)
+template<class StringRef, class F>
+void header_value_for_each(const StringRef &header_value, const F &f)
 {
-    header_value_any_of(header_value, [&f](const string_ref &v) {
+    header_value_any_of(header_value, [&f](const StringRef &v) {
             f(v);
             return false;
         });

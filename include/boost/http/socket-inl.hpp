@@ -97,14 +97,14 @@ basic_socket<Socket>::async_read_trailers(Message &message,
 }
 
 template<class Socket>
-template<class Message, class CompletionToken>
+template<class StringRef, class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
 basic_socket<Socket>
 ::async_write_response(std::uint_fast16_t status_code,
-                       const boost::string_ref &reason_phrase,
-                       const Message &message, CompletionToken &&token)
+                       const StringRef &reason_phrase, const Message &message,
+                       CompletionToken &&token)
 {
     using detail::string_literal_buffer;
     typedef typename asio::handler_type<
@@ -219,13 +219,13 @@ basic_socket<Socket>
 }
 
 template<class Socket>
-template<class Message, class CompletionToken>
+template<class StringRef, class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
 basic_socket<Socket>
 ::async_write_response_metadata(std::uint_fast16_t status_code,
-                                const boost::string_ref &reason_phrase,
+                                const StringRef &reason_phrase,
                                 const Message &message, CompletionToken &&token)
 {
     using detail::string_literal_buffer;

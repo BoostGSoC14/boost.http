@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 
+#include <boost/utility/string_ref.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/http/socket.hpp>
@@ -74,7 +75,8 @@ int main()
                 cout << "About to send the reply's metadata" << endl;
 
                 http::message reply;
-                socket.async_write_response_metadata(200, "OK", reply, yield);
+                socket.async_write_response_metadata(200, string_ref("OK"),
+                                                     reply, yield);
 
                 std::cout << "Outgoing state = " << int(socket.write_state())
                 << std::endl;
