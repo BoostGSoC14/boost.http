@@ -335,7 +335,7 @@ String to_http_date(const posix_time::ptime &datetime)
 }
 
 /**
- * \p's signature MUST be:
+ * \p p's signature MUST be:
  * bool(boost::string_ref value);
  */
 template<class String, class Predicate>
@@ -373,6 +373,19 @@ bool header_value_any_of(const String &header_value, const Predicate &p)
             ++comma;
     } while (comma != header_value.end());
     return false;
+}
+
+/**
+ * \p f's signature MUST be:
+ * void(boost::string_ref value);
+ */
+template<class String, class F>
+void header_value_for_each(const String &header_value, const F &f)
+{
+    header_value_any_of(header_value, [&f](const string_ref &v) {
+            f(v);
+            return false;
+        });
 }
 
 } // namespace http
