@@ -20,6 +20,7 @@ namespace http {
 class polymorphic_socket_base
 {
 public:
+    typedef message message_type;
     typedef std::function<void(system::error_code)> callback_type;
 
     // ### ABI-stable interface ###
