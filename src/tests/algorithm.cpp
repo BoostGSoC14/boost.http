@@ -105,6 +105,97 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
         });
     BOOST_REQUIRE(counter == 13);
     BOOST_REQUIRE(ret == false);
+
+    connection = " ";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = "          ";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = ",";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = ",,";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = ",,,";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = " ,";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = "   ,";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = ", ";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = ",    ";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = " , ";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = "   ,   ";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = "   ,,   ";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = "   ,,   ,     ,,,    ";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
 }
 
 BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
