@@ -111,7 +111,6 @@ basic_socket<Socket>
         CompletionToken, void(system::error_code)>::type Handler;
 
     Handler handler(std::forward<CompletionToken>(token));
-
     asio::async_result<Handler> result(handler);
 
     if (!writer_helper.write_message()) {
@@ -121,6 +120,8 @@ basic_socket<Socket>
 
     auto crlf = string_literal_buffer("\r\n");
     auto sep = string_literal_buffer(": ");
+    bool implicit_content_length
+        = (message.headers().find("content-length") != message.headers().end());
 
     // because we don't create multiple responses at once with HTTP/1.1
     // pipelining, it's safe to use this "shared state"
@@ -138,7 +139,7 @@ basic_socket<Socket>
         // Each header is 4 buffer pieces: key + sep + value + crlf
         + 4 * message.headers().size()
         // Extra content-length header uses 3 pieces
-        + 3
+        + (implicit_content_length ? 0 : 3)
         // Extra CRLF for end of headers
         + 1
         // And finally, the message body
@@ -161,12 +162,14 @@ basic_socket<Socket>
         buffers.push_back(crlf);
     }
 
-    buffers.push_back(string_literal_buffer("content-length: "));
-    buffers.push_back(asio::buffer(content_length_buffer.data()
-                                   + content_length_delim,
-                                   content_length_buffer.size()
-                                   - content_length_delim));
-    buffers.push_back(crlf);
+    if (!implicit_content_length) {
+        buffers.push_back(string_literal_buffer("content-length: "));
+        buffers.push_back(asio::buffer(content_length_buffer.data()
+                                       + content_length_delim,
+                                       content_length_buffer.size()
+                                       - content_length_delim));
+        buffers.push_back(crlf);
+    }
 
     buffers.push_back(crlf);
     buffers.push_back(asio::buffer(message.body()));

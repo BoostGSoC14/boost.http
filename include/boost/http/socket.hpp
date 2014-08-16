@@ -158,7 +158,14 @@ public:
 
     // ### WRITE FUNCTIONS ###
 
-    // write the whole message in "one phase"
+    /**
+     * Write the whole message in "one phase".
+     *
+     * To be able to properly respond to "HEAD" HTTP requests, you must use this
+     * method. For this function, and this function only, if you provide a
+     * "content-length" header, we'll use it. It's undefined behaviour to
+     * provide this header in others writing functions.
+     */
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
