@@ -33,9 +33,9 @@ namespace http {
 class polymorphic_server_socket: public polymorphic_socket_base
 {
 public:
-    typedef std::string method_type;
-    typedef std::string path_type;
-    typedef boost::string_ref reason_phrase_type;
+    typedef std::string method_write_type;
+    typedef std::string path_write_type;
+    typedef boost::string_ref reason_phrase_write_type;
 
     // ### ABI-stable interface ###
     virtual bool write_response_native_stream() const = 0;
