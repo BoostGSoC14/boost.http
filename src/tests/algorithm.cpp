@@ -5,6 +5,17 @@
 #include <boost/http/message.hpp>
 #include <boost/http/socket.hpp>
 
+struct my_accumulator
+{
+    template<class T>
+    void operator()(const T&)
+    {
+        ++count;
+    }
+
+    unsigned count = 0;
+};
+
 BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     using boost::http::header_value_any_of;
     using boost::string_ref;
@@ -238,6 +249,13 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
         });
     BOOST_REQUIRE(counter == 6);
     BOOST_REQUIRE(ret == true);
+}
+
+BOOST_AUTO_TEST_CASE(header_value_for_each_case) {
+    using boost::http::header_value_for_each;
+    using boost::string_ref;
+    BOOST_CHECK(header_value_for_each(string_ref("t,t2,t"), my_accumulator())
+                .count == 3);
 }
 
 BOOST_AUTO_TEST_CASE(request_continue_required) {

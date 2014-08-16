@@ -381,12 +381,13 @@ bool header_value_any_of(const StringRef &header_value, const Predicate &p)
  * void(StringRef value);
  */
 template<class StringRef, class F>
-void header_value_for_each(const StringRef &header_value, const F &f)
+F header_value_for_each(const StringRef &header_value, F f)
 {
     header_value_any_of(header_value, [&f](const StringRef &v) {
             f(v);
             return false;
         });
+    return std::move(f);
 }
 
 } // namespace http
