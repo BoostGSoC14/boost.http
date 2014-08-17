@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <regex>
 #include <type_traits>
+#include <limits>
 
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
@@ -46,11 +47,31 @@ Target from_decimal_string(BidirIt begin, BidirIt end)
                     typename std::iterator_traits<BidirIt>::value_type,
                     char>::value,
                   "from_decimal_string only supports char type");
+
     Target ret = 0, digit = 1;
     std::reverse_iterator<BidirIt> it(end), rend(begin);
-    for (;it != rend;++it) {
-        ret += (*it - '0') * digit;
-        digit *= 10;
+    for (bool overflow = false;it != rend;++it) {
+        Target value = (*it - '0');
+
+        if (value != 0) {
+            if (overflow)
+                throw std::overflow_error("cannot update digit");
+
+            if (std::numeric_limits<Target>::max() / digit < value)
+                throw std::overflow_error("cannot update value");
+
+            value *= digit;
+
+            if (std::numeric_limits<Target>::max() - value < ret)
+                throw std::overflow_error("cannot update ret");
+
+            ret += value;
+        }
+
+        if (std::numeric_limits<Target>::max() / 10 < digit)
+            overflow = true;
+        else
+            digit *= 10;
     }
     return ret;
 }

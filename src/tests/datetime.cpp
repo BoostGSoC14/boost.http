@@ -31,7 +31,8 @@ void reset(boost::posix_time::ptime &datetime)
 }
 
 BOOST_AUTO_TEST_CASE(from_decimal_string_case) {
-    // Just need to test up to 4 digits
+    /* Just need to test up to 4 digits **IF** the using code is
+       datetime-related */
     BOOST_CHECK(from_decimal_string<int>("") == 0);
     BOOST_CHECK(from_decimal_string<int>("0") == 0);
     BOOST_CHECK(from_decimal_string<int>("000") == 0);
@@ -48,6 +49,238 @@ BOOST_AUTO_TEST_CASE(from_decimal_string_case) {
     BOOST_CHECK(from_decimal_string<int>("1984") == 1984);
     BOOST_CHECK(from_decimal_string<int>("1337") == 1337);
     BOOST_CHECK(from_decimal_string<int>("42") == 42);
+}
+
+BOOST_AUTO_TEST_CASE(from_decimal_string_overflow_case) {
+    // first cases that shouldn't fail
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("255") == 255);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("254") == 254);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("253") == 253);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("252") == 252);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("251") == 251);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("250") == 250);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("249") == 249);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("248") == 248);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("247") == 247);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("246") == 246);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("245") == 245);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("244") == 244);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0") == 0);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("1") == 1);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("2") == 2);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("3") == 3);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("4") == 4);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("5") == 5);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("6") == 6);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("7") == 7);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("8") == 8);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("9") == 9);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("10") == 10);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("11") == 11);
+
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000255") == 255);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000254") == 254);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000253") == 253);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000252") == 252);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000251") == 251);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000250") == 250);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000249") == 249);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000248") == 248);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000247") == 247);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000246") == 246);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000245") == 245);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("000000000000000244") == 244);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000000") == 0);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000001") == 1);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000002") == 2);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000003") == 3);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000004") == 4);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000005") == 5);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000006") == 6);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000007") == 7);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000008") == 8);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("0000000000000009") == 9);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("00000000000000010") == 10);
+    BOOST_CHECK(from_decimal_string<std::uint8_t>("00000000000000011") == 11);
+
+    // now cases that should fail
+    bool overflow_detected = false;
+
+    try {
+        from_decimal_string<std::uint8_t>("266");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("265");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("264");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("263");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("262");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("261");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("260");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("259");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("258");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("257");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("256");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    // Now with 000's prefix
+
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000266");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000265");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000264");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000263");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000262");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000261");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000260");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000259");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000258");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000257");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
+
+    overflow_detected = false;
+    try {
+        from_decimal_string<std::uint8_t>("0000000000000000000000000000000256");
+    } catch(std::overflow_error&) {
+        overflow_detected = true;
+    }
+    BOOST_REQUIRE(overflow_detected);
 }
 
 BOOST_AUTO_TEST_CASE(rfc1123_rfc1036_asctime) {
