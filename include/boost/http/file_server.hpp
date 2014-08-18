@@ -768,6 +768,21 @@ struct on_async_response_transmit_file_multi
     const std::string file_size;
 };
 
+bool path_contains_file(const filesystem::path &dir,
+                        const filesystem::path &file)
+{
+    /* If dir has more components than file, then file can't possibly
+       reside in dir. */
+    auto dir_len = std::distance(dir.begin(), dir.end());
+    auto file_len = std::distance(file.begin(), file.end());
+    if (dir_len > file_len)
+        return false;
+
+    /* This stops checking when it reaches dir.end(), so it's OK if file
+       has more directory components afterward. They won't be checked. */
+    return std::equal(dir.begin(), dir.end(), file.begin());
+}
+
 } // namespace detail
 
 /**
@@ -1225,8 +1240,8 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
  * The second additional error code is
  * `file_server_category::file_type_not_supported` and happens when resolution
  * finishes but this function cannot process the result because the file is not
- * regular (directories, block devices, broken links...). The channel is also
- * left untouched, giving the user the opportunity to use another HTTP consumer.
+ * regular (directories, block devices, links...). The channel is also left
+ * untouched, giving the user the opportunity to use another HTTP consumer.
  *
  * The only feature missing is mime support (content-type header). It cannot be
  * done reliably within this abstraction.
@@ -1277,7 +1292,48 @@ async_response_transmit_dir(ServerSocket &socket, const String &method,
                             const filesystem::path &root_dir, Predicate filter,
                             CompletionToken &&token)
 {
-    // TODO
+    typedef typename asio::handler_type<
+        CompletionToken, void(system::error_code)>::type Handler;
+
+    Handler handler(std::forward<CompletionToken>(token));
+    asio::async_result<Handler> result(handler);
+
+    if (method != "GET" && method != "HEAD") {
+        omessage.headers().emplace("allow", "GET, HEAD");
+        socket.async_write_response(405, string_ref("Method Not Allowed"),
+                                    omessage, handler);
+        return result.get();
+    }
+
+    bool is_head = (method == "HEAD");
+
+    try {
+        auto canonical_root = canonical(root_dir);
+        auto canonical_file = canonical(root_dir / ipath);
+
+        if (!detail::path_contains_file(canonical_root, canonical_file)) {
+            handler(system::error_code{file_server_errc::file_not_found});
+            return result.get();
+        }
+
+        if (!is_regular_file(canonical_file)) {
+            handler(system::error_code{file_server_errc
+                        ::file_type_not_supported});
+            return result.get();
+        }
+
+        if (!filter(canonical_file)) {
+            handler(system::error_code{file_server_errc::filter_set});
+            return result.get();
+        }
+
+        async_response_transmit_file(socket, imessage, omessage, canonical_file,
+                                     is_head, handler);
+    } catch(filesystem::filesystem_error &e) {
+        handler(e.code());
+    }
+
+    return result.get();
 }
 
 template<class ServerSocket, class String, class ConvertibleToPath,
