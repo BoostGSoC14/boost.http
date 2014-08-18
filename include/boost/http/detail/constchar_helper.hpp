@@ -15,10 +15,22 @@ namespace detail {
 struct constchar_helper
 {
     template<std::size_t N>
-    constchar_helper(const char (&input)[N]) :
+    constexpr constchar_helper(const char (&input)[N]) :
         data(input),
         size(N - 1)
     {}
+
+    template<class T>
+    const T *begin() const
+    {
+        return reinterpret_cast<const T*>(data);
+    }
+
+    template<class T>
+    const T *end() const
+    {
+        return reinterpret_cast<const T*>(data+size);
+    }
 
     const char *data;
     const std::size_t size;
