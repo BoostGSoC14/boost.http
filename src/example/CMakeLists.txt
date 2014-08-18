@@ -3,6 +3,7 @@ set(examples
   "spawn-chunked"
   "spawn-with-runtime"
   "spawn-with-runtime2"
+  "spawn-fileserver"
 )
 
 macro(add_example_target target)

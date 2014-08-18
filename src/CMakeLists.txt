@@ -1,5 +1,6 @@
 set(library_SRC
   http_category.cpp
+  file_server.cpp
   socket.cpp
   http_parser.c
 )
