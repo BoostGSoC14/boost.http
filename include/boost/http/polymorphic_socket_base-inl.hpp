@@ -51,7 +51,7 @@ typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
 polymorphic_socket_base
-::async_write(message &message, CompletionToken &&token)
+::async_write(const message &message, CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -70,7 +70,7 @@ typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
 polymorphic_socket_base
-::async_write_trailers(message &message, CompletionToken &&token)
+::async_write_trailers(const message &message, CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;

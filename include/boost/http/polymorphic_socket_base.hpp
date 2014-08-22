@@ -54,13 +54,13 @@ public:
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write(message &message, CompletionToken &&token);
+    async_write(const message &message, CompletionToken &&token);
 
     template<class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write_trailers(message &message, CompletionToken &&token);
+    async_write_trailers(const message &message, CompletionToken &&token);
 
     template<class CompletionToken>
     typename asio::async_result<
