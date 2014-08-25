@@ -18,30 +18,30 @@
 namespace boost {
 namespace http {
 
-template<class String = string_ref, class Socket, class Message,
+template<class StringRef = string_ref, class ServerSocket, class Message,
          class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-async_write_response(Socket &socket, status_code sc, const Message &message,
-                     CompletionToken &&token)
+async_write_response(ServerSocket &socket, status_code sc,
+                     const Message &message, CompletionToken &&token)
 {
     return socket.async_write_response(static_cast<std::uint_fast16_t>(sc),
-                                       to_string<String>(sc), message,
+                                       to_string<StringRef>(sc), message,
                                        std::forward<CompletionToken>(token));
 }
 
-template<class String = string_ref, class Socket, class Message,
+template<class StringRef = string_ref, class ServerSocket, class Message,
          class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-async_write_response_metadata(Socket &socket, status_code sc,
+async_write_response_metadata(ServerSocket &socket, status_code sc,
                               const Message &message, CompletionToken &&token)
 {
     return socket
         .async_write_response_metadata(static_cast<std::uint_fast16_t>(sc),
-                                       to_string<String>(sc), message,
+                                       to_string<StringRef>(sc), message,
                                        std::forward<CompletionToken>(token));
 }
 
