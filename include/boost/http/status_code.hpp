@@ -6,6 +6,8 @@
 #ifndef BOOST_HTTP_STATUS_CODE_HPP
 #define BOOST_HTTP_STATUS_CODE_HPP
 
+#include <cstdint>
+
 namespace boost {
 namespace http {
 
@@ -17,7 +19,7 @@ namespace http {
  * but this abstraction is still useful for comparassions maintaining readable
  * code.
  */
-enum class status_code
+enum class status_code: std::uint_fast16_t
 {
     // Informational (1xx)
     continue_request = 100,
