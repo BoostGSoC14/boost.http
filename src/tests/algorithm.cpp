@@ -117,6 +117,26 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(counter == 13);
     BOOST_REQUIRE(ret == false);
 
+    connection = "\tupgrade\t,,\tclose\t\t";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+                                  vector<string> v = {"upgrade", "close"};
+                                  BOOST_REQUIRE(value == v[counter-13]);
+                                  ++counter;
+                                  return false;
+        });
+    BOOST_REQUIRE(counter == 15);
+    BOOST_REQUIRE(ret == false);
+
+    connection = "\t \t upgrade\t \t \t,,\t \t \tclose \t \t";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+                                  vector<string> v = {"upgrade", "close"};
+                                  BOOST_REQUIRE(value == v[counter-15]);
+                                  ++counter;
+                                  return false;
+        });
+    BOOST_REQUIRE(counter == 17);
+    BOOST_REQUIRE(ret == false);
+
     connection = " ";
     ret = header_value_any_of(connection, [&counter](string_ref value) {
             BOOST_REQUIRE(false);
@@ -124,7 +144,21 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
         });
     BOOST_REQUIRE(ret == false);
 
+    connection = "\t";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
     connection = "          ";
+    ret = header_value_any_of(connection, [&counter](string_ref value) {
+            BOOST_REQUIRE(false);
+            return false;
+        });
+    BOOST_REQUIRE(ret == false);
+
+    connection = "\t\t\t\t\t\t\t\t\t\t\t";
     ret = header_value_any_of(connection, [&counter](string_ref value) {
             BOOST_REQUIRE(false);
             return false;

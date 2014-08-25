@@ -6,8 +6,6 @@
 #ifndef BOOST_HTTP_ALGORITHM_HEADER_HPP
 #define BOOST_HTTP_ALGORITHM_HEADER_HPP
 
-#include <cctype>
-
 #include <algorithm>
 #include <regex>
 #include <type_traits>
@@ -364,22 +362,21 @@ bool header_value_any_of(const StringRef &header_value, const Predicate &p)
     typedef typename StringRef::value_type char_type;
     typedef typename StringRef::const_reverse_iterator reverse_iterator;
 
+    auto isspace = [](const char_type &c) {
+        return c == ' ' || c == '\t';
+    };
+
     auto comma = header_value.begin();
     decltype(comma) next_comma;
     do {
         next_comma = std::find(comma, header_value.end(), ',');
 
-        auto value_begin = std::find_if_not(comma, next_comma,
-                                            [](const char_type &c) {
-                                                return std::isspace(c);
-                                            });
+        auto value_begin = std::find_if_not(comma, next_comma, isspace);
 
         if (value_begin != next_comma) {
             auto value_end = std::find_if_not(reverse_iterator(next_comma),
                                               reverse_iterator(value_begin),
-                                              [](const char_type &c){
-                                                  return std::isspace(c);
-                                              }).base();
+                                              isspace).base();
             if (value_begin != value_end
                 && p(header_value.substr(value_begin - header_value.begin(),
                                          value_end - value_begin))) {
