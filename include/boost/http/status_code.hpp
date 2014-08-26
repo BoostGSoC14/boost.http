@@ -86,14 +86,14 @@ enum class status_code: std::uint_fast16_t
     network_authentication_required = 511
 };
 
-inline bool operator==(status_code lhs, int rhs)
+inline bool operator==(status_code lhs, std::uint_fast16_t rhs)
 {
-    return static_cast<int>(lhs) == rhs;
+    return static_cast<std::uint_fast16_t>(lhs) == rhs;
 }
 
-inline bool operator==(int lhs, status_code rhs)
+inline bool operator==(std::uint_fast16_t lhs, status_code rhs)
 {
-    return lhs == static_cast<int>(rhs);
+    return lhs == static_cast<std::uint_fast16_t>(rhs);
 }
 
 template<class String>
