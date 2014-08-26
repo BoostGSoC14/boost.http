@@ -1,0 +1,10 @@
+[section:header_header <boost/http/algorithm/header.hpp>]
+
+Import the following symbols:
+
+* [^[link reference.header_to_ptime header_to_ptime]]
+* [^[link reference.to_http_date to_http_date]]
+* [^[link reference.header_value_any_of header_value_any_of]]
+* [^[link reference.header_value_for_each header_value_for_each]]
+
+[endsect]

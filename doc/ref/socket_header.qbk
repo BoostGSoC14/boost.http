@@ -1,0 +1,11 @@
+[section:socket_header <boost/http/socket.hpp>]
+
+Import the following symbols:
+
+* [^[link reference.basic_socket basic_socket]]
+* [^[link reference.socket socket]]
+* [^[link reference.read_state read_state]]
+* [^[link reference.write_state write_state]]
+* [^[link reference.http_errc http_errc]]
+
+[endsect]

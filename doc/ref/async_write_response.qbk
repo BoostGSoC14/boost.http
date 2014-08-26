@@ -1,0 +1,72 @@
+[section:async_write_response async_write_response]
+
+ #include <boost/http/algorithm/write.hpp>
+
+\u0020
+
+ template<class StringRef = boost::string_ref, class ServerSocket,
+          class Message, class CompletionToken>
+ typename boost::asio::async_result<
+     typename boost::asio::handler_type<CompletionToken,
+                                 void(boost::system::error_code)>::type>::type
+ async_write_response(ServerSocket &socket, status_code sc,
+                      const Message &message, CompletionToken &&token)
+
+Get the integer-based and textual representation from /sc/ and dispatch the
+`async_write_response` operation to /socket/.
+
+[note The `to_string(status_code)` function is used to get the textual
+ representation.]
+
+[section Template parameters]
+
+[variablelist
+
+[[`StringRef`][A type fulfilling the requirements of the StringRef concept
+ (i.e. boost::basic_string_ref).]]
+
+[[`ServerSocket`][A type fulfilling the [link reference.server_socket_concept
+ [^ServerSocket] concept].]]
+
+[[`Message`][A type fulfilling the [link reference.message_concept [^Message]
+ concept].]]
+
+[[`CompletionToken`][A type fulfilling the concept of a completion token, as
+ defined in [@https://isocpp.org/files/papers/n4045.pdf N4045: Library
+ Foundations for Asynchronous Operations, Revision 2].]]
+
+]
+
+[endsect]
+
+[section Parameters]
+
+[variablelist
+
+[[`ServerSocket &socket`][The server socket used to initiate the operations.]]
+
+[[`status_code sc`][A status code from which we'll extract the integer and
+ string representations.]]
+
+[[`const Message &message`][The reply message.]]
+
+[[`CompletionToken &&token`][The completion token used to get the handler and
+ return value.]]
+
+]
+
+[endsect]
+
+[section Return value]
+
+Extracted from /token/.
+
+[endsect]
+
+[section See also]
+
+* [^[link reference.status_code status_code]]
+
+[endsect]
+
+[endsect]

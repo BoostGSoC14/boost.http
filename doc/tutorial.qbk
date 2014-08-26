@@ -1,0 +1,345 @@
+[chapter Tutorial
+[quickbook 1.6]
+]
+
+[section Tutorial]
+
+This tutorial begins by the code snippet below to illustrate the library usage
+and follows explaining it.
+
+[warning This tutorial assumes you're already familiar with HTTP[footnote
+[/TODO]I plan to extend this tutorial to include a small and fast introduction
+later on]!]
+
+[warning This tutorial assumes you're already familiar with ASIO!]
+
+ #include <iostream>
+ #include <algorithm>
+
+ #include <boost/utility/string_ref.hpp>
+ #include <boost/asio/io_service.hpp>
+ #include <boost/asio/spawn.hpp>
+ #include <boost/http/socket.hpp>
+ #include <boost/http/algorithm.hpp>
+
+ using namespace std;
+ using namespace boost;
+
+ int main()
+ {
+     asio::io_service ios;
+
+     asio::ip::tcp::acceptor acceptor(ios, asio::ip::tcp
+                                      ::endpoint(asio::ip::tcp::v6(), 8080));
+
+     auto work = [&acceptor](asio::yield_context yield) {
+         while (true) {
+             try {
+                 char buffer[4];
+                 http::socket socket(acceptor.get_io_service(),
+                                     asio::buffer(buffer));
+                 std::string method;
+                 std::string path;
+                 http::message message;
+
+                 cout << "About to accept a new connection" << endl;
+                 acceptor.async_accept(socket.next_layer(), yield);
+
+                 cout << "About to receive a new message" << endl;
+                 socket.async_read_request(method, path, message, yield);
+                 //message.body().clear(); // freeing not used resources
+
+                 if (http::request_continue_required(message)) {
+                     cout << "Continue required. About to send \"100-continue\""
+                          << std::endl;
+                     socket.async_write_response_continue(yield);
+                 }
+
+                 while (socket.read_state() != http::read_state::empty) {
+                     cout << "Message not fully received" << endl;
+                     switch (socket.read_state()) {
+                     case http::read_state::message_ready:
+                         cout << "About to receive some body" << endl;
+                         socket.async_read_some(message, yield);
+                         break;
+                     case http::read_state::body_ready:
+                         cout << "About to receive trailers" << endl;
+                         socket.async_read_trailers(message, yield);
+                         break;
+                     default:;
+                     }
+                 }
+
+                 //cout << "BODY:==";
+                 //for (const auto &e: message.body()) {
+                 //    cout << char(e);
+                 //}
+                 //cout << "==" << endl;
+
+                 cout << "Message received. State = "
+                      << int(socket.read_state()) << endl;
+                 cout << "Method: " << method << endl;
+                 cout << "Path: " << path << endl;
+                 cout << "Host header: "
+                      << message.headers().find("host")->second << endl;
+
+                 std::cout << "Write state = " << int(socket.write_state())
+                 << std::endl;
+
+                 cout << "About to send a reply" << endl;
+
+                 http::message reply;
+                 const char body[] = "Foobar";
+                 std::copy(body, body + sizeof(body) - 1,
+                           std::back_inserter(reply.body()));
+
+                 socket.async_write_response(200, string_ref("OK"), reply,
+                                             yield);
+             } catch (std::exception &e) {
+                 cerr << "Aborting on exception: " << e.what() << endl;
+                 std::exit(1);
+             }
+         };
+     };
+
+     cout << "About to spawn" << endl;
+     spawn(ios, work);
+
+     cout << "About to run" << endl;
+     ios.run();
+
+     return 0;
+ }
+
+[section Overview]
+
+This application listens for connections effectively implementing an HTTP
+server. This is a standalone server and it doesn't depend on external software
+(such as Apache) to handle incoming requests. The default port for naked
+(non-HTTP[*S]) HTTP connections is `80`, but we're using `8080` here.
+
+For each connection accepted, the application will handle the first request and
+ignore the rest of the connection, spending resources on the next one. The
+response message will be a "200 OK" with a "/Foobar/" data payload. All states
+are respected and we correctly handle the "100-continue" requests.
+
+The application will also print to the standard output to give us a clue of what
+is going on.
+
+[endsect]
+
+[section Imported declarations]
+
+First things first. Let's look at the imported headers:
+
+ #include <iostream>
+ #include <algorithm>
+
+ #include <boost/utility/string_ref.hpp>
+
+We're going to make use of the standard output for easy debugging. We're also
+going to make use of the `copy` algorithm to fill the body of the messages and
+the `boost::string_ref` class to adapt string literals into full objects
+implementing the `String` container/concept. These are the `<iostream>`,
+`<algorithm>` and `<boost/utility/string_ref.hpp>` headers.
+
+ #include <boost/asio/io_service.hpp>
+ #include <boost/asio/spawn.hpp>
+
+Just as ASIO require, we're going to use the popular `io_service`. And to make
+the code more readable, we're also including the `spawn` completion token.
+
+ #include <boost/http/socket.hpp>
+ #include <boost/http/algorithm.hpp>
+
+These is the interesting part of the block of `#include` directives. The first
+header includes the probably most useful HTTP producer that this library will
+ever provide. The second one has some useful HTTP algorithms. From these
+algorithms, we're going to make use of `request_continue_required`. If we wanted
+to reduce the amount of imported symbols, we could just `#include`
+`<boost/http/algorithm/query.hpp>` instead `<boost/http/algorithm>`.
+
+ using namespace std;
+ using namespace boost;
+
+And we don't want to endlessly and brainlessly type like a monkey, then we
+import some declarations to the global namespace.
+
+[endsect]
+
+[section Connection management]
+
+ asio::ip::tcp::acceptor acceptor(ios, asio::ip::tcp
+                                  ::endpoint(asio::ip::tcp::v6(), 8080));
+
+ auto work = [&acceptor](asio::yield_context yield) {
+     while (true) {
+         try {
+             char buffer[4];
+             http::socket socket(acceptor.get_io_service(),
+                                 asio::buffer(buffer));
+
+HTTP doesn't require to handle protocol negotiation separately from the
+remaining protocol or any super special handshaking flow. Therefore, we use a
+"naked" acceptor to fuel an usable HTTP socket. This approach also give us the
+flexibility to use many other socket creation mechanisms (e.g. HTTP[*S]).
+`socket` is just a typedef defined as follows:
+
+ typedef basic_socket<boost::asio::ip::tcp::socket> socket;
+
+The template type argument is available through
+`basic_socket<Socket>::next_layer_type` and the underlying socket is available
+through `socket.next_layer()`. This design mirrors the ASIO's `ssl::stream`
+class. It's not just useful for HTTP[*S], but any abstraction that can go below
+the high-level HTTP socket (like
+[@http://sourceforge.net/p/axiomq/code/ci/master/tree/include/axiomq/basic_queue_socket.hpp
+basic_queue_socket] from AxioMQ). Therefore, we hope the acceptance will look
+something like the following line (and indeed it does):
+
+ acceptor.async_accept(socket.next_layer(), yield);
+
+You'll soon see that the data from the HTTP messages is feeded to an appropriate
+`message` object, but maybe you're surprised to see the explicit construction of
+a `buffer` object. Maybe you're wondering ['why won't we use the soon-to-be-seen
+`message` object to behave as the buffer]. A fully separated buffer is requried
+to correctly handle HTTP pipelining (and multiplexing on supporting
+channels). So this is what we do. We are using a very small buffer because any
+buffer size larger than one should do (assuming you're using a good parser and
+we're), but you should consider using larger buffers.
+
+[endsect]
+
+[section Receiving request messages]
+
+ std::string method;
+ std::string path;
+ http::message message;
+
+And then we declare the objects that will hold the message info from the
+soon-to-be-received HTTP request message. `http::message` is a general
+container-like object that encompass data that is common to HTTP requests and
+HTTP responses. An alternative design would also include the variant start line
+data within this object, but these alternative designs were not chosen because
+not very type safe and unnecessary overhead.
+
+Also, if you have special resource usage requirements and don't want to
+reimplement the `Message` concept you'll be happy to know that `http::message`
+is just a typedef defined as follows:
+
+ typedef basic_message<boost::http::headers, std::vector<std::uint8_t>> message;
+
+\u0020
+
+ cout << "About to accept a new connection" << endl;
+ acceptor.async_accept(socket.next_layer(), yield);
+
+ cout << "About to receive a new message" << endl;
+ socket.async_read_request(method, path, message, yield);
+ //message.body().clear(); // freeing not used resources
+
+And then we just call `async_read_request` passing the objects to be filled and
+we're done.
+
+A request is considered ready and, in sequence, dispatched to the user, when the
+start line and the complete header section (all headers) are received. A request
+cannot be properly handled before this stage[footnote Once again, according to
+the HTTP RFC 7230, section 3.2.2: ["A server MUST NOT apply a request to the
+target resource until the entire request header section is received, since later
+header fields might include conditionals, authentication credentials, or
+deliberately misleading duplicate header fields that would impact request
+processing.]]. Pieces of the body, in contrast, are delivered/dispatched as
+they're available.
+
+[note Even if you only requested enough to handle the message, by the time the
+operation completes (your callback is called), your `message` object may contain
+more data than asked for (e.g. a small part of the body or even the complete
+message). You should check the `read_state` once the operation completes.]
+
+ if (http::request_continue_required(message)) {
+     cout << "Continue required. About to send \"100-continue\""
+          << std::endl;
+     socket.async_write_response_continue(yield);
+ }
+
+In this next step we handle the HTTP 100-continue requests. These special
+requests were created to decrease network traffic usage by rejecting requests
+that would be discarded anyway sooner. Here, we accept all requests, then we
+tell the client to proceed to send the body payload.
+
+ while (socket.read_state() != http::read_state::empty) {
+     cout << "Message not fully received" << endl;
+     switch (socket.read_state()) {
+     case http::read_state::message_ready:
+         cout << "About to receive some body" << endl;
+         socket.async_read_some(message, yield);
+         break;
+     case http::read_state::body_ready:
+         cout << "About to receive trailers" << endl;
+         socket.async_read_trailers(message, yield);
+         break;
+     default:;
+     }
+ }
+
+And then we check the `read_state` to possibly start more operations until we
+can ensure the whole message was received.
+
+ //cout << "BODY:==";
+ //for (const auto &e: message.body()) {
+ //    cout << char(e);
+ //}
+ //cout << "==" << endl;
+
+ cout << "Message received. State = "
+      << int(socket.read_state()) << endl;
+ cout << "Method: " << method << endl;
+ cout << "Path: " << path << endl;
+ cout << "Host header: "
+      << message.headers().find("host")->second << endl;
+
+And some debugging info.
+
+[warning In this chunk of code, we unconditionally print the first \"host\"
+field found, but this header isn't always present and may cause the application
+to segfault. You should add checks before using any header field.]
+
+[endsect]
+
+[section Generating a reply]
+
+ std::cout << "Write state = " << int(socket.write_state())
+ << std::endl;
+
+ cout << "About to send a reply" << endl;
+
+ http::message reply;
+ const char body[] = "Foobar";
+ std::copy(body, body + sizeof(body) - 1,
+           std::back_inserter(reply.body()));
+
+ socket.async_write_response(200, string_ref("OK"), reply,
+                             yield);
+
+And in the last part of our little adventure, we begin by printing the
+associated write_state (should be `write_state::empty` given we didn't started
+any response operations yet).
+
+And the reply itself is rather trivial to execute. Just fill a `message` object
+and proceed to send it with an associated response start line (status code and
+the associated reason phrase).
+
+[tip Alternatively, we don't need to specify the status code and its associated
+reason phrases. The header `<boost/http/algorithm/write.hpp>` provide algorithms
+that can take care of the standard status codes.]
+
+If you want to make use of the streaming interface (not shown in this example),
+you should first make sure streaming is available for the current
+request-response exchange. This test can be done using the
+`write_response_native_stream()` member-function. If supported, you can then
+proceed to making use of the streaming interface, available through the methods
+`async_write_response_metadata`, `async_write`, `async_write_trailers` and
+`async_write_end_of_message`.
+
+[endsect]
+
+[endsect]

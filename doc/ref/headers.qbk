@@ -1,0 +1,10 @@
+[section:headers headers]
+
+ #include <boost/http/headers.hpp>
+
+=headers= is a simple typedef for =boost::container::flat_multimap=. It's
+defined as follows:
+
+ typedef boost::container::flat_multimap<std::string, std::string> headers;
+
+[endsect]

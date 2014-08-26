@@ -1,5 +1,140 @@
-[chapter A chapter
+[chapter Reference
 [quickbook 1.6]
 ]
 
-[xinclude docbook/index.xml]
+All declarations from this library resides within the =boost::http=
+namespace. For brevity, this prefix is *not* repeated on the documentation.
+
+[section Summary]
+
+[section Classes]
+
+* [^[link reference.headers headers]]
+* [^[link reference.message message]]
+* [^[link reference.socket socket]]
+* [^[link reference.polymorphic_socket_base polymorphic_socket_base]]
+* [^[link reference.polymorphic_server_socket polymorphic_server_socket]]
+
+[endsect]
+
+[section Class Templates]
+
+* [^[link reference.basic_message basic_message]]
+* [^[link reference.basic_socket basic_socket]]
+* [^[link reference.server_socket_adaptor server_socket_adaptor]]
+
+[endsect]
+
+[section Free Functions]
+
+* Header processing
+  * [^[link reference.header_to_ptime header_to_ptime]]
+  * [^[link reference.to_http_date to_http_date]]
+  * [^[link reference.header_value_any_of header_value_any_of]]
+  * [^[link reference.header_value_for_each header_value_for_each]]
+* Channel querying
+  * [^[link reference.request_continue_required request_continue_required]]
+  * [^[link reference.request_upgrade_desired request_upgrade_desired]]
+* Writing messages
+  * [^[link reference.async_write_response async_write_response]]
+  * [^[link reference.async_write_response_metadata
+       async_write_response_metadata]]
+* File server
+  * [^[link reference.async_response_transmit_file
+       async_response_transmit_file]]
+  * [^[link reference.async_response_transmit_dir
+       async_response_transmit_dir]]
+
+[endsect]
+
+[section Enumerations]
+
+* [^[link reference.read_state read_state]]
+* [^[link reference.write_state write_state]]
+* [^[link reference.status_code status_code]]
+
+[endsect]
+
+[section Error Codes]
+
+* [^[link reference.http_errc http_errc]]
+* [^[link reference.file_server_errc file_server_errc]]
+
+[endsect]
+
+[section Type Requirements]
+
+* [^[link reference.message_concept Message]]
+* [^[link reference.socket_concept Socket]]
+* [^[link reference.server_socket_concept ServerSocket]]
+
+[endsect]
+
+[section Headers]
+
+* [^[link reference.algorithm_header <boost/http/algorithm.hpp>]]
+* [^[link reference.header_header <boost/http/algorithm/header.hpp>]]
+* [^[link reference.query_header <boost/http/algorithm/query.hpp>]]
+* [^[link reference.write_header <boost/http/algorithm/write.hpp>]]
+* [^[link reference.file_server_header <boost/http/file_server.hpp>]]
+* [^[link reference.headers_header <boost/http/headers.hpp>]]
+* [^[link reference.http_category_header <boost/http/http_category.hpp>]]
+* [^[link reference.http_errc_header <boost/http/http_errc.hpp>]]
+* [^[link reference.message_header <boost/http/message.hpp>]]
+* [^[link reference.polymorphic_server_socket_header
+     <boost/http/polymorphic_server_socket.hpp>]]
+* [^[link reference.polymorphic_socket_base_header
+     <boost/http/polymorphic_socket_base.hpp>]]
+* [^[link reference.read_state_header <boost/http/read_state.hpp>]]
+* [^[link reference.server_socket_adaptor_header
+     <boost/http/server_socket_adaptor.hpp>]]
+* [^[link reference.socket_header <boost/http/socket.hpp>]]
+* [^[link reference.status_code_header <boost/http/status_code.hpp>]]
+* [^[link reference.write_state_header <boost/http/write_state.hpp>]]
+
+[endsect]
+
+[endsect]
+
+[include ref/headers.qbk]
+[include ref/message.qbk]
+[include ref/socket.qbk]
+[include ref/polymorphic_socket_base.qbk]
+[include ref/polymorphic_server_socket.qbk]
+[include ref/basic_message.qbk]
+[include ref/basic_socket.qbk]
+[include ref/server_socket_adaptor.qbk]
+[include ref/header_to_ptime.qbk]
+[include ref/to_http_date.qbk]
+[include ref/header_value_any_of.qbk]
+[include ref/header_value_for_each.qbk]
+[include ref/request_continue_required.qbk]
+[include ref/request_upgrade_desired.qbk]
+[include ref/async_write_response.qbk]
+[include ref/async_write_response_metadata.qbk]
+[include ref/async_response_transmit_file.qbk]
+[include ref/async_response_transmit_dir.qbk]
+[include ref/read_state.qbk]
+[include ref/write_state.qbk]
+[include ref/status_code.qbk]
+[include ref/http_errc.qbk]
+[include ref/file_server_errc.qbk]
+[include ref/message_concept.qbk]
+[include ref/socket_concept.qbk]
+[include ref/server_socket_concept.qbk]
+[include ref/algorithm_header.qbk]
+[include ref/header_header.qbk]
+[include ref/query_header.qbk]
+[include ref/write_header.qbk]
+[include ref/file_server_header.qbk]
+[include ref/headers_header.qbk]
+[include ref/http_category_header.qbk]
+[include ref/http_errc_header.qbk]
+[include ref/message_header.qbk]
+[include ref/polymorphic_server_socket_header.qbk]
+[include ref/polymorphic_socket_base_header.qbk]
+[include ref/read_state_header.qbk]
+[include ref/server_socket_adaptor_header.qbk]
+[include ref/socket_header.qbk]
+[include ref/status_code_header.qbk]
+[include ref/write_state_header.qbk]

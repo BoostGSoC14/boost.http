@@ -1,0 +1,9 @@
+[section:file_server_header <boost/http/file_server.hpp>]
+
+Import the following symbols:
+
+* [^[link reference.async_response_transmit_file async_response_transmit_file]]
+* [^[link reference.async_response_transmit_dir async_response_transmit_dir]]
+* [^[link reference.file_server_errc file_server_errc]]
+
+[endsect]

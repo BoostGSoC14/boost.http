@@ -1,0 +1,8 @@
+[section:polymorphic_socket_base_header
+ <boost/http/polymorphic_socket_base.hpp>]
+
+Import the following symbol:
+
+* [^[link reference.polymorphic_socket_base polymorphic_socket_base]]
+
+[endsect]

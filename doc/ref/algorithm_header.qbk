@@ -1,0 +1,17 @@
+[section:algorithm_header <boost/http/algorithm.hpp>]
+
+A shorthand to write:
+
+ #include <boost/http/algorithm/header.hpp>
+ #include <boost/http/algorithm/query.hpp>
+ #include <boost/http/algorithm/write.hpp>
+
+[section See also]
+
+* [^[link reference.header_header <boost/http/algorithm/header.hpp>]]
+* [^[link reference.query_header <boost/http/algorithm/query.hpp>]]
+* [^[link reference.write_header <boost/http/algorithm/write.hpp>]]
+
+[endsect]
+
+[endsect]
