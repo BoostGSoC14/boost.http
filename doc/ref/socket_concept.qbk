@@ -183,6 +183,13 @@ Foundations for Asynchronous Operations, Revision 2].]]
   characters are converted to lowercase) before they're inserted into objects of
   type `Message::headers_type`.
 
+# The `Socket` object has the freedom to store information required to further
+  process the incoming message in the user-provided `message` object. Thus, the
+  library user MUST *NOT* use different `message` objects in the functions that
+  initiate *read* operations, in the context of the *same* message exchange
+  (i.e. the user can use a different `message` object to receive a different
+  message). This requirement is extended to refinements of this concept.
+
 [endsect]
 
 [section Models]
