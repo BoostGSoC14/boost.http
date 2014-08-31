@@ -15,12 +15,6 @@
 namespace boost {
 namespace http {
 
-/**
- * Check if received headers include `100-continue` in the _Expect_ header.
- *
- * The name _required_ is used instead _supported_, because a 100-continue
- * status require action from the server.
- */
 template<class Message>
 bool request_continue_required(const Message &message)
 {
@@ -32,14 +26,6 @@ bool request_continue_required(const Message &message)
     });
 }
 
-/**
- * Check if the client desires to initiate a protocol upgrade.
- *
- * The desired protocols will be in the `upgrade` header as a comma-separated
- * list.
- *
- * The upgrade can always be safely ignored.
- */
 template<class Message,
          class StringRef = boost::basic_string_ref<
              typename Message::headers_type::mapped_type::value_type>>

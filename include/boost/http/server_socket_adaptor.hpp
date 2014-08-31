@@ -11,30 +11,6 @@
 namespace boost {
 namespace http {
 
-/**
- * This design was chosen taking a number of shortcomings in consideration.
- *
- * If the user can control object construction, he might benefit by less levels
- * of indirection by constructing both (the HTTP socket and its runtime-based
- * polymorphic adaptor) at once and at a single memory space.
- *
- * The scenario where the user don't control the object construction was also
- * taken in consideration. In these cases, it's possible to use the
- * std::reference_wrapper type found in the <functional> header. There is a
- * server_socket_adaptor specialization that will do the job for
- * std::reference_wrapper.
- *
- * Also, if the user needs to query for the specific type at runtime, the user
- * can do so with a single call to dynamic_cast to the specific polymorphic
- * wrapper (rather than calling a second function to query for the wrapped
- * object).
- *
- * The design is simple to use, to learn and to read. This values were chasen to
- * avoid misuse by the user's part.
- *
- * Although very different, the name and inspiration were borrowed from N3525
- * (polymorphic allocators).
- */
 template<class Socket>
 class server_socket_adaptor: public polymorphic_server_socket, private Socket
 {
@@ -44,13 +20,6 @@ public:
     template<class... Args>
     server_socket_adaptor(Args&&... args);
 
-    /**
-     * Socket isn't exposed directly to avoid confusion over the duplication of
-     * interfaces.
-     *
-     * The name socket is not used because both (the wrapped object and this
-     * object itself) are sockets and it would be confusing.
-     */
     next_layer_type &next_layer();
 
     const next_layer_type &next_layer() const;
@@ -89,13 +58,6 @@ public:
 
     server_socket_adaptor(Socket &&socket) = delete;
 
-    /**
-     * Socket isn't exposed directly to avoid confusion over the duplication of
-     * interfaces.
-     *
-     * The name socket is not used because both (the wrapped object and this
-     * object itself) are sockets and it would be confusing.
-     */
     next_layer_type &next_layer();
 
     const next_layer_type &next_layer() const;

@@ -11,14 +11,6 @@
 namespace boost {
 namespace http {
 
-/**
- * Contains useful status codes defined in RFC2616.
- *
- * A client library can receive integers not enumarated in this abstraction,
- * then an integer would be chosen instead of this enum in such client library,
- * but this abstraction is still useful for comparassions maintaining readable
- * code.
- */
 enum class status_code: std::uint_fast16_t
 {
     // Informational (1xx)
@@ -43,13 +35,13 @@ enum class status_code: std::uint_fast16_t
     see_other = 303,
     not_modified = 304,
     use_proxy = 305,
-    switch_proxy = 306, //< No longer used
+    switch_proxy = 306,
     temporary_redirect = 307,
     permanent_redirect = 308,
     // Client Error (4xx)
     bad_request = 400,
     unauthorized = 401,
-    payment_required = 402, //< Reserved for future usage
+    payment_required = 402,
     forbidden = 403,
     not_found = 404,
     method_not_allowed = 405,

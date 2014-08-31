@@ -12,10 +12,6 @@
 namespace boost {
 namespace http {
 
-// TODO: Define the `headers` concept and evaluate which container is more
-// appropriate
-
-// I think the container shouldn't be sorted. you only pay for what you use (?)
 typedef boost::container::flat_multimap<std::string, std::string> headers;
 
 } // namespace http

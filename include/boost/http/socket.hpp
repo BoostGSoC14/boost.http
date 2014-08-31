@@ -96,39 +96,14 @@ public:
 
     // ### QUERY FUNCTIONS ###
 
-    /* Vocabulary might be confusing here. The word "read" could refer to
-       request if in server-mode or to response if in client-mode. */
-
     http::read_state read_state() const;
-
-    /* used to know if message is complete and what parts (body, trailers) were
-       completed. */
     http::write_state write_state() const;
-
-    /** If output support native stream or will buffer the body internally.
-     *
-     * This query is only available after the message is ready (e.g. on the
-     * async_receive_message handler).
-     *
-     * write_response prefix is used instead plain write, because it's not
-     * possible to query capabilities information w/o communication with the
-     * other peer, then this query is only available in server-mode. clients can
-     * just issue a request and try again later if not supported. design may be
-     * refined later. */
     bool write_response_native_stream() const;
-
-    // The following two algorithms should be moved to reusable free functions:
 
     // ### END OF QUERY FUNCTIONS ###
 
     // ### READ FUNCTIONS ###
 
-    // only warns you when the message is ready (start-line and headers).
-    /* \warning async_read_message is a composed operation. It is implemented in
-       terms of zero or more calls to underlying low-level operations. The
-       program must ensure that no other operation is performed on the
-       basic_socket until this operation completes (the user handler is called,
-       either with or without an error code set). */
     template<class String, class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -136,17 +111,12 @@ public:
     async_read_request(String &method, String &path, Message &message,
                        CompletionToken &&token);
 
-    // body might very well not fit into memory and user might very well want to
-    // save it to disk or immediately stream to somewhere else (proxy?)
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
     async_read_some(Message &message, CompletionToken &&token);
 
-    // it doesn't make sense to expose an interface that only feed one trailer
-    // at a time, because headers and trailers are metadata about the body and
-    // the user need the metadata to correctly decode/interpret the body anyway.
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -157,14 +127,6 @@ public:
 
     // ### WRITE FUNCTIONS ###
 
-    /**
-     * Write the whole message in "one phase".
-     *
-     * To be able to properly respond to "HEAD" HTTP requests, you must use this
-     * method. For this function, and this function only, if you provide a
-     * "content-length" header, we'll use it. It's undefined behaviour to
-     * provide this header in others writing functions.
-     */
     template<class StringRef, class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -173,22 +135,12 @@ public:
                          const StringRef &reason_phrase, const Message &message,
                          CompletionToken &&token);
 
-    /**
-     * Write the 100-continue status that must be written before the client
-     * proceed to feed body of the request.
-     *
-     * \warning If `read_request_continue_required` returns true, you
-     * **MUST** call this function to let the remote client to send the body. If
-     * your handler can give an appropriate answer without the body, just reply
-     * as usual.
-     */
     template<class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
     async_write_response_continue(CompletionToken &&token);
 
-    // write start-line and headers
     template<class StringRef, class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -226,9 +178,6 @@ public:
     template<class... Args>
     basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args);
 
-    /**
-     * Returns a reference to the underlying stream
-     */
     next_layer_type &next_layer();
     const next_layer_type &next_layer() const;
 

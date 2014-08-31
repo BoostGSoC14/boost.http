@@ -448,7 +448,7 @@ basic_socket<Socket>
     buffer(inbuffer),
     writer_helper(http::write_state::empty)
 {
-    // TODO: add test to this feature and document it
+    // TODO: add test to this feature
     if (asio::buffer_size(buffer) == 0)
         throw std::invalid_argument("buffers must not be 0-sized");
 
@@ -465,7 +465,7 @@ basic_socket<Socket>
     , buffer(inbuffer)
     , writer_helper(http::write_state::empty)
 {
-    // TODO: add test to this feature and document it
+    // TODO: add test to this feature
     if (asio::buffer_size(buffer) == 0)
         throw std::invalid_argument("buffers must not be 0-sized");
 
@@ -644,9 +644,6 @@ template<class Message>
 int basic_socket<Socket>
 ::on_header_field(http_parser *parser, const char *at, std::size_t size)
 {
-    /* The SG4's uri library also face the problem to define a
-       case-insensitive interface and the chosen solution was to convert
-       everything to lower case upon normalization. */
     using std::transform;
     auto tolower = [](int ch) -> int { return std::tolower(ch); };
 

@@ -17,19 +17,6 @@
 namespace boost {
 namespace http {
 
-/**
- * The design of this hierarchy is inspired by C++ iostream.
- *
- * polymorphic_socket_base -> polymorphic_server_socket +-> polymorphic_socket
- *                         -> polymorphic_client_socket +
- *
- * Once the client socket concept is defined, a polymorphic_client_socket
- * abstract class should also be defined, alongside with a
- * polymorphic_socket. The polymorphic_socket should inherit from
- * polymorphic_client_socket and polymorphic_server_socket.
- *
- * Given there is no state in these classes, virtual inheritance isn't used.
- */
 class polymorphic_server_socket: public polymorphic_socket_base
 {
 public:

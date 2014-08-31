@@ -51,18 +51,10 @@ enum class file_server_errc {
 } // namespace http
 namespace system {
 
-/**
- * Extends the type trait boost::system::is_error_code_enum to identify
- * file_server error codes.
- */
 template<>
 struct is_error_code_enum<boost::http::file_server_errc>: public std::true_type
 {};
 
-/**
- * Extends the type trait boost::system::is_error_code_enum to identify
- * file_server error conditions.
- */
 template<>
 struct is_error_condition_enum<boost::http::file_server_errc>
     : public std::true_type
@@ -73,17 +65,11 @@ namespace http {
 
 const system::error_category& file_server_category();
 
-/**
- * Constructs a file_server error_code.
- */
 inline system::error_code make_error_code(file_server_errc e)
 {
     return system::error_code(static_cast<int>(e), file_server_category());
 }
 
-/**
- * Constructs a file_server error_condition.
- */
 inline system::error_condition make_error_condition(file_server_errc e)
 {
     return system::error_condition(static_cast<int>(e), file_server_category());
@@ -787,30 +773,6 @@ bool path_contains_file(const filesystem::path &dir,
 
 } // namespace detail
 
-/**
- * This function might be similar to the previous one, but actually does a lot
- * more:
- *
- * - It'll interpret and process the request headers. However, it doesn't
- *   process the request method nor the the input path. This means you still
- *   have to guarantee the method is applicable and to resolve the input path to
- *   a valid local file path.
- * - It'll fill all the applicable response headers appropriate to the request.
- * - It'll interpret the file attributes to process conditional requests and
- *   partial download. However, MIME detection (the `content-type` optional
- *   header) is still left for the user to handler.
- *
- * The response headers filled by this function MUST NOT be sent through
- * trailers. Therefore, this function will not do any operation and it will call
- * the handler with an error_code (file_server_errc::write_state_not_supported)
- * set if you pass a socket for which the headers were already sent.
- *
- * If you cannot guarantee the \p file did not change twice during the second
- * covered by the last write time, you should remove all "range" and "if-range"
- * headers from \p imessage. It's possible to construct a more robust file
- * server by making use of system-level APIs that can provide unique identifiers
- * for file revisions.
- */
 template<class ServerSocket, class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
@@ -819,18 +781,6 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                              Message &omessage, const filesystem::path &file,
                              CompletionToken &&token);
 
-/**
- * Same as before, but takes extra head argument to indicate if it is a head
- * request. If is_head_request is false, then it'll assume request method is
- * "GET" and will make use of range headers, which are only allowed within "GET"
- * requests. If this ain't a "GET" request, but isn't "HEAD" either, you MAY
- * remove all "range" and "if-range" headers and pass the value `false` to the
- * \p is_head_request argument.
- *
- * \p omessage.body() will be used as output buffer. If
- * omessage.body().capacity() == 0, an unspecified buffer size will be used and
- * is very likely it'll be highly inefficient.
- */
 template<class ServerSocket, class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
@@ -1212,48 +1162,6 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                                         std::forward<CompletionToken>(token));
 }
 
-/**
- * This function does a lot more than just sending bytes. It carries the
- * responsibilities from the previous function, but add a few more of its own:
- *
- * - It'll also handle the method.
- * - It'll also handle the file resolution. It does so with respect to the given
- *   root_dir argument.
- *
- * All urls are absolute, but are absolute with respect to the given \p
- * root_dir. This interface provides no means to disable this security check. If
- * the user needs that much complex logic, then it should write its own path
- * resolving solution and use async_response_transmit_file.
- *
- * \p ipath (standing for input path) is the **parsed path** from the requested
- * url and it is guaranteed that it'll only be used to construct a
- * filesystem::path object. Thus, the user can fake the requested path to force
- * an "internal redirect". Extracting the path is an extra responsibility for
- * the user, but it is an useful abstraction for scenarios where the user
- * doesn't control the served root dir. Thanks to the security check, this
- * "internal redirect" trick doesn't work for files outside the \p root_dir.
- *
- * This function can emit two additional error codes. The first is
- * `file_server_category::file_not_found`. This error arises when the requested
- * file, with respect to the given \p root_dir, cannot be found. The channel
- * remains untouched in this case, giving the user the opportunity to send
- * custom 404 messages.
- *
- * The second additional error code is
- * `file_server_category::file_type_not_supported` and happens when resolution
- * finishes but this function cannot process the result because the file is not
- * regular (directories, block devices, links...). The channel is also left
- * untouched, giving the user the opportunity to use another HTTP consumer.
- *
- * The only feature missing is mime support (content-type header). It cannot be
- * done reliably within this abstraction.
- *
- * This function will handle even the start line and the only acceptable
- * write_state is empty. It'll fail on any other write_state.
- *
- * If the file is found and processable, but HTTP method is different than `GET`
- * and `HEAD`, this function will reply with method not implemented.
- */
 template<class ServerSocket, class String, class ConvertibleToPath,
          class Message, class CompletionToken>
 typename asio::async_result<
@@ -1265,24 +1173,6 @@ async_response_transmit_dir(ServerSocket &socket, const String &method,
                             const filesystem::path &root_dir,
                             CompletionToken &&token);
 
-/**
- * Same as above, but the predicate \p filter is applied to the resolved path as
- * the last step before proceeding to file and network operations. \p filter
- * signature must be as follows:
- *
- *     bool(filesystem::path &resolved_path)
- *
- * If filter returns falses, the functions finishes before touching the channel,
- * with the error_code `file_server_category::filter_set`.
- *
- * It's possible to use a stateful non-pure \p filter to add response headers
- * and properly process mime types (content-type header).
- *
- * \p filter can also be used to redirect files by modifying the input arg.
- *
- * This function might throw if \p filter throws. In this case, we provide the
- * basic exception guarantee.
- */
 template<class ServerSocket, class String, class ConvertibleToPath,
          class Message, class Predicate, class CompletionToken>
 typename asio::async_result<

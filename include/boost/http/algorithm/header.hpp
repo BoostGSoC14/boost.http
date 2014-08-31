@@ -268,9 +268,6 @@ void append_number(String &string, Unsigned value)
 
 } // namespace detail
 
-/**
- * Use is_not_a_date_time() to check if the conversion failed.
- */
 template<class StringRef>
 posix_time::ptime header_to_ptime(const StringRef &value)
 {
@@ -284,11 +281,6 @@ posix_time::ptime header_to_ptime(const StringRef &value)
     return ret;
 }
 
-/**
- * This function considers \p datetime is given in UTC timezone.
- *
- * Will throw std::out_of_range if invalid \p datetime is given.
- */
 template<class String>
 String to_http_date(const posix_time::ptime &datetime)
 {
@@ -352,10 +344,6 @@ String to_http_date(const posix_time::ptime &datetime)
     return ret;
 }
 
-/**
- * \p p's signature MUST be:
- * bool(StringRef value);
- */
 template<class StringRef, class Predicate>
 bool header_value_any_of(const StringRef &header_value, const Predicate &p)
 {
@@ -394,10 +382,6 @@ bool header_value_any_of(const StringRef &header_value, const Predicate &p)
     return false;
 }
 
-/**
- * \p f's signature MUST be:
- * void(StringRef value);
- */
 template<class StringRef, class F>
 F header_value_for_each(const StringRef &header_value, F f)
 {
