@@ -48,7 +48,7 @@ $ make MAKEOPTIONS
 =OPTIONS= can be null or have a combination of the following values:
 
 * [^-DCMAKE_INSTALL_PREFIX=${INSTALLDIR}] sets the directory where to install
-  Tufão.
+  this library.
 * [^-DCMAKE_BUILD_TYPE=Debug].
 * [^-DCMAKE_BUILD_TYPE=Release].
 * [^-DCMAKE_BUILD_TYPE=RelWithDebInfo].
