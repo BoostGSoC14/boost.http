@@ -121,7 +121,9 @@ basic_socket<Socket>
     auto crlf = string_literal_buffer("\r\n");
     auto sep = string_literal_buffer(": ");
     bool implicit_content_length
-        = (message.headers().find("content-length") != message.headers().end());
+        = (message.headers().find("content-length") != message.headers().end())
+        || (status_code / 100 == 1) || (status_code == 204)
+        || (connect_request && (status_code / 100 == 2));
 
     // because we don't create multiple responses at once with HTTP/1.1
     // pipelining, it's safe to use this "shared state"
@@ -143,7 +145,7 @@ basic_socket<Socket>
         // Extra CRLF for end of headers
         + 1
         // And finally, the message body
-        + 1;
+        + (implicit_content_length ? 0 : 1);
 
     // TODO (C++14): replace by dynarray
     std::vector<asio::const_buffer> buffers(nbuffer_pieces);
@@ -172,7 +174,9 @@ basic_socket<Socket>
     }
 
     buffers.push_back(crlf);
-    buffers.push_back(asio::buffer(message.body()));
+
+    if (!implicit_content_length)
+        buffers.push_back(asio::buffer(message.body()));
 
     auto flags = this->flags;
     asio::async_write(channel, buffers,
@@ -722,6 +726,7 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
         };
         const auto &m = methods[parser->method];
         method->append(m.data, m.size);
+        socket->connect_request = parser->method == 5;
     }
 
     {

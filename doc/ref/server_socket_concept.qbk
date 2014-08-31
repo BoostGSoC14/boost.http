@@ -228,6 +228,13 @@ Foundations for Asynchronous Operations, Revision 2].]]
   This behaviour is intended for the communication between the user of this
   library and the `ServerSocket` and can differ from the communication between
   the `ServerSocket` and the underlying channel.]
+
+ [If the `"content-length"` header is provided to `async_write_response`, then
+  the `ServerSocket` MUST ignore the message body (i.e. there is no data payload
+  in the reply message) and SHOULD use the user-provided header.
+
+  The `ServerSocket` MUST adopt a behaviour that is compatible with the
+  behaviour defined in the section 3.3.2 of the RFC 7230.]
 ]
 
 [endsect]

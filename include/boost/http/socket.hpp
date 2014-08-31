@@ -267,6 +267,7 @@ private:
     // Output state
     detail::writer_helper writer_helper;
     std::string content_length_buffer;
+    bool connect_request;
 };
 
 typedef basic_socket<boost::asio::ip::tcp::socket> socket;
