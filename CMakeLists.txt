@@ -16,6 +16,15 @@ find_package(Boost 1.55 COMPONENTS
   coroutine
   REQUIRED)
 
+# Configure options
+option(BUILD_TESTS
+  "Build tests" YES
+)
+
+option(BUILD_EXAMPLES
+  "Build examples" YES
+)
+
 # Build options
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_FLAGS}")
 
@@ -26,7 +35,6 @@ set(libdir "lib")
 # Targets
 add_subdirectory(include)
 add_subdirectory(src)
-#add_subdirectory(doc)
 
 # uninstall target
 configure_file(
@@ -38,4 +46,6 @@ add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 
 # CTest
-include(CTest)
+if(BUILD_TESTS)
+  include(CTest)
+endif()
