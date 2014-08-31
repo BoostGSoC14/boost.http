@@ -259,10 +259,12 @@ void to_cpp_range(std::pair<std::uintmax_t, std::uintmax_t> &range)
     ++range.second;
 }
 
-/* a and b MUST NOT be signed */
 template<class A, class B>
 auto safe_add(const A &a, const B &b) -> decltype(a+b)
 {
+    static_assert(std::is_unsigned<A>::value, "A MUST NOT be signed");
+    static_assert(std::is_unsigned<B>::value, "B MUST NOT be signed");
+
     constexpr auto max = std::numeric_limits<decltype(a+b)>::max();
     if (max - a < b)
         throw std::overflow_error("a + b > max");
