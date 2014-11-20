@@ -15,8 +15,8 @@ macro(add_example_target target)
     ${Boost_DATE_TIME_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
-    ${Boost_CONTEXT_LIBRARY}
-    ${Boost_COROUTINE_LIBRARY})
+    ${Boost_COROUTINE_LIBRARY}
+    ${Boost_CONTEXT_LIBRARY})
 endmacro()
 
 foreach(example ${examples})
