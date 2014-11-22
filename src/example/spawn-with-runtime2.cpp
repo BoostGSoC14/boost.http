@@ -21,9 +21,7 @@ int main()
     auto work = [&acceptor](asio::yield_context yield) {
         while (true) {
             try {
-                char buffer[4];
-                http::socket underlying_socket(acceptor.get_io_service(),
-                                               asio::buffer(buffer));
+                http::socket underlying_socket(acceptor.get_io_service());
                 http::server_socket_adaptor<
                     std::reference_wrapper<http::socket>>
                 adaptor(underlying_socket);

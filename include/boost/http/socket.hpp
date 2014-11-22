@@ -172,11 +172,8 @@ public:
 
     // ### START OF basic_server SPECIFIC FUNCTIONS ###
 
-    basic_socket(boost::asio::io_service &io_service,
-                 boost::asio::mutable_buffer inbuffer);
-
     template<class... Args>
-    basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args);
+    basic_socket(boost::asio::io_service&, Args&&... args);
 
     next_layer_type &next_layer();
     const next_layer_type &next_layer() const;
@@ -241,8 +238,7 @@ private:
     Socket channel;
     http::read_state istate;
 
-    // TODO: maybe replace by buffersequence to allow scatter-gather operations
-    asio::mutable_buffer buffer;
+    std::array<std::uint8_t, 256> read_buffer;
     std::size_t used_size = 0;
 
     /* pimpl is not used to avoid the extra level of indirection and the extra

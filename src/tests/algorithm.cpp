@@ -326,8 +326,7 @@ BOOST_AUTO_TEST_CASE(request_upgrade_desired) {
    don't try very hard to enforce the Socket concept. */
 BOOST_AUTO_TEST_CASE(write_without_reason_phrase) {
     boost::asio::io_service ios;
-    char buffer[1];
-    boost::http::socket socket(ios, boost::asio::buffer(buffer));
+    boost::http::socket socket(ios);
     boost::http::message m;
     async_write_response(socket, boost::http::status_code::ok, m,
                          [](boost::system::error_code) {});

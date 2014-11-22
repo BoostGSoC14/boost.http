@@ -444,35 +444,13 @@ basic_socket<Socket>
 }
 
 template<class Socket>
-basic_socket<Socket>
-::basic_socket(boost::asio::io_service &io_service,
-               boost::asio::mutable_buffer inbuffer) :
-    channel(io_service),
-    istate(http::read_state::empty),
-    buffer(inbuffer),
-    writer_helper(http::write_state::empty)
-{
-    // TODO: add test to this feature
-    if (asio::buffer_size(buffer) == 0)
-        throw std::invalid_argument("buffers must not be 0-sized");
-
-    detail::init(parser);
-    parser.data = this;
-}
-
-template<class Socket>
 template<class... Args>
 basic_socket<Socket>
-::basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args)
-    : channel(std::forward<Args>(args)...)
+::basic_socket(boost::asio::io_service &io_service, Args&&... args)
+    : channel(io_service, std::forward<Args>(args)...)
     , istate(http::read_state::empty)
-    , buffer(inbuffer)
     , writer_helper(http::write_state::empty)
 {
-    // TODO: add test to this feature
-    if (asio::buffer_size(buffer) == 0)
-        throw std::invalid_argument("buffers must not be 0-sized");
-
     detail::init(parser);
     parser.data = this;
 }
@@ -501,7 +479,8 @@ void basic_socket<Socket>
                                          system::error_code{}, 0);
     } else {
         // TODO (C++14): move in lambda capture list
-        channel.async_read_some(asio::buffer(buffer + used_size),
+        channel.async_read_some(asio::buffer(&read_buffer[used_size],
+                                             read_buffer.size() - used_size),
                                 [this,handler,method,path,&message]
                                 (const system::error_code &ec,
                                  std::size_t bytes_transferred) mutable {
@@ -531,8 +510,7 @@ void basic_socket<Socket>
     current_path = reinterpret_cast<void*>(path);
     current_message = reinterpret_cast<void*>(&message);
     auto nparsed = detail::execute(parser, settings<Message, String>(),
-                                   asio::buffer_cast<const std::uint8_t*>
-                                   (buffer),
+                                   read_buffer.data(),
                                    used_size);
 
     if (parser.http_errno) {
@@ -570,10 +548,7 @@ void basic_socket<Socket>
         }
     }
 
-    {
-        auto b = asio::buffer_cast<std::uint8_t*>(buffer);
-        std::copy_n(b + nparsed, used_size - nparsed, b);
-    }
+    std::copy_n(&read_buffer[nparsed], used_size - nparsed, read_buffer.begin());
 
     used_size -= nparsed;
 
@@ -587,13 +562,14 @@ void basic_socket<Socket>
         flags &= ~(READY|DATA|END);
         handler(system::error_code{});
     } else {
-        if (used_size == asio::buffer_size(buffer)) {
+        if (used_size == read_buffer.size()) {
             handler(system::error_code{http_errc::buffer_exhausted});
             return;
         }
 
         // TODO (C++14): move in lambda capture list
-        channel.async_read_some(asio::buffer(buffer + used_size),
+        channel.async_read_some(asio::buffer(&read_buffer[used_size],
+                                             read_buffer.size() - used_size),
                                 [this,handler,method,path,&message]
                                 (const system::error_code &ec,
                                  std::size_t bytes_transferred) mutable {
