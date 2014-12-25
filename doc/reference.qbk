@@ -94,6 +94,23 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 
 [endsect]
 
+[section Macros]
+
+[variablelist
+
+[[`BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE`] [This macro defines the default
+buffer size for [^[link reference.basic_socket basic_socket]]. It's safe to
+override this value (per using class or globally) and should be done before
+including the file [^[link reference.socket_header
+<boost/http/socket.hpp>]]. This size is used to construct a buffer when no
+buffer is passed to the [^[link reference.basic_socket basic_socket]]
+constructor. The default provided value (i.e. the non-overriden version) is
+unspecified (e.g. can change among versions and platforms).]]
+
+]
+
+[endsect]
+
 [endsect]
 
 [include ref/headers.qbk]

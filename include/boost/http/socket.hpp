@@ -6,6 +6,10 @@
 #ifndef BOOST_HTTP_SOCKET_HPP
 #define BOOST_HTTP_SOCKET_HPP
 
+#ifndef BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE
+#define BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE 256
+#endif // BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE
+
 #include <cstdint>
 #include <cstddef>
 
@@ -85,6 +89,20 @@ std::size_t execute(http_parser &parser,
                     const std::uint8_t *data, std::size_t len);
 bool should_keep_alive(const http_parser &parser);
 bool body_is_final(const http_parser &parser);
+
+template<class... Args>
+class enable_variadic_ctor: public std::true_type
+{};
+
+template<class... Args>
+class enable_variadic_ctor<boost::asio::io_service,
+                           Args...>: public std::false_type
+{};
+
+template<class... Args>
+class enable_variadic_ctor<boost::asio::mutable_buffer,
+                           Args...>: public std::false_type
+{};
 
 } // namespace detail
 
@@ -178,6 +196,17 @@ public:
     template<class... Args>
     basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args);
 
+    basic_socket(boost::asio::io_service &io_service);
+
+    template<class... Args,
+             class = typename std::enable_if<
+                 detail::enable_variadic_ctor<typename std::decay<Args>::type...
+                                              >::value>
+             ::type>
+    basic_socket(Args&&... args);
+
+    ~basic_socket();
+
     next_layer_type &next_layer();
     const next_layer_type &next_layer() const;
 
@@ -239,6 +268,7 @@ private:
     static void clear_message(Message &message);
 
     Socket channel;
+    char *buffer_if_not_provided = NULL;
     http::read_state istate;
 
     // TODO: maybe replace by buffersequence to allow scatter-gather operations

@@ -478,6 +478,45 @@ basic_socket<Socket>
 }
 
 template<class Socket>
+basic_socket<Socket>::basic_socket(boost::asio::io_service &io_service) :
+    channel(io_service),
+    buffer_if_not_provided(new char[BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE]),
+    istate(http::read_state::empty),
+    buffer(boost::asio::buffer(buffer_if_not_provided,
+                               BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE)),
+    writer_helper(http::write_state::empty)
+{
+    static_assert(BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE != 0,
+                  "buffers must not be 0-sized");
+
+    detail::init(parser);
+    parser.data = this;
+}
+
+template<class Socket>
+template<class... Args, class>
+basic_socket<Socket>::basic_socket(Args&&... args)
+    : channel(std::forward<Args>(args)...)
+    , buffer_if_not_provided(new char[BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE])
+    , istate(http::read_state::empty)
+    , buffer(boost::asio::buffer(buffer_if_not_provided,
+                                 BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE))
+    , writer_helper(http::write_state::empty)
+{
+    static_assert(BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE != 0,
+                  "buffers must not be 0-sized");
+
+    detail::init(parser);
+    parser.data = this;
+}
+
+template<class Socket>
+basic_socket<Socket>::~basic_socket()
+{
+    delete[] buffer_if_not_provided;
+}
+
+template<class Socket>
 Socket &basic_socket<Socket>::next_layer()
 {
     return channel;
