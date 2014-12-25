@@ -20,9 +20,7 @@ int main()
     auto work = [&acceptor](asio::yield_context yield) {
         while (true) {
             try {
-                char buffer[4];
-                http::socket socket(acceptor.get_io_service(),
-                                   asio::buffer(buffer));
+                http::socket socket(acceptor.get_io_service());
                 std::string method;
                 std::string path;
                 http::message message;
