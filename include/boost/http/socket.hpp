@@ -267,6 +267,11 @@ private:
     template<class Message>
     static void clear_message(Message &message);
 
+    template <typename Handler,
+              typename ErrorCode>
+    void invoke_handler(Handler&& handler,
+                        ErrorCode error);
+
     Socket channel;
     char *buffer_if_not_provided = NULL;
     http::read_state istate;

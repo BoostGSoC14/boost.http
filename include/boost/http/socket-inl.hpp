@@ -36,7 +36,8 @@ basic_socket<Socket>
     asio::async_result<Handler> result(handler);
 
     if (istate != http::read_state::empty) {
-        handler(system::error_code{http_errc::out_of_order});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
         return result.get();
     }
 
@@ -62,7 +63,8 @@ basic_socket<Socket>::async_read_some(Message &message, CompletionToken &&token)
     asio::async_result<Handler> result(handler);
 
     if (istate != http::read_state::message_ready) {
-        handler(system::error_code{http_errc::out_of_order});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
         return result.get();
     }
 
@@ -87,7 +89,8 @@ basic_socket<Socket>::async_read_trailers(Message &message,
     asio::async_result<Handler> result(handler);
 
     if (istate != http::read_state::body_ready) {
-        handler(system::error_code{http_errc::out_of_order});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
         return result.get();
     }
 
@@ -114,7 +117,8 @@ basic_socket<Socket>
     asio::async_result<Handler> result(handler);
 
     if (!writer_helper.write_message()) {
-        handler(system::error_code{http_errc::out_of_order});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
         return result.get();
     }
 
@@ -207,7 +211,8 @@ basic_socket<Socket>
     asio::async_result<Handler> result(handler);
 
     if (!writer_helper.write_continue()) {
-        handler(system::error_code{http_errc::out_of_order});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
         return result.get();
     }
 
@@ -241,12 +246,14 @@ basic_socket<Socket>
     asio::async_result<Handler> result(handler);
 
     if (!writer_helper.write_metadata()) {
-        handler(system::error_code{http_errc::out_of_order});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
         return result.get();
     }
 
     if (flags & HTTP_1_1 == 0) {
-        handler(system::error_code{http_errc::native_stream_unsupported});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::native_stream_unsupported);
         return result.get();
     }
 
@@ -311,12 +318,14 @@ basic_socket<Socket>::async_write(const Message &message,
     asio::async_result<Handler> result(handler);
 
     if (!writer_helper.write()) {
-        handler(system::error_code{http_errc::out_of_order});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
         return result.get();
     }
 
     if (message.body().size() == 0) {
-        handler(system::error_code{});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       system::errc::success);
         return result.get();
     }
 
@@ -363,7 +372,8 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
     asio::async_result<Handler> result(handler);
 
     if (!writer_helper.write_trailers()) {
-        handler(system::error_code{http_errc::out_of_order});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
         return result.get();
     }
 
@@ -424,7 +434,8 @@ basic_socket<Socket>
     asio::async_result<Handler> result(handler);
 
     if (!writer_helper.end()) {
-        handler(system::error_code{http_errc::out_of_order});
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
         return result.get();
     }
 
@@ -886,6 +897,19 @@ void basic_socket<Socket>::clear_message(Message &message)
     message.headers().clear();
     message.body().clear();
     message.trailers().clear();
+}
+
+template<class Socket>
+template <typename Handler,
+          typename ErrorCode>
+void basic_socket<Socket>::invoke_handler(Handler&& handler,
+                                          ErrorCode error)
+{
+    channel.get_io_service().post
+        ([handler, error] () mutable
+         {
+             handler(make_error_code(error));
+         });
 }
 
 } // namespace boost
