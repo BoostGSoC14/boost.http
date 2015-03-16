@@ -32,6 +32,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
   * [^[link reference.to_http_date to_http_date]]
   * [^[link reference.header_value_all_of header_value_all_of]]
   * [^[link reference.header_value_any_of header_value_any_of]]
+  * [^[link reference.header_value_none_of header_value_none_of]]
   * [^[link reference.header_value_for_each header_value_for_each]]
 * Channel querying
   * [^[link reference.request_continue_required request_continue_required]]
@@ -109,6 +110,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 [include ref/to_http_date.qbk]
 [include ref/header_value_all_of.qbk]
 [include ref/header_value_any_of.qbk]
+[include ref/header_value_none_of.qbk]
 [include ref/header_value_for_each.qbk]
 [include ref/request_continue_required.qbk]
 [include ref/request_upgrade_desired.qbk]

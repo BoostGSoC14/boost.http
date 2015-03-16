@@ -420,6 +420,14 @@ bool header_value_any_of(const StringRef &header_value, const Predicate &p)
     return false;
 }
 
+template<class StringRef, class Predicate>
+bool header_value_none_of(const StringRef &header_value, const Predicate &p)
+{
+    return header_value_all_of(header_value, [&p](const StringRef &s) {
+            return !p(s);
+        });
+}
+
 template<class StringRef, class F>
 F header_value_for_each(const StringRef &header_value, F f)
 {
