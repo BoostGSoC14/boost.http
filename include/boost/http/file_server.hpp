@@ -789,7 +789,10 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                              Message &omessage, const filesystem::path &file,
                              bool is_head_request, CompletionToken &&token)
 {
+    typedef typename Message::headers_type::value_type headers_value_type;
     typedef typename Message::headers_type::mapped_type String;
+    typedef typename String::value_type CharT;
+    typedef basic_string_ref<CharT> string_ref_type;
     typedef typename Message::body_type::value_type body_value_type;
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -831,6 +834,39 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
             return result.get();
         }
 
+        auto etag = [](const typename Message::headers_type &headers) {
+            auto header = headers.equal_range("etag");
+            if (std::distance(header.first, header.second) != 1)
+                return std::make_pair(string_ref_type{}, false);
+
+            auto &value = header.first->second;
+            if (value.size() < 2 || value.back() != '"')
+                return std::make_pair(string_ref_type{}, false);
+
+            if (value.front() == '"') {
+                return std::make_pair(string_ref_type{&value[1],
+                                                      value.size() - 2},
+                                      true);
+            } else if (value.size() > 2 && (value[0] == 'W' && value[1] == '/'
+                                            && value[2] == '"')) {
+                return std::make_pair(string_ref_type{&value[3],
+                                                      value.size() - 4},
+                                      false);
+            }
+
+            return std::make_pair(string_ref_type{}, false);
+        };
+
+        auto etag_value = [](const std::pair<string_ref_type, bool> &etag) {
+            return etag.first;
+        };
+
+        auto etag_is_strong = [](const std::pair<string_ref_type, bool> &etag) {
+            return etag.second;
+        };
+
+        auto current_etag = etag(omessage.headers());
+        auto current_etag_value = etag_value(current_etag);
 
         /* only fill response headers that need no more than the target file
            to be computed (i.e. ignore all input headers) */
@@ -852,7 +888,32 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
         /* The order to check the conditional request headers is defined in
            RFC7232 */
 
-        { // Check "if-unmodified-since" header
+        auto if_match_query = imessage.headers().equal_range("if-match");
+
+        if (if_match_query.first != if_match_query.second) {
+            // Check "if-match" header
+
+            auto none_of_predicate = [&current_etag_value]
+                (const headers_value_type &v) {
+                auto p = [&current_etag_value](const string_ref_type &v) {
+                    auto &c = current_etag_value;
+                    return v == "*" || header_value_etag_match_strong(c, v);
+                };
+                return header_value_any_of(v.second, p);
+            };
+
+            if (current_etag_value.size() == 0
+                || !etag_is_strong(current_etag)
+                || std::none_of(if_match_query.first, if_match_query.second,
+                                none_of_predicate)) {
+                socket.async_write_response(412, string_ref("Precondition"
+                                                            " Failed"),
+                                            omessage, handler);
+                return result.get();
+            }
+        } else {
+            // Check "if-unmodified-since" header
+
             auto query = imessage.headers().equal_range("if-unmodified-since");
             if (std::distance(query.first, query.second) == 1) {
                 auto query_datetime = header_to_ptime(query.first->second);
@@ -870,7 +931,32 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
             }
         }
 
-        { // Check "if-modified-since" header
+        auto if_none_match_query
+            = imessage.headers().equal_range("if-none-match");
+
+        if (if_none_match_query.first != if_none_match_query.second) {
+            // Check "if-none-match" header
+
+            auto any_of_predicate = [&current_etag_value]
+                (const headers_value_type &v) {
+                auto p = [&current_etag_value](const string_ref_type &v) {
+                    auto &c = current_etag_value;
+                    return v == "*" || header_value_etag_match_weak(c, v);
+                };
+                return header_value_any_of(v.second, p);
+            };
+
+            if (current_etag_value.size() == 0
+                || !etag_is_strong(current_etag)
+                || std::any_of(if_match_query.first, if_match_query.second,
+                               any_of_predicate)) {
+                socket.async_write_response(304, string_ref("Not Modified"),
+                                            omessage, handler);
+                return result.get();
+            }
+        } else {
+            // Check "if-modified-since" header
+
             auto query = imessage.headers().equal_range("if-modified-since");
             if (std::distance(query.first, query.second) == 1) {
                 auto query_datetime = header_to_ptime(query.first->second);

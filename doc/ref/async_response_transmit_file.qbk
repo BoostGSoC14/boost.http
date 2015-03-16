@@ -42,6 +42,8 @@ Summarizing your responsibilities:
   calling this function. /Overload 2/ also accepts the `"HEAD"` method.
 * Resolve the input URL to the appropriate file.
 * *Optional*: MIME detection (the `"content-type"` header).
+* *Optional*: `ETag` detection (see [link
+  reference.async_response_transmit_file.etag below]).
 
 A method with semantics similar to the `"GET"` method is any method fulfilling
 the following conditions:
@@ -89,6 +91,90 @@ capable channels, starting points for two solutions are:
 [note `omessage.body()` will be used as output buffer. If
 `omessage.body().capacity() == 0`, an unspecified buffer size will be used and
 it is very likely it'll be highly inefficient.]
+
+[section:etag ETags]
+
+An ETag is a string that identify a representation of a resource. The ETag can
+be used to perform conditional requests more robust than the ones done with
+dates (limited by HTTP to second-based precision). In the conditional request
+context, an etag is a validator.
+
+If you want to make use of the ETag implementation, just set the `"etag"` header
+in the `omessage` object to the appropriate value, as described below (also
+described in more details in RFC7232).
+
+The first decision you must do if you decide to provide an etag is if you're
+going to provide a strong validator or a weak validator.
+
+[section Strong validators]
+
+A strong validator changes whenever a change occurs to the representation data
+that would be observable in the payload body. A strong validator is unique
+across all versions of all representations associated with a particular resource
+over time.
+
+A strong etag has the form (specified in Augmented Backus-Naur Form (ABNF)
+notation of [RFC5234]):
+
+[pre
+strong-etag = DQUOTE *etagc DQUOTE
+etagc       = %x21 / %x23-7E / obs-text
+            ; VCHAR except double quotes, plus obs-text
+obs-text    = %x80-FF
+]
+
+[caution Some recipients might perform backslash unescaping. Therefore, it is a
+good practice to avoid backslash characters.]
+
+Some examples:
+
+* [^"xyasdzzy"]
+* [^"xyz9czy"]
+* [^""]
+
+[note A strong validator might change for reasons other than a change to the
+representation data.]
+
+[note There is no implication of uniqueness across representations of different
+resources.]
+
+[endsect]
+
+[section Weak validators]
+
+A weak validator might not change for every change to the representation data.
+
+A weak etag has the form (specified in Augmented Backus-Naur Form (ABNF)
+notation of [RFC5234]):
+
+[pre
+weak-etag  = weak opaque-tag
+weak       = %x57.2F ; "W/", case-sensitive
+opaque-tag = DQUOTE *etagc DQUOTE
+etagc      = %x21 / %x23-7E / obs-text
+           ; VCHAR except double quotes, plus obs-text
+obs-text   = %x80-FF
+]
+
+[caution Some recipients might perform backslash unescaping. Therefore, it is a
+good practice to avoid backslash characters.]
+
+Some examples:
+
+* [^W/"xyasdzzy"]
+* [^W/"xyz9czy"]
+* [^W/""]
+
+[note An HTTP-date is usually a weak validator and it will be used if you don't
+provide an etag.]
+
+[note An origin server SHOULD change a weak entity-tag whenever it considers
+prior representations to be unacceptable as a substitute for the current
+representation.]
+
+[endsect]
+
+[endsect]
 
 [section Template parameters]
 
