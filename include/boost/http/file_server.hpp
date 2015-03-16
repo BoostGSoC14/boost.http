@@ -823,13 +823,14 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
             return (ret != 0) ? ret : magic_constant;
         }();
 
+        omessage.body().clear();
+
         if (size == 0) {
             socket.async_write_response(200, string_ref("OK"), omessage,
                                         handler);
             return result.get();
         }
 
-        omessage.body().clear();
 
         /* only fill response headers that need no more than the target file
            to be computed (i.e. ignore all input headers) */
