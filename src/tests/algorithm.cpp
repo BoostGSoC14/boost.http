@@ -896,3 +896,29 @@ BOOST_AUTO_TEST_CASE(write_without_reason_phrase) {
     async_write_response_metadata(socket, boost::http::status_code::ok, m,
                                   [](boost::system::error_code) {});
 }
+
+BOOST_AUTO_TEST_CASE(header_value_etag_match) {
+    using boost::http::header_value_etag_match_strong;
+    using boost::http::header_value_etag_match_weak;
+    using boost::string_ref;
+
+    // Strong comparisons
+    BOOST_CHECK(header_value_etag_match_strong(string_ref("W/\"a\""),
+                                               string_ref("W/\"a\"")) == false);
+    BOOST_CHECK(header_value_etag_match_strong(string_ref("W/\"a\""),
+                                               string_ref("W/\"b\"")) == false);
+    BOOST_CHECK(header_value_etag_match_strong(string_ref("W/\"a\""),
+                                               string_ref("\"a\"")) == false);
+    BOOST_CHECK(header_value_etag_match_strong(string_ref("\"a\""),
+                                               string_ref("\"a\"")) == true);
+
+    // Weak comparisons
+    BOOST_CHECK(header_value_etag_match_weak(string_ref("W/\"a\""),
+                                             string_ref("W/\"a\"")) == true);
+    BOOST_CHECK(header_value_etag_match_weak(string_ref("W/\"a\""),
+                                             string_ref("W/\"b\"")) == false);
+    BOOST_CHECK(header_value_etag_match_weak(string_ref("W/\"a\""),
+                                             string_ref("\"a\"")) == true);
+    BOOST_CHECK(header_value_etag_match_weak(string_ref("\"a\""),
+                                             string_ref("\"a\"")) == true);
+}

@@ -438,6 +438,23 @@ F header_value_for_each(const StringRef &header_value, F f)
     return std::move(f);
 }
 
+template<class StringRef>
+bool header_value_etag_match_strong(const StringRef &a, const StringRef &b)
+{
+    if ((a.size() && a[0] == 'W') || (b.size() && b[0] == 'W'))
+        return false;
+
+    return a == b;
+}
+
+template<class StringRef>
+bool header_value_etag_match_weak(const StringRef &a, const StringRef &b)
+{
+    bool a_is_weak = a.size() > 2 && a[0] == 'W' && a[1] == '/';
+    bool b_is_weak = b.size() > 2 && b[0] == 'W' && b[1] == '/';
+    return (a_is_weak ? a.substr(2) : a) == (b_is_weak ? b.substr(2) : b);
+}
+
 } // namespace http
 } // namespace boost
 
