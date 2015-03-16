@@ -20,8 +20,8 @@ This function has two overloads.
      typename boost::asio::handler_type<CompletionToken,
                                  void(boost::system::error_code)>::type>::type
  async_response_transmit_file(ServerSocket &socket, const Message &imessage,
-                              Message &omessage, const
-                              boost::filesystem::path &file,
+                              Message &omessage,
+                              const boost::filesystem::path &file,
                               bool is_head_request,
                               CompletionToken &&token); // (2)
 
