@@ -345,6 +345,44 @@ String to_http_date(const posix_time::ptime &datetime)
 }
 
 template<class StringRef, class Predicate>
+bool header_value_all_of(const StringRef &header_value, const Predicate &p)
+{
+    typedef typename StringRef::value_type char_type;
+    typedef typename StringRef::const_reverse_iterator reverse_iterator;
+
+    auto isspace = [](const char_type &c) {
+        return c == ' ' || c == '\t';
+    };
+
+    auto comma = header_value.begin();
+    decltype(comma) next_comma;
+    do {
+        next_comma = std::find(comma, header_value.end(), ',');
+
+        auto value_begin = std::find_if_not(comma, next_comma, isspace);
+
+        if (value_begin != next_comma) {
+            auto value_end = std::find_if_not(reverse_iterator(next_comma),
+                                              reverse_iterator(value_begin),
+                                              isspace).base();
+            if (value_begin != value_end
+                && !p(header_value.substr(value_begin - header_value.begin(),
+                                          value_end - value_begin))) {
+                return false;
+            }
+        }
+
+        comma = next_comma;
+
+        /* skip comma, so won't process an empty string in the next iteration
+           and enter within an infinite loop afterwards. */
+        if (next_comma != header_value.end())
+            ++comma;
+    } while (comma != header_value.end());
+    return true;
+}
+
+template<class StringRef, class Predicate>
 bool header_value_any_of(const StringRef &header_value, const Predicate &p)
 {
     typedef typename StringRef::value_type char_type;
