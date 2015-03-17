@@ -946,9 +946,9 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                 return header_value_any_of(v.second, p);
             };
 
-            if (current_etag_value.size() == 0
-                || !etag_is_strong(current_etag)
-                || std::any_of(if_match_query.first, if_match_query.second,
+            if (current_etag_value.size() != 0
+                && std::any_of(if_none_match_query.first,
+                               if_none_match_query.second,
                                any_of_predicate)) {
                 socket.async_write_response(304, string_ref("Not Modified"),
                                             omessage, handler);
