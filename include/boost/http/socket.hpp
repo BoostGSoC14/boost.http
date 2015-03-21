@@ -243,6 +243,9 @@ private:
     void invoke_handler(Handler&& handler,
                         ErrorCode error);
 
+    template<class Handler>
+    void invoke_handler(Handler &&handler);
+
     Socket channel;
     http::read_state istate;
 

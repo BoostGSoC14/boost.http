@@ -324,8 +324,7 @@ basic_socket<Socket>::async_write(const Message &message,
     }
 
     if (message.body().size() == 0) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
-                       system::errc::success);
+        invoke_handler(std::forward<decltype(handler)>(handler));
         return result.get();
     }
 
@@ -870,6 +869,17 @@ void basic_socket<Socket>::invoke_handler(Handler&& handler,
         ([handler, error] () mutable
          {
              handler(make_error_code(error));
+         });
+}
+
+template<class Socket>
+template <class Handler>
+void basic_socket<Socket>::invoke_handler(Handler&& handler)
+{
+    channel.get_io_service().post
+        ([handler] () mutable
+         {
+             handler(system::error_code{});
          });
 }
 
