@@ -25,6 +25,7 @@ public:
     const next_layer_type &next_layer() const;
 
     // ### polymorphic_socket INTERFACE IMPLEMENTATION ###
+    asio::io_service& get_io_service() override;
     http::read_state read_state() const override;
     http::write_state write_state() const override;
     bool write_response_native_stream() const override;
@@ -63,6 +64,7 @@ public:
     const next_layer_type &next_layer() const;
 
     // ### polymorphic_socket INTERFACE IMPLEMENTATION ###
+    asio::io_service& get_io_service() override;
     http::read_state read_state() const override;
     http::write_state write_state() const override;
     bool write_response_native_stream() const override;

@@ -62,6 +62,10 @@ Foundations for Asynchronous Operations, Revision 2].]]
 
 [[Expression] [Return type] [Precondition] [Semantics] [Postcondition]]
 
+[[`a.get_io_service()`] [`asio::io_service&`] [] [Returns the `io_service`
+ object through which the handlers of asynchronous operations will be invoked.]
+ []]
+
 [[`X::message_type`] [] [`Socket` only supports operations involving a single
  type of message.] [Must be a type fulfilling the [link
  reference.message_concept [^Message] concept].] []]

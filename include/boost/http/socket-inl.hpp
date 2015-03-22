@@ -20,6 +20,12 @@ bool basic_socket<Socket>::write_response_native_stream() const
 }
 
 template<class Socket>
+asio::io_service &basic_socket<Socket>::get_io_service()
+{
+    return channel.get_io_service();
+}
+
+template<class Socket>
 template<class String, class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,

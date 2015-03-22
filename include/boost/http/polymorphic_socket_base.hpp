@@ -24,6 +24,7 @@ public:
     typedef std::function<void(system::error_code)> callback_type;
 
     // ### ABI-stable interface ###
+    virtual asio::io_service& get_io_service() = 0;
     virtual http::read_state read_state() const = 0;
     virtual http::write_state write_state() const = 0;
     virtual void async_read_some(message &message, callback_type handler) = 0;

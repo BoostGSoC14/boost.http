@@ -25,6 +25,12 @@ const Socket &server_socket_adaptor<Socket>::next_layer() const
 }
 
 template<class Socket>
+asio::io_service& server_socket_adaptor<Socket>::get_io_service()
+{
+    return Socket::get_io_service();
+}
+
+template<class Socket>
 read_state server_socket_adaptor<Socket>::read_state() const
 {
     return Socket::read_state();
@@ -129,6 +135,13 @@ const Socket &server_socket_adaptor<std::reference_wrapper<Socket>>
 ::next_layer() const
 {
     return wrapped_socket;
+}
+
+template<class Socket>
+asio::io_service& server_socket_adaptor<std::reference_wrapper<Socket>>
+::get_io_service()
+{
+    return wrapped_socket.get().get_io_service();
 }
 
 template<class Socket>

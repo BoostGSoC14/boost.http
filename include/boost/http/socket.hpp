@@ -100,6 +100,8 @@ public:
     http::write_state write_state() const;
     bool write_response_native_stream() const;
 
+    asio::io_service &get_io_service();
+
     // ### END OF QUERY FUNCTIONS ###
 
     // ### READ FUNCTIONS ###
