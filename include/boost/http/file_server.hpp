@@ -804,8 +804,10 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
         auto state = socket.write_state();
         if (state != write_state::empty
             && state != write_state::continue_issued) {
-            handler(system::error_code(file_server_errc
-                                       ::write_state_not_supported));
+            socket.get_io_service().post([handler]() mutable {
+                    handler(system::error_code(file_server_errc
+                                               ::write_state_not_supported));
+                });
             return result.get();
         }
     }
@@ -1037,7 +1039,10 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                                                          omessage, callback);
                 } else {
                     if (range.second > omessage.body().max_size()) {
-                        handler(system::error_code{file_server_errc::io_error});
+                        socket.get_io_service().post([handler]() mutable {
+                                handler(system::error_code
+                                        {file_server_errc::io_error});
+                            });
                         return result.get();
                     }
 
@@ -1163,8 +1168,10 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                             auto newsiz = detail::safe_add(index, range.second);
                             omessage.body().resize(newsiz);
                         } catch(std::overflow_error&) {
-                            handler(system::error_code{file_server_errc
-                                        ::io_error});
+                            socket.get_io_service().post([handler]() mutable {
+                                    handler(system::error_code{file_server_errc
+                                                ::io_error});
+                                });
                             return result.get();
                         }
                         stream.seekg(range.first);
@@ -1211,7 +1218,9 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                                                  omessage, callback);
         } else {
             if (size > omessage.body().max_size()) {
-                handler(system::error_code{file_server_errc::io_error});
+                socket.get_io_service().post([handler]() mutable {
+                        handler(system::error_code{file_server_errc::io_error});
+                    });
                 return result.get();
             }
 
@@ -1229,7 +1238,9 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                                         handler);
         }
     } catch (std::ios_base::failure&) {
-        handler(system::error_code{file_server_errc::io_error});
+        socket.get_io_service().post([handler]() mutable {
+                handler(system::error_code{file_server_errc::io_error});
+            });
         return result.get();
     }
 
@@ -1291,25 +1302,35 @@ async_response_transmit_dir(ServerSocket &socket, const String &method,
         auto canonical_file = canonical(root_dir / ipath);
 
         if (!detail::path_contains_file(canonical_root, canonical_file)) {
-            handler(system::error_code{file_server_errc::file_not_found});
+            socket.get_io_service().post([handler]() mutable {
+                    handler(system::error_code{file_server_errc
+                                ::file_not_found});
+                });
             return result.get();
         }
 
         if (!is_regular_file(canonical_file)) {
-            handler(system::error_code{file_server_errc
-                        ::file_type_not_supported});
+            socket.get_io_service().post([handler]() mutable {
+                    handler(system::error_code{file_server_errc
+                                ::file_type_not_supported});
+                });
             return result.get();
         }
 
         if (!filter(canonical_file)) {
-            handler(system::error_code{file_server_errc::filter_set});
+            socket.get_io_service().post([handler]() mutable {
+                    handler(system::error_code{file_server_errc::filter_set});
+                });
             return result.get();
         }
 
         async_response_transmit_file(socket, imessage, omessage, canonical_file,
                                      is_head, handler);
     } catch(filesystem::filesystem_error &e) {
-        handler(e.code());
+        auto err = e.code();
+        socket.get_io_service().post([handler,err]() mutable {
+                handler(err);
+            });
     }
 
     return result.get();
