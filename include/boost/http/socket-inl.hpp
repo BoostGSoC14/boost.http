@@ -738,7 +738,8 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
             "SUBSCRIBE",
             "UNSUBSCRIBE",
             "PATCH",
-            "PURGE"
+            "PURGE",
+            "MKCALENDAR"
         };
         const auto &m = methods[parser->method];
         method->append(m.data, m.size);
