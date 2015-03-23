@@ -257,7 +257,7 @@ basic_socket<Socket>
         return result.get();
     }
 
-    if (flags & HTTP_1_1 == 0) {
+    if ((flags & HTTP_1_1) == 0) {
         invoke_handler(std::forward<decltype(handler)>(handler),
                        http_errc::native_stream_unsupported);
         return result.get();
