@@ -19,10 +19,10 @@ int main()
 
     auto work = [&acceptor](asio::yield_context yield) {
         while (true) {
+            char buffer[4];
+            http::socket socket(acceptor.get_io_service(),
+                                asio::buffer(buffer));
             try {
-                char buffer[4];
-                http::socket socket(acceptor.get_io_service(),
-                                    asio::buffer(buffer));
                 std::string method;
                 std::string path;
                 http::message message;
@@ -65,8 +65,11 @@ int main()
                      << int(socket.read_state()) << endl;
                 cout << "Method: " << method << endl;
                 cout << "Path: " << path << endl;
-                cout << "Host header: "
-                     << message.headers().find("host")->second << endl;
+                {
+                    auto host = message.headers().find("host");
+                    if (host != message.headers().end())
+                        cout << "Host header: " << host->second << endl;
+                }
 
                 std::cout << "Outgoing state = " << int(socket.write_state())
                 << std::endl;
@@ -74,6 +77,7 @@ int main()
                 cout << "About to send the reply's metadata" << endl;
 
                 http::message reply;
+                reply.headers().emplace("connection", "close");
                 socket.async_write_response_metadata(200, string_ref("OK"),
                                                      reply, yield);
 
@@ -110,6 +114,16 @@ int main()
 
                 std::cout << "Outgoing state = " << int(socket.write_state())
                 << std::endl;
+            } catch (system::system_error &e) {
+                if (e.code()
+                    != system::error_code{http::http_errc::stream_finished}) {
+                    cerr << "Aborting on exception: " << e.what() << endl;
+                    std::exit(1);
+                }
+
+                socket.next_layer()
+                .shutdown(asio::ip::tcp::socket::shutdown_both);
+                socket.next_layer().close();
             } catch (std::exception &e) {
                 cerr << "Aborting on exception: " << e.what() << endl;
                 std::exit(1);
