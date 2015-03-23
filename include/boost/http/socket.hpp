@@ -15,6 +15,9 @@
 #include <type_traits>
 #include <utility>
 
+#include <boost/utility/string_ref.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
@@ -24,6 +27,7 @@
 #include <boost/http/http_errc.hpp>
 #include <boost/http/detail/writer_helper.hpp>
 #include <boost/http/detail/constchar_helper.hpp>
+#include <boost/http/algorithm/header.hpp>
 
 namespace boost {
 namespace http {

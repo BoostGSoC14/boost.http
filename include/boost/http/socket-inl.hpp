@@ -1,6 +1,29 @@
 namespace boost {
 namespace http {
 
+namespace detail {
+
+template <class Headers>
+bool has_connection_close(const Headers &headers)
+{
+    typedef basic_string_ref<typename Headers::mapped_type::value_type>
+        string_ref_type;
+
+    auto range = headers.equal_range("connection");
+    for (; range.first != range.second ; ++range.first) {
+        if (header_value_any_of((*range.first).second,
+                                [](const string_ref_type &v) {
+                                    return iequals(v, "close");
+                                })) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+} // namespace detail
+
 template<class Socket>
 read_state basic_socket<Socket>::read_state() const
 {
@@ -134,6 +157,13 @@ basic_socket<Socket>
         = (message.headers().find("content-length") != message.headers().end())
         || (status_code / 100 == 1) || (status_code == 204)
         || (connect_request && (status_code / 100 == 2));
+    auto has_connection_close = detail::has_connection_close(message.headers());
+
+    if (has_connection_close)
+        flags &= ~KEEP_ALIVE;
+
+    auto use_connection_close_buf = ((flags & KEEP_ALIVE) == 0)
+        && !has_connection_close;
 
     // because we don't create multiple responses at once with HTTP/1.1
     // pipelining, it's safe to use this "shared state"
@@ -148,6 +178,8 @@ basic_socket<Socket>
         // Start line (http version + status code + reason phrase) + CRLF
         4
         // Headers
+        // If user didn't provided "connection: close"
+        + (use_connection_close_buf ? 1 : 0)
         // Each header is 4 buffer pieces: key + sep + value + crlf
         + 4 * message.headers().size()
         // Extra content-length header uses 3 pieces
@@ -166,6 +198,9 @@ basic_socket<Socket>
                                    content_length_delim));
     buffers.push_back(asio::buffer(reason_phrase.data(), reason_phrase.size()));
     buffers.push_back(crlf);
+
+    if (use_connection_close_buf)
+        buffers.push_back(string_literal_buffer("connection: close\r\n"));
 
     for (const auto &header: message.headers()) {
         buffers.push_back(asio::buffer(header.first));
@@ -265,6 +300,13 @@ basic_socket<Socket>
 
     auto crlf = string_literal_buffer("\r\n");
     auto sep = string_literal_buffer(": ");
+    auto has_connection_close = detail::has_connection_close(message.headers());
+
+    if (has_connection_close)
+        flags &= ~KEEP_ALIVE;
+
+    auto use_connection_close_buf = ((flags & KEEP_ALIVE) == 0)
+        && !has_connection_close;
 
     // because we don't create multiple responses at once with HTTP/1.1
     // pipelining, it's safe to use this "shared state"
@@ -274,6 +316,8 @@ basic_socket<Socket>
         // Start line (http version + status code + reason phrase) + CRLF
         4
         // Headers
+        // If user didn't provided "connection: close"
+        + (use_connection_close_buf ? 1 : 0)
         // Each header is 4 buffer pieces: key + sep + value + crlf
         + 4 * message.headers().size()
         // Extra transfer-encoding header and extra CRLF for end of headers
@@ -287,6 +331,9 @@ basic_socket<Socket>
     buffers.push_back(asio::buffer(content_length_buffer));
     buffers.push_back(asio::buffer(reason_phrase.data(), reason_phrase.size()));
     buffers.push_back(crlf);
+
+    if (use_connection_close_buf)
+        buffers.push_back(string_literal_buffer("connection: close\r\n"));
 
     for (const auto &header: message.headers()) {
         buffers.push_back(asio::buffer(header.first));
