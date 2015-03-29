@@ -11,6 +11,9 @@ set(tests
 macro(add_test_target target)
   add_executable("${target}" "${target}.cpp")
 
+  set_property(TARGET "${target}" PROPERTY CXX_STANDARD 11)
+  set_property(TARGET "${target}" PROPERTY CXX_STANDARD_REQUIRED ON)
+
   target_link_libraries("${target}"
     boost_http
     ${Boost_DATE_TIME_LIBRARY}
