@@ -17,6 +17,7 @@
 
 #include <boost/utility/string_ref.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>

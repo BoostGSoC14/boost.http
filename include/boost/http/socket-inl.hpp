@@ -720,6 +720,9 @@ int basic_socket<Socket>
     auto &value = socket->last_header.second;
 
     if (value.size() /* last header piece was value */) {
+        algorithm::trim_right_if(socket->last_header.second, [](char ch) {
+                return ch == ' ' || ch == '\t';
+            });
         if (!socket->use_trailers)
             message->headers().insert(socket->last_header);
         else
@@ -847,6 +850,9 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
         }
     }
 
+    algorithm::trim_right_if(socket->last_header.second, [](char ch) {
+            return ch == ' ' || ch == '\t';
+        });
     message->headers().insert(socket->last_header);
     socket->last_header.first.clear();
     socket->last_header.second.clear();
