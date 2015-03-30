@@ -72,6 +72,7 @@ basic_socket<Socket>
 
     method.clear();
     path.clear();
+    writer_helper = write_state::finished;
     schedule_on_async_read_message<READY>(handler, message, &method, &path);
 
     return result.get();
@@ -859,6 +860,7 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
     socket->use_trailers = true;
     socket->istate = http::read_state::message_ready;
     socket->flags |= READY;
+    socket->writer_helper = write_state::empty;
 
     if (detail::should_keep_alive(*parser))
         socket->flags |= KEEP_ALIVE;
@@ -894,11 +896,11 @@ int basic_socket<Socket>::on_message_complete(http_parser *parser)
     socket->last_header.second.clear();
     socket->istate = http::read_state::empty;
     socket->use_trailers = false;
-    socket->flags |= END;
+    socket->flags |= END | (parser->upgrade ? UPGRADE : 0);
 
     /* To avoid passively parsing pipelined message ahead-of-asked, we
        signalize error to stop parsing. */
-    return parser->upgrade ? -1 : 0;
+    return -1;
 }
 
 template<class Socket>

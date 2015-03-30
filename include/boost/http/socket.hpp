@@ -199,7 +199,8 @@ private:
         DATA       = 1 << 1,
         END        = 1 << 2,
         HTTP_1_1   = 1 << 3,
-        KEEP_ALIVE = 1 << 4
+        KEEP_ALIVE = 1 << 4,
+        UPGRADE    = 1 << 5
     };
 
     template<int target, class Message, class Handler,

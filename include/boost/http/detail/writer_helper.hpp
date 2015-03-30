@@ -20,6 +20,12 @@ struct writer_helper
         : state(state)
     {}
 
+    writer_helper& operator=(write_state state)
+    {
+        this->state = state;
+        return *this;
+    }
+
     bool write_message();
     bool write_continue();
     bool write_metadata();
