@@ -520,7 +520,6 @@ basic_socket<Socket>
     buffer(inbuffer),
     writer_helper(http::write_state::empty)
 {
-    // TODO: add test to this feature
     if (asio::buffer_size(buffer) == 0)
         throw std::invalid_argument("buffers must not be 0-sized");
 
@@ -537,7 +536,6 @@ basic_socket<Socket>
     , buffer(inbuffer)
     , writer_helper(http::write_state::empty)
 {
-    // TODO: add test to this feature
     if (asio::buffer_size(buffer) == 0)
         throw std::invalid_argument("buffers must not be 0-sized");
 

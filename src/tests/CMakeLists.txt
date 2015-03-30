@@ -6,6 +6,8 @@ set(tests
   "errc"
   "algorithm"
   "datetime"
+  "mocksocket"
+  "socket"
 )
 
 macro(add_test_target target)
@@ -19,7 +21,9 @@ macro(add_test_target target)
     ${Boost_DATE_TIME_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
-    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+    ${Boost_COROUTINE_LIBRARY}
+    ${Boost_CONTEXT_LIBRARY})
 
   add_test(NAME "${target}" COMMAND $<TARGET_FILE:${target}>)
 endmacro()
