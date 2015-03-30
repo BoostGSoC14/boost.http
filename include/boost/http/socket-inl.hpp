@@ -287,16 +287,20 @@ basic_socket<Socket>
 
     asio::async_result<Handler> result(handler);
 
-    if (!writer_helper.write_metadata()) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
-                       http_errc::out_of_order);
-        return result.get();
-    }
+    {
+        auto prev = writer_helper.state;
+        if (!writer_helper.write_metadata()) {
+            invoke_handler(std::forward<decltype(handler)>(handler),
+                           http_errc::out_of_order);
+            return result.get();
+        }
 
-    if ((flags & HTTP_1_1) == 0) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
-                       http_errc::native_stream_unsupported);
-        return result.get();
+        if ((flags & HTTP_1_1) == 0) {
+            writer_helper = prev;
+            invoke_handler(std::forward<decltype(handler)>(handler),
+                           http_errc::native_stream_unsupported);
+            return result.get();
+        }
     }
 
     auto crlf = string_literal_buffer("\r\n");
