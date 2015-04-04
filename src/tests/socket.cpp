@@ -794,3 +794,193 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
     spawn(ios, work);
     ios.run();
 }
+
+BOOST_AUTO_TEST_CASE(socket_connection_close) {
+    asio::io_service ios;
+    auto work = [&ios](asio::yield_context yield) {
+        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                socket.next_layer().input_buffer.emplace_back();
+                fill_vector(socket.next_layer().input_buffer.front(),
+                            "GET /1 HTTP/1.1\r\n"
+                            "Host: example.com\r\n"
+                            "Connection: close\r\n"
+                            "\r\n"
+                            "GET /2 HTTP/1.1\r\n"
+                            "Host: example.com\r\n"
+                            "\r\n"
+                            "GET /3 HTTP/1.0\r\n"
+                            "\r\n");
+
+                // First request
+                std::string method;
+                std::string path;
+                http::message message;
+
+                BOOST_REQUIRE(method.size() == 0);
+                BOOST_REQUIRE(path.size() == 0);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_CHECK(socket.write_response_native_stream());
+                BOOST_CHECK(!http::request_continue_required(message));
+                BOOST_CHECK(method == "GET");
+                BOOST_CHECK(path == "/1");
+                {
+                    http::headers expected_headers{
+                        {"host", "example.com"},
+                        {"connection", "close"}
+                    };
+                    BOOST_CHECK(message.headers() == expected_headers);
+                }
+                BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
+
+                BOOST_CHECK(socket.write_state() == http::write_state::empty);
+                http::message reply;
+                {
+                    const char body[] = "Hello World\n";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+
+                {
+                    bool captured = false;
+                    try {
+                        socket.async_write_response(200, string_ref("OK"),
+                                                    reply, yield);
+                    } catch(system::system_error &e) {
+                        BOOST_REQUIRE(e.code()
+                                      == system::error_code{http::http_errc
+                                                            ::stream_finished});
+                        captured = true;
+                    }
+                    BOOST_REQUIRE(captured);
+                }
+
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.1 200 OK\r\n"
+                                "connection: close\r\n"
+                                "content-length: 12\r\n"
+                                "\r\n"
+                                "Hello World\n");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+
+                // ### Second request (on the same connection)
+                socket.next_layer().output_buffer.clear();
+                clear_message(reply);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_CHECK(socket.write_response_native_stream());
+                BOOST_CHECK(!http::request_continue_required(message));
+                BOOST_CHECK(method == "GET");
+                BOOST_CHECK(path == "/2");
+                {
+                    http::headers expected_headers{
+                        {"host", "example.com"}
+                    };
+                    BOOST_CHECK(message.headers() == expected_headers);
+                }
+
+                BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                {
+                    const char body[] = "Hello World";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+
+                reply.headers().emplace("connection", "close");
+
+                {
+                    bool captured = false;
+                    try {
+                        socket.async_write_response(200, string_ref("OK"),
+                                                    reply, yield);
+                    } catch(system::system_error &e) {
+                        BOOST_REQUIRE(e.code()
+                                      == system::error_code{http::http_errc
+                                                            ::stream_finished});
+                        captured = true;
+                    }
+                    BOOST_REQUIRE(captured);
+                }
+
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.1 200 OK\r\n"
+                                "connection: close\r\n"
+                                "content-length: 11\r\n"
+                                "\r\n"
+                                "Hello World");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+
+                // ### Last request (on the very same connection)
+                socket.next_layer().output_buffer.clear();
+                clear_message(reply);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_CHECK(!socket.write_response_native_stream());
+                BOOST_CHECK(!http::request_continue_required(message));
+                BOOST_CHECK(method == "GET");
+                BOOST_CHECK(path == "/3");
+                BOOST_CHECK(message.headers() == http::headers{});
+                BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                {
+                    const char body[] = "nothing special";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+
+                {
+                    bool captured = false;
+                    try {
+                        socket.async_write_response(200, string_ref("OK"),
+                                                    reply, yield);
+                    } catch(system::system_error &e) {
+                        BOOST_REQUIRE(e.code()
+                                      == system::error_code{http::http_errc
+                                              ::stream_finished});
+                        captured = true;
+                    }
+                    BOOST_REQUIRE(captured);
+                }
+
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.0 200 OK\r\n"
+                                "connection: close\r\n"
+                                "content-length: 15\r\n"
+                                "\r\n"
+                                "nothing special");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+            });
+    };
+
+    spawn(ios, work);
+    ios.run();
+}
