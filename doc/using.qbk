@@ -12,11 +12,13 @@ replaced by `boost::system::error_code` within ASIO-using code.
 
 The full list of dependencies is:
 
+* CMake 3.1.0 or more recent[footnote for the build system]. It's going to be
+  replaced later.
 * Boost
   * algorithm, container, string_ref, ASIO, date_time and system[footnote Used
     in the core library.].
   * unit_test_framework[footnote For tests.].
-  * context and coroutine[footnote For the examples.].
+  * context and coroutine[footnote For the examples and tests.].
   * filesystem[footnote For the `file_server`.].
   * Quickbook and boostbook[footnote For the documentation.].
 

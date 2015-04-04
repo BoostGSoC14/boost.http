@@ -143,7 +143,7 @@ before the HTTP body data payload.]
 
 [Always returns a reference to the same object.]]] []]
 
-[[`a.trailers()`] [`X::trailers_type&`] []
+[[`a.trailers()`] [`X::headers_type&`] []
 [[itemized_list
 
 [It should be used to represent the /HTTP header section/ received/to-be-sent
@@ -154,7 +154,7 @@ after the HTTP body data payload.]
 [The returned object MUST *NOT* be shared with the one returned by
 `a.headers()`.]]] []]
 
-[[`ca.trailers()`] [`const X::trailers_type&`] []
+[[`ca.trailers()`] [`const X::headers_type&`] []
 [[itemized_list
 
 [It should be used to represent the /HTTP header section/ received/to-be-sent
