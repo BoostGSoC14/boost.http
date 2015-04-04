@@ -176,7 +176,7 @@ we're interested in extracting key features available from this library.
                       << message.headers().find("host")->second << endl;
 
                  std::cout << "Write state = " << int(socket.write_state())
-                 << std::endl;
+                           << std::endl;
 
                  cout << "About to send a reply" << endl;
 
@@ -268,7 +268,7 @@ method and even an associative container for the headers!!!
 
 If you do have special memory requirements for the messages, you're free to
 implementing an alternative container, as long as it fulfills the documented
-`Message` concept. Conections channels and HTTP messages are *not* coupled
+`Message` concept. Connections channels and HTTP messages are *not* coupled
 together. You can reuse these pieces in many many different contexts.
 
 The uncoupled architecture is more general and it is the default mode, but let's

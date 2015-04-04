@@ -84,7 +84,7 @@ later on]!]
                       << message.headers().find("host")->second << endl;
 
                  std::cout << "Write state = " << int(socket.write_state())
-                 << std::endl;
+                           << std::endl;
 
                  cout << "About to send a reply" << endl;
 
