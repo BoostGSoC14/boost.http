@@ -904,7 +904,12 @@ int basic_socket<Socket>::on_message_complete(http_parser *parser)
 {
     auto socket = reinterpret_cast<basic_socket*>(parser->data);
     auto message = reinterpret_cast<Message*>(socket->current_message);
-    message->trailers().insert(socket->last_header);
+    if (socket->last_header.first.size()) {
+        algorithm::trim_right_if(socket->last_header.second, [](char ch) {
+                return ch == ' ' || ch == '\t';
+            });
+        message->trailers().insert(socket->last_header);
+    }
     socket->last_header.first.clear();
     socket->last_header.second.clear();
     socket->istate = http::read_state::empty;
