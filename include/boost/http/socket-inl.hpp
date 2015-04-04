@@ -726,10 +726,11 @@ int basic_socket<Socket>
         algorithm::trim_right_if(socket->last_header.second, [](char ch) {
                 return ch == ' ' || ch == '\t';
             });
-        if (!socket->use_trailers)
-            message->headers().insert(socket->last_header);
-        else
-            message->trailers().insert(socket->last_header);
+        if ((parser->http_minor != 0 || parser->http_major > 1)
+            || field != "expect") {
+            (socket->use_trailers ? message->trailers() : message->headers())
+                .insert(socket->last_header);
+        }
         value.clear();
 
         field.replace(0, field.size(), at, size);
@@ -853,7 +854,9 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
         }
     }
 
-    if (socket->last_header.first.size()) {
+    if (socket->last_header.first.size()
+        && ((socket->flags & HTTP_1_1)
+            || socket->last_header.first != "expect")) {
         algorithm::trim_right_if(socket->last_header.second, [](char ch) {
                 return ch == ' ' || ch == '\t';
             });
@@ -865,6 +868,12 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
     socket->istate = http::read_state::message_ready;
     socket->flags |= READY;
     socket->writer_helper = write_state::empty;
+
+    {
+        auto er = message->headers().equal_range("expect");
+        if (std::distance(er.first, er.second) > 1)
+            message->headers().erase(er.first, er.second);
+    }
 
     if (detail::should_keep_alive(*parser))
         socket->flags |= KEEP_ALIVE;
