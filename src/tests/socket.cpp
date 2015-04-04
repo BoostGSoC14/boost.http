@@ -96,6 +96,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                     BOOST_CHECK(message.headers() == expected_headers);
                 }
                 BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
 
                 BOOST_CHECK(socket.write_state() == http::write_state::empty);
                 http::message reply;
@@ -149,6 +150,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                     vector<uint8_t> v{'p', 'i', 'n', 'g'};
                     BOOST_CHECK(message.body() == v);
                 }
+                BOOST_CHECK(message.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
                 {
                     const char body[] = "pong";
@@ -183,6 +185,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 BOOST_CHECK(path == "/whats_up");
                 BOOST_CHECK(message.headers() == http::headers{});
                 BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
                 {
                     const char body[] = "nothing special";
@@ -298,6 +301,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                     BOOST_CHECK(message.headers() == expected_headers);
                 }
                 BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
 
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::continue_issued);
@@ -344,6 +348,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(message.body().size() == 0);
+                BOOST_CHECK(message.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
                 {
                     const char body[] = "pong";
@@ -399,6 +404,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                     vector<uint8_t> v{'p', 'i', 'n', 'g'};
                     BOOST_CHECK(message.body() == v);
                 }
+                BOOST_CHECK(message.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state()
                               == http::write_state::continue_issued);
                 {
@@ -436,6 +442,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 BOOST_CHECK(path == "/whats_up");
                 BOOST_CHECK(message.headers() == http::headers{});
                 BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
                 {
                     const char body[] = "nothing special";
@@ -473,6 +480,309 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                     fill_vector(v,
                                 "HTTP/1.0 200 OK\r\n"
                                 "connection: close\r\n"
+                                "content-length: 15\r\n"
+                                "\r\n"
+                                "nothing special");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+            });
+    };
+
+    spawn(ios, work);
+    ios.run();
+}
+
+BOOST_AUTO_TEST_CASE(socket_chunked) {
+    asio::io_service ios;
+    auto work = [&ios](asio::yield_context yield) {
+        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                socket.next_layer().input_buffer.emplace_back();
+                fill_vector(socket.next_layer().input_buffer.front(),
+                            // first request
+                            "POST /1 HTTP/1.1\r\n"
+                            "Host: example.com\r\n"
+                            "Transfer-Encoding: chunked\r\n"
+                            "TE: trailers\r\n"
+                            "Trailer: Content-MD5\r\n"
+                            "\r\n"
+
+                            "4\r\n"
+                            "Wiki\r\n"
+
+                            "5\r\n"
+                            "pedia\r\n"
+
+                            "e\r\n"
+                            " in\r\n\r\nchunks.\r\n"
+
+                            "0\r\n"
+                            "Content-MD5: \t  \t\t   25b83662323c397c9944a8a7b3"
+                            "fef7ab    \t\t\t\t   \t \r\n"
+                            "\r\n"
+                            // second request
+                            "POST /2 HTTP/1.1\r\n"
+                            "Expect: 100-continue\r\n"
+                            "Host: example.com\r\n"
+                            "Transfer-Encoding: chunked\r\n"
+                            "TE: trailers\r\n"
+                            "\r\n"
+
+                            "4\r\n"
+                            "Wiki\r\n"
+
+                            "5\r\n"
+                            "pedia\r\n"
+
+                            "e\r\n"
+                            " in\r\n\r\nchunks.\r\n"
+
+                            "0\r\n"
+                            "\r\n"
+                            // third request
+                            "POST /3 HTTP/1.1\r\n"
+                            "Host: example.com\r\n"
+                            "Transfer-Encoding: chunked\r\n"
+                            "TE: trailers\r\n"
+                            "Trailer: Content-MD5, X-Content-SHA1\r\n"
+                            "\r\n"
+
+                            "10\r\n"
+                            "violets are blue\r\n"
+
+                            "f\r\n"
+                            ", roses are red\r\n"
+
+                            "0\r\n"
+                            "Content-MD5: \t\t  \t 27577ea5cf683e1b73bd3684998c"
+                            "6510\t\t  \t \t  \r\n"
+                            "X-Content-SHA1:\t   \t\t\t\t   \t  ac507bbd7ec6d86"
+                            "8f2840dd8c6e283e2c96a5900     \t\t\t  \t    \t\r\n"
+                            "\r\n");
+
+                // ### First request
+                std::string method;
+                std::string path;
+                http::message message;
+
+                BOOST_REQUIRE(method.size() == 0);
+                BOOST_REQUIRE(path.size() == 0);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE((socket.read_state()
+                               == http::read_state::message_ready)
+                              || (socket.read_state()
+                                  == http::read_state::body_ready)
+                              || (socket.read_state()
+                                  == http::read_state::empty));
+                BOOST_CHECK(socket.write_response_native_stream());
+                BOOST_CHECK(!http::request_continue_required(message));
+                BOOST_CHECK(method == "POST");
+                BOOST_CHECK(path == "/1");
+                {
+                    http::headers expected_headers{
+                        {"host", "example.com"},
+                        {"transfer-encoding", "chunked"},
+                        {"te", "trailers"},
+                        {"trailer", "Content-MD5"}
+                    };
+                    BOOST_CHECK(message.headers() == expected_headers);
+                }
+
+                while (socket.read_state() != http::read_state::empty)
+                    socket.async_read_some(message, yield);
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+
+                {
+                    vector<uint8_t> v{'W', 'i', 'k', 'i', 'p', 'e', 'd', 'i',
+                            'a', ' ', 'i', 'n', '\r', '\n', '\r', '\n', 'c',
+                            'h', 'u', 'n', 'k', 's', '.'};
+                    BOOST_CHECK(message.body() == v);
+                }
+
+                {
+                    http::headers expected_trailers{
+                        {"content-md5", "25b83662323c397c9944a8a7b3fef7ab"}
+                    };
+                    BOOST_CHECK(message.trailers() == expected_trailers);
+                }
+
+                BOOST_CHECK(socket.write_state() == http::write_state::empty);
+                http::message reply;
+                {
+                    const char body[] = "Hello World\n";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+                socket.async_write_response_metadata(200, string_ref("OK"),
+                                                     reply, yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::metadata_issued);
+                socket.async_write(reply, yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::metadata_issued);
+                socket.async_write_end_of_message(yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.1 200 OK\r\n"
+                                "transfer-encoding: chunked\r\n"
+                                "\r\n"
+                                "c\r\n"
+                                "Hello World\n\r\n"
+                                "0\r\n"
+                                "\r\n");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+
+                // ### Second request (on the same connection)
+                socket.next_layer().output_buffer.clear();
+                clear_message(reply);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE((socket.read_state()
+                               == http::read_state::message_ready)
+                              || (socket.read_state()
+                                  == http::read_state::body_ready)
+                              || (socket.read_state()
+                                  == http::read_state::empty));
+                BOOST_CHECK(socket.write_response_native_stream());
+
+                BOOST_CHECK(http::request_continue_required(message));
+                socket.async_write_response_continue(yield);
+
+                BOOST_CHECK(method == "POST");
+                BOOST_CHECK(path == "/2");
+
+                {
+                    http::headers expected_headers{
+                        {"expect", "100-continue"},
+                        {"host", "example.com"},
+                        {"transfer-encoding", "chunked"},
+                        {"te", "trailers"}
+                    };
+                    BOOST_CHECK(message.headers() == expected_headers);
+                }
+
+                while (socket.read_state() != http::read_state::empty)
+                    socket.async_read_some(message, yield);
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+
+                {
+                    vector<uint8_t> v{'W', 'i', 'k', 'i', 'p', 'e', 'd', 'i',
+                            'a', ' ', 'i', 'n', '\r', '\n', '\r', '\n', 'c',
+                            'h', 'u', 'n', 'k', 's', '.'};
+                    BOOST_CHECK(message.body() == v);
+                }
+                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_REQUIRE(socket.write_state()
+                              == http::write_state::continue_issued);
+                reply.headers().emplace("trailer", "Content-MD5");
+                {
+                    const char body[] = "karate do";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+                reply.trailers().emplace("content-md5",
+                                         "fa7d2a3fba7a239ef30f825827e613ef");
+                socket.async_write_response_metadata(200, string_ref("OK"),
+                                                     reply, yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::metadata_issued);
+                socket.async_write(reply, yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::metadata_issued);
+                socket.async_write_trailers(reply, yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.1 100 Continue\r\n"
+                                "\r\n"
+                                "HTTP/1.1 200 OK\r\n"
+                                "trailer: Content-MD5\r\n"
+                                "transfer-encoding: chunked\r\n"
+                                "\r\n"
+                                "9\r\n"
+                                "karate do\r\n"
+                                "0\r\n"
+                                "content-md5:"
+                                " fa7d2a3fba7a239ef30f825827e613ef\r\n"
+                                "\r\n");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+
+                // ### Last request (on the very same connection)
+                socket.next_layer().output_buffer.clear();
+                clear_message(reply);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE((socket.read_state()
+                               == http::read_state::message_ready)
+                              || (socket.read_state()
+                                  == http::read_state::body_ready)
+                              || (socket.read_state()
+                                  == http::read_state::empty));
+                BOOST_CHECK(socket.write_response_native_stream());
+                BOOST_CHECK(!http::request_continue_required(message));
+                BOOST_CHECK(method == "POST");
+                BOOST_CHECK(path == "/3");
+
+                {
+                    http::headers expected_headers{
+                        {"host", "example.com"},
+                        {"transfer-encoding", "chunked"},
+                        {"te", "trailers"},
+                        {"trailer", "Content-MD5, X-Content-SHA1"}
+                    };
+                    BOOST_CHECK(message.headers() == expected_headers);
+                }
+
+                while (socket.read_state() != http::read_state::empty)
+                    socket.async_read_some(message, yield);
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+
+                {
+                    vector<uint8_t> v{'v', 'i', 'o', 'l', 'e', 't', 's', ' ',
+                            'a', 'r', 'e', ' ', 'b', 'l', 'u', 'e', ',', ' ',
+                            'r', 'o', 's', 'e', 's', ' ', 'a', 'r', 'e', ' ',
+                            'r', 'e', 'd'};
+                    BOOST_CHECK(message.body() == v);
+                }
+
+                {
+                    http::headers expected_trailers{
+                        {"content-md5", "27577ea5cf683e1b73bd3684998c6510"},
+                        {"x-content-sha1",
+                         "ac507bbd7ec6d868f2840dd8c6e283e2c96a5900"}
+                    };
+                    BOOST_CHECK(message.trailers() == expected_trailers);
+                }
+
+                BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                {
+                    const char body[] = "nothing special";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.1 200 OK\r\n"
                                 "content-length: 15\r\n"
                                 "\r\n"
                                 "nothing special");
