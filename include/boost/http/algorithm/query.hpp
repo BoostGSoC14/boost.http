@@ -21,9 +21,8 @@ bool request_continue_required(const Message &message)
     typedef decltype(*message.headers().begin()) value_type;
     auto values = message.headers().equal_range("expect");
 
-    return std::any_of(values.first, values.second, [](const value_type &v) {
-        return iequals(v.second, "100-continue");
-    });
+    return std::distance(values.first, values.second) == 1
+        && iequals(values.first->second, "100-continue");
 }
 
 template<class Message,

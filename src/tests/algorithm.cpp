@@ -866,7 +866,7 @@ BOOST_AUTO_TEST_CASE(request_continue_required) {
     m.headers().emplace("expect", "element,100-continue");
     BOOST_CHECK(boost::http::request_continue_required(m) == false);
     m.headers().emplace("expect", "100-continue");
-    BOOST_CHECK(boost::http::request_continue_required(m) == true);
+    BOOST_CHECK(boost::http::request_continue_required(m) == false);
 }
 
 BOOST_AUTO_TEST_CASE(request_upgrade_desired) {
