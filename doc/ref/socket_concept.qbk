@@ -194,6 +194,9 @@ Foundations for Asynchronous Operations, Revision 2].]]
   (i.e. the user can use a different `message` object to receive a different
   message). This requirement is extended to refinements of this concept.
 
+# The `Socket` object MUST *NOT* insert HTTP headers with empty keys (i.e. `""`)
+  or empty values (i.e. `""`) in message objects provided by the user.
+
 [endsect]
 
 [section Models]
