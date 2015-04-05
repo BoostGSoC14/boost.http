@@ -231,10 +231,26 @@ Foundations for Asynchronous Operations, Revision 2].]]
  [If the `ServerSocket` reads a message that represent a desire from the HTTP
   client to initiate a protocol upgrade, the `ServerSocket` supports a protocol
   upgrade and it'll communicate the client desire to the user of this library,
-  it MUST communicate the desire by inserting the `"upgrade"` (case-insensitive)
-  HTTP field value into one of the `"connection"` headers. The `"upgrade"` value
-  MUST [*NOT] be present otherwise. Note that the `"connection"` HTTP field
-  value allow comma-separated list of values.
+  it MUST communicate the desire ensuring all of the following conditions:
+
+  [itemized_list
+
+   [Ensuring that the `"upgrade"` (case-insensitive) string is present in the
+    comma-separated list of values from some `"connection"` header. This rule
+    implictly requires the presence of at least one `"connection"` header.]
+
+   [There is at least one `"upgrade"` header and all of the `"upgrade"` headers
+    respect the conditions established in the section 6.7 of the RFC7230.]
+
+  ]
+
+  This behaviour is intended for the communication between the user of this
+  library and the `ServerSocket` and can differ from the communication between
+  the `ServerSocket` and the underlying channel.]
+
+ [If the `ServerSocket` isn't willing to provide a protocol upgrade, then no
+  `"upgrade"` headers can be present (in other words, all `"upgrade"` headers
+  MUST be erased before delivering the message to the user of this library).
 
   This behaviour is intended for the communication between the user of this
   library and the `ServerSocket` and can differ from the communication between

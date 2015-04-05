@@ -727,7 +727,7 @@ int basic_socket<Socket>
                 return ch == ' ' || ch == '\t';
             });
         if ((parser->http_minor != 0 || parser->http_major > 1)
-            || field != "expect") {
+            || (field != "expect" && field != "upgrade")) {
             (socket->use_trailers ? message->trailers() : message->headers())
                 .insert(socket->last_header);
         }
@@ -856,7 +856,8 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
 
     if (socket->last_header.first.size()
         && ((socket->flags & HTTP_1_1)
-            || socket->last_header.first != "expect")) {
+            || (socket->last_header.first != "expect"
+                && socket->last_header.first != "upgrade"))) {
         algorithm::trim_right_if(socket->last_header.second, [](char ch) {
                 return ch == ' ' || ch == '\t';
             });
