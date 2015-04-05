@@ -38,12 +38,12 @@ bool request_upgrade_desired(const Message &message)
         return iequals(value, "upgrade");
     };
 
-    return std::any_of(connection_headers.first, connection_headers.second,
+    return message.headers().find("upgrade") != message.headers().end()
+        && std::any_of(connection_headers.first, connection_headers.second,
                        [contains_upgrade](const header_type &v) {
                            return header_value_any_of(v.second,
                                                       contains_upgrade);
-                       })
-        && message.headers().find("upgrade") != message.headers().end();
+                       });
 }
 
 } // namespace http
