@@ -984,3 +984,190 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
     spawn(ios, work);
     ios.run();
 }
+
+BOOST_AUTO_TEST_CASE(socket_upgrade) {
+    asio::io_service ios;
+    auto work = [&ios](asio::yield_context yield) {
+        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                socket.next_layer().input_buffer.emplace_back();
+                fill_vector(socket.next_layer().input_buffer.front(),
+                            "GET /1 HTTP/1.1\r\n"
+                            "Host: example.com\r\n"
+                            "Connection: upgrade\r\n"
+                            "Upgrade: vinipsmaker/0.1\r\n"
+                            "\r\n");
+                socket.next_layer().input_buffer.emplace_back();
+                fill_vector(socket.next_layer().input_buffer.back(),
+                            "OPTIONS /2 HTTP/1.1\r\n"
+                            "host: example.com\r\n"
+                            "expect: 100-continue\r\n"
+                            "connection: upgrade\r\n"
+                            "upgrade: vinipsmaker/0.1\r\n"
+                            "\r\n");
+                socket.next_layer().input_buffer.emplace_back();
+                fill_vector(socket.next_layer().input_buffer.back(),
+                            "GET /3 HTTP/1.0\r\n"
+                            "connection: upgrade\r\n"
+                            "upgrade: vinipsmaker/0.1\r\n"
+                            "\r\n");
+
+                // First request
+                std::string method;
+                std::string path;
+                http::message message;
+
+                BOOST_REQUIRE(method.size() == 0);
+                BOOST_REQUIRE(path.size() == 0);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_CHECK(socket.write_response_native_stream());
+                BOOST_CHECK(!http::request_continue_required(message));
+                BOOST_CHECK(http::request_upgrade_desired(message));
+                BOOST_CHECK(method == "GET");
+                BOOST_CHECK(path == "/1");
+                {
+                    http::headers expected_headers{
+                        {"host", "example.com"},
+                        {"connection", "upgrade"},
+                        {"upgrade", "vinipsmaker/0.1"}
+                    };
+                    BOOST_CHECK(message.headers() == expected_headers);
+                }
+                BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
+
+                BOOST_CHECK(socket.write_state() == http::write_state::empty);
+                http::message reply;
+                {
+                    const char body[] = "Sing now!\n";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.1 200 OK\r\n"
+                                "content-length: 10\r\n"
+                                "\r\n"
+                                "Sing now!\n");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+
+                // ### Second request (on the same connection)
+                socket.next_layer().output_buffer.clear();
+                clear_message(reply);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_CHECK(socket.write_response_native_stream());
+
+                BOOST_CHECK(http::request_continue_required(message));
+                socket.async_write_response_continue(yield);
+
+                BOOST_CHECK(http::request_upgrade_desired(message));
+                BOOST_CHECK(method == "OPTIONS");
+                BOOST_CHECK(path == "/2");
+                {
+                    http::headers expected_headers{
+                        {"host", "example.com"},
+                        {"expect", "100-continue"},
+                        {"connection", "upgrade"},
+                        {"upgrade", "vinipsmaker/0.1"}
+                    };
+                    BOOST_CHECK(message.headers() == expected_headers);
+                }
+
+                BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_REQUIRE(socket.write_state()
+                              == http::write_state::continue_issued);
+                {
+                    const char body[] = "I'm scatman!";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.1 100 Continue\r\n"
+                                "\r\n"
+                                "HTTP/1.1 200 OK\r\n"
+                                "content-length: 12\r\n"
+                                "\r\n"
+                                "I'm scatman!");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+
+                // ### Last request (on the very same connection)
+                socket.next_layer().output_buffer.clear();
+                clear_message(reply);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_CHECK(!socket.write_response_native_stream());
+                BOOST_CHECK(!http::request_continue_required(message));
+                BOOST_CHECK(!http::request_upgrade_desired(message));
+                BOOST_CHECK(method == "GET");
+                BOOST_CHECK(path == "/3");
+
+                {
+                    http::headers expected_headers{
+                        {"connection", "upgrade"}
+                    };
+                    BOOST_CHECK(message.headers() == expected_headers);
+                }
+
+                BOOST_CHECK(message.body() == vector<uint8_t>{});
+                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                {
+                    const char body[] = "nothing special";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+
+                bool captured = false;
+                try {
+                    socket.async_write_response(200, string_ref("OK"), reply,
+                                                yield);
+                } catch(system::system_error &e) {
+                    BOOST_REQUIRE(e.code()
+                                  == system::error_code{http::http_errc
+                                                        ::stream_finished});
+                    captured = true;
+                }
+                BOOST_REQUIRE(captured);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.0 200 OK\r\n"
+                                "connection: close\r\n"
+                                "content-length: 15\r\n"
+                                "\r\n"
+                                "nothing special");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+            });
+    };
+
+    spawn(ios, work);
+    ios.run();
+}
