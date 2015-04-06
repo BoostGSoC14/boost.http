@@ -72,7 +72,7 @@ basic_socket<Socket>
 
     method.clear();
     path.clear();
-    writer_helper = write_state::finished;
+    writer_helper = http::write_state::finished;
     schedule_on_async_read_message<READY>(handler, message, &method, &path);
 
     return result.get();
@@ -868,7 +868,7 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
     socket->use_trailers = true;
     socket->istate = http::read_state::message_ready;
     socket->flags |= READY;
-    socket->writer_helper = write_state::empty;
+    socket->writer_helper = http::write_state::empty;
 
     {
         auto er = message->headers().equal_range("expect");
