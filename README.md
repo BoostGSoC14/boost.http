@@ -24,4 +24,14 @@ This library is licensed under the terms of the Boost Software License, version
 
 ## Documentation
 
-...
+You can generate documentation using the Boost.Build-based rules within the doc
+directory. Like so:
+
+```shell
+cd doc
+b2
+```
+
+If you can't (or just don't want) generate the documentation, just look at the
+generated documentation found on the `gh-pages` branch or the
+<http://boostgsoc14.github.io/boost.http/> site.
