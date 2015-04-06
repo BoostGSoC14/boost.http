@@ -4,6 +4,17 @@
 
 [section Introduction]
 
+This library can be used to create applications that need to expose services
+through HTTP (e.g. embeddable ReST services). It's designed for multiple
+backends (e.g. embedded servers, FastCGI...) and has well documented type
+requirements and type erased abstractions, allowing compile-time-based and
+runtime-based polymorphism.
+
+Also, this library follows the Boost.Asio threading model, so the user can
+handle HTTP requests in the same thread as all other network traffic. That way
+the application can be single-threaded, which is useful on small devices that
+expose a simple ReST service.
+
 This library was envisioned to solve the HTTP problem for the C++ programming
 language. The proposal to solve this problem was to expose an HTTP abstraction
 able to make use of the HTTP power (chunking/streaming, pipelining, upgrade for
@@ -28,6 +39,8 @@ live video.
 Besides providing a number of abstractions to isolate HTTP producers and HTTP
 consumers, there is also a number of abstractions on top of that to ease the job
 of creating applications making use of this distributed collaborative protocol.
+
+And even with all these goodies, the API is very simple.
 
 [endsect]
 
