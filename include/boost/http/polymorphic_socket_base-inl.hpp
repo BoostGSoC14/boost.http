@@ -6,14 +6,17 @@
 namespace boost {
 namespace http {
 
-inline polymorphic_socket_base::~polymorphic_socket_base() = default;
+template<class Message>
+basic_polymorphic_socket_base<Message>
+::~basic_polymorphic_socket_base() = default;
 
+template<class Message>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-polymorphic_socket_base
-::async_read_some(message &message, CompletionToken &&token)
+basic_polymorphic_socket_base<Message>
+::async_read_some(message_type &message, CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -27,12 +30,13 @@ polymorphic_socket_base
     return result.get();
 }
 
+template<class Message>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-polymorphic_socket_base
-::async_read_trailers(message &message, CompletionToken &&token)
+basic_polymorphic_socket_base<Message>
+::async_read_trailers(message_type &message, CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -46,12 +50,13 @@ polymorphic_socket_base
     return result.get();
 }
 
+template<class Message>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-polymorphic_socket_base
-::async_write(const message &message, CompletionToken &&token)
+basic_polymorphic_socket_base<Message>
+::async_write(const message_type &message, CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -65,12 +70,13 @@ polymorphic_socket_base
     return result.get();
 }
 
+template<class Message>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-polymorphic_socket_base
-::async_write_trailers(const message &message, CompletionToken &&token)
+basic_polymorphic_socket_base<Message>
+::async_write_trailers(const message_type &message, CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -84,11 +90,12 @@ polymorphic_socket_base
     return result.get();
 }
 
+template<class Message>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-polymorphic_socket_base
+basic_polymorphic_socket_base<Message>
 ::async_write_end_of_message(CompletionToken &&token)
 {
     typedef typename asio::handler_type<

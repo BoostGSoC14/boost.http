@@ -4,7 +4,8 @@
 
 This class adapts a class fulfilling the [link reference.server_socket_concept
 [^ServerSocket] concept] to implement the [^[link
-reference.polymorphic_server_socket polymorphic_server_socket]] interface.
+reference.basic_polymorphic_server_socket
+basic_polymorphic_server_socket<Message>]] interface.
 
 This design was chosen taking a number of shortcomings in consideration.
 
@@ -34,6 +35,9 @@ Polymorphic Allocators].
 [variablelist
 
 [[`Socket`][The type to be wrapped.]]
+
+[[`Message = message`][The message type. Default argument is [^[link
+reference.message message]].]]
 
 ]
 

@@ -17,9 +17,13 @@
 namespace boost {
 namespace http {
 
-class polymorphic_server_socket: public polymorphic_socket_base
+template<class Message>
+class basic_polymorphic_server_socket
+    : public basic_polymorphic_socket_base<Message>
 {
 public:
+    using typename basic_polymorphic_socket_base<Message>::message_type;
+    using typename basic_polymorphic_socket_base<Message>::callback_type;
     typedef std::string method_server_type;
     typedef std::string path_server_type;
     typedef boost::string_ref reason_phrase_server_type;
@@ -27,20 +31,20 @@ public:
     // ### ABI-stable interface ###
     virtual bool write_response_native_stream() const = 0;
     virtual void async_read_request(std::string &method, std::string &path,
-                                    message &message,
+                                    message_type &message,
                                     callback_type handler) = 0;
     virtual void async_write_response(std::uint_fast16_t status_code,
                                       const boost::string_ref &reason_phrase,
-                                      const message &message,
+                                      const message_type &message,
                                       callback_type handler) = 0;
     virtual void async_write_response_continue(callback_type handler) = 0;
     virtual void async_write_response_metadata(std::uint_fast16_t status_code,
                                                const boost::string_ref
                                                &reason_phrase,
-                                               const message &message,
+                                               const message_type &message,
                                                callback_type handler) = 0;
 
-    virtual ~polymorphic_server_socket() = default;
+    virtual ~basic_polymorphic_server_socket() = default;
 
     // ### wrappers for the ASIO's extensible model ###
     template<class CompletionToken>
@@ -48,7 +52,7 @@ public:
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
     async_read_request(std::string &method, std::string &path,
-                       message &message, CompletionToken &&token);
+                       message_type &message, CompletionToken &&token);
 
     template<class CompletionToken>
     typename asio::async_result<
@@ -56,7 +60,7 @@ public:
                                     void(system::error_code)>::type>::type
     async_write_response(std::uint_fast16_t status_code,
                          const boost::string_ref &reason_phrase,
-                         const message &message, CompletionToken &&token);
+                         const message_type &message, CompletionToken &&token);
 
     template<class CompletionToken>
     typename asio::async_result<
@@ -70,9 +74,11 @@ public:
                                     void(system::error_code)>::type>::type
     async_write_response_metadata(std::uint_fast16_t status_code,
                                   const boost::string_ref &reason_phrase,
-                                  const message &message,
+                                  const message_type &message,
                                   CompletionToken &&token);
 };
+
+typedef basic_polymorphic_server_socket<message> polymorphic_server_socket;
 
 } // namespace http
 } // namespace boost

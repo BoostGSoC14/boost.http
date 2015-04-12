@@ -17,51 +17,53 @@
 namespace boost {
 namespace http {
 
-class polymorphic_socket_base
+template<class Message>
+class basic_polymorphic_socket_base
 {
 public:
-    typedef message message_type;
+    typedef Message message_type;
     typedef std::function<void(system::error_code)> callback_type;
 
     // ### ABI-stable interface ###
     virtual asio::io_service& get_io_service() = 0;
     virtual http::read_state read_state() const = 0;
     virtual http::write_state write_state() const = 0;
-    virtual void async_read_some(message &message, callback_type handler) = 0;
-    virtual void async_read_trailers(message &message,
+    virtual void async_read_some(message_type &message,
+                                 callback_type handler) = 0;
+    virtual void async_read_trailers(message_type &message,
                                      callback_type handler) = 0;
-    virtual void async_write(const message &message,
+    virtual void async_write(const message_type &message,
                              callback_type handler) = 0;
-    virtual void async_write_trailers(const message &message,
+    virtual void async_write_trailers(const message_type &message,
                                       callback_type handler) = 0;
     virtual void async_write_end_of_message(callback_type handler) = 0;
 
-    virtual ~polymorphic_socket_base() = 0;
+    virtual ~basic_polymorphic_socket_base() = 0;
 
     // ### wrappers for the ASIO's extensible model ###
     template<class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_read_some(message &message, CompletionToken &&token);
+    async_read_some(message_type &message, CompletionToken &&token);
 
     template<class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_read_trailers(message &message, CompletionToken &&token);
+    async_read_trailers(message_type &message, CompletionToken &&token);
 
     template<class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write(const message &message, CompletionToken &&token);
+    async_write(const message_type &message, CompletionToken &&token);
 
     template<class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write_trailers(const message &message, CompletionToken &&token);
+    async_write_trailers(const message_type &message, CompletionToken &&token);
 
     template<class CompletionToken>
     typename asio::async_result<
@@ -69,6 +71,8 @@ public:
                                     void(system::error_code)>::type>::type
     async_write_end_of_message(CompletionToken &&token);
 };
+
+typedef basic_polymorphic_socket_base<message> polymorphic_socket_base;
 
 } // namespace http
 } // namespace boost

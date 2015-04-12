@@ -11,10 +11,13 @@
 namespace boost {
 namespace http {
 
-template<class Socket>
-class server_socket_adaptor: public polymorphic_server_socket, private Socket
+template<class Socket, class Message = message>
+class server_socket_adaptor
+    : public basic_polymorphic_server_socket<Message>, private Socket
 {
 public:
+    using typename basic_polymorphic_server_socket<Message>::message_type;
+    using typename basic_polymorphic_server_socket<Message>::callback_type;
     typedef Socket next_layer_type;
 
     template<class... Args>
@@ -30,29 +33,34 @@ public:
     http::write_state write_state() const override;
     bool write_response_native_stream() const override;
     void async_read_request(std::string &method, std::string &path,
-                            message &message, callback_type handler) override;
-    void async_read_some(message &message, callback_type handler) override;
-    void async_read_trailers(message &message, callback_type handler) override;
+                            message_type &message,
+                            callback_type handler) override;
+    void async_read_some(message_type &message, callback_type handler) override;
+    void async_read_trailers(message_type &message,
+                             callback_type handler) override;
     void async_write_response(std::uint_fast16_t status_code,
                               const boost::string_ref &reason_phrase,
-                              const message &message, callback_type handler)
-        override;
+                              const message_type &message,
+                              callback_type handler) override;
     void async_write_response_continue(callback_type handler) override;
     void async_write_response_metadata(std::uint_fast16_t status_code,
                                        const boost::string_ref &reason_phrase,
-                                       const message &message,
+                                       const message_type &message,
                                        callback_type handler) override;
-    void async_write(const message &message, callback_type handler) override;
-    void async_write_trailers(const message &message, callback_type handler)
-        override;
+    void async_write(const message_type &message,
+                     callback_type handler) override;
+    void async_write_trailers(const message_type &message,
+                              callback_type handler) override;
     void async_write_end_of_message(callback_type handler) override;
 };
 
-template<class Socket>
-class server_socket_adaptor<std::reference_wrapper<Socket>>
-    : public polymorphic_server_socket
+template<class Socket, class Message>
+class server_socket_adaptor<std::reference_wrapper<Socket>, Message>
+    : public basic_polymorphic_server_socket<Message>
 {
 public:
+    using typename basic_polymorphic_server_socket<Message>::message_type;
+    using typename basic_polymorphic_server_socket<Message>::callback_type;
     typedef Socket next_layer_type;
 
     server_socket_adaptor(Socket &socket);
@@ -69,21 +77,24 @@ public:
     http::write_state write_state() const override;
     bool write_response_native_stream() const override;
     void async_read_request(std::string &method, std::string &path,
-                            message &message, callback_type handler) override;
-    void async_read_some(message &message, callback_type handler) override;
-    void async_read_trailers(message &message, callback_type handler) override;
+                            message_type &message,
+                            callback_type handler) override;
+    void async_read_some(message_type &message, callback_type handler) override;
+    void async_read_trailers(message_type &message,
+                             callback_type handler) override;
     void async_write_response(std::uint_fast16_t status_code,
                               const boost::string_ref &reason_phrase,
-                              const message &message, callback_type handler)
-        override;
+                              const message_type &message,
+                              callback_type handler) override;
     void async_write_response_continue(callback_type handler) override;
     void async_write_response_metadata(std::uint_fast16_t status_code,
                                        const boost::string_ref &reason_phrase,
-                                       const message &message,
+                                       const message_type &message,
                                        callback_type handler) override;
-    void async_write(const message &message, callback_type handler) override;
-    void async_write_trailers(const message &message, callback_type handler)
-        override;
+    void async_write(const message_type &message,
+                     callback_type handler) override;
+    void async_write_trailers(const message_type &message,
+                              callback_type handler) override;
     void async_write_end_of_message(callback_type handler) override;
 
 private:

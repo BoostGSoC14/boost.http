@@ -21,6 +21,10 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 
 * [^[link reference.basic_message basic_message]]
 * [^[link reference.basic_socket basic_socket]]
+* [^[link reference.basic_polymorphic_socket_base
+     basic_polymorphic_socket_base]]
+* [^[link reference.basic_polymorphic_server_socket
+     basic_polymorphic_server_socket]]
 * [^[link reference.server_socket_adaptor server_socket_adaptor]]
 
 [endsect]
@@ -105,6 +109,8 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 [include ref/headers.qbk]
 [include ref/message.qbk]
 [include ref/socket.qbk]
+[include ref/basic_polymorphic_socket_base.qbk]
+[include ref/basic_polymorphic_server_socket.qbk]
 [include ref/polymorphic_socket_base.qbk]
 [include ref/polymorphic_server_socket.qbk]
 [include ref/basic_message.qbk]
