@@ -899,7 +899,7 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                 (const headers_value_type &v) {
                 auto p = [&current_etag_value](const string_ref_type &v) {
                     auto &c = current_etag_value;
-                    return v == "*" || header_value_etag_match_strong(c, v);
+                    return v == "*" || etag_match_strong(c, v);
                 };
                 return header_value_any_of(v.second, p);
             };
@@ -943,7 +943,7 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                 (const headers_value_type &v) {
                 auto p = [&current_etag_value](const string_ref_type &v) {
                     auto &c = current_etag_value;
-                    return v == "*" || header_value_etag_match_weak(c, v);
+                    return v == "*" || etag_match_weak(c, v);
                 };
                 return header_value_any_of(v.second, p);
             };

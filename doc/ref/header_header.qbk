@@ -8,8 +8,7 @@ Import the following symbols:
 * [^[link reference.header_value_any_of header_value_any_of]]
 * [^[link reference.header_value_none_of header_value_none_of]]
 * [^[link reference.header_value_for_each header_value_for_each]]
-* [^[link reference.header_value_etag_match_strong
-     header_value_etag_match_strong]]
-* [^[link reference.header_value_etag_match_weak header_value_etag_match_weak]]
+* [^[link reference.etag_match_strong etag_match_strong]]
+* [^[link reference.etag_match_weak etag_match_weak]]
 
 [endsect]

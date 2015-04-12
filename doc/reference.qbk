@@ -38,10 +38,8 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
   * [^[link reference.header_value_any_of header_value_any_of]]
   * [^[link reference.header_value_none_of header_value_none_of]]
   * [^[link reference.header_value_for_each header_value_for_each]]
-  * [^[link reference.header_value_etag_match_strong
-       header_value_etag_match_strong]]
-  * [^[link reference.header_value_etag_match_weak
-       header_value_etag_match_weak]]
+  * [^[link reference.etag_match_strong etag_match_strong]]
+  * [^[link reference.etag_match_weak etag_match_weak]]
 * Channel querying
   * [^[link reference.request_continue_required request_continue_required]]
   * [^[link reference.request_upgrade_desired request_upgrade_desired]]
@@ -122,8 +120,8 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 [include ref/header_value_any_of.qbk]
 [include ref/header_value_none_of.qbk]
 [include ref/header_value_for_each.qbk]
-[include ref/header_value_etag_match_strong.qbk]
-[include ref/header_value_etag_match_weak.qbk]
+[include ref/etag_match_strong.qbk]
+[include ref/etag_match_weak.qbk]
 [include ref/request_continue_required.qbk]
 [include ref/request_upgrade_desired.qbk]
 [include ref/async_write_response.qbk]
