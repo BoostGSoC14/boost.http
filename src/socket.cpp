@@ -16,6 +16,7 @@ extern "C" {
 enum http_parser_type { HTTP_REQUEST, HTTP_RESPONSE, HTTP_BOTH };
 
 void http_parser_init(http_parser *parser, enum http_parser_type type);
+void http_parser_settings_init(http_parser_settings *settings);
 std::size_t http_parser_execute(http_parser *parser,
                                 const http_parser_settings *settings,
                                 const char *data,
@@ -36,6 +37,8 @@ int http_body_is_final(const http_parser *parser);
   XX(CB_body, "the on_body callback failed")                         \
   XX(CB_message_complete, "the on_message_complete callback failed") \
   XX(CB_status, "the on_status callback failed")                     \
+  XX(CB_chunk_header, "the on_chunk_header callback failed")         \
+  XX(CB_chunk_complete, "the on_chunk_complete callback failed")     \
                                                                      \
   /* Parsing-related errors */                                       \
   XX(INVALID_EOF_STATE, "stream ended at an unexpected time")        \
@@ -90,10 +93,13 @@ void init(http_parser &parser)
                   " Ryan Dahl's HTTP parser");
 }
 
-std::size_t execute(http_parser &parser,
-                                            const http_parser_settings &settings,
-                                            const std::uint8_t *data,
-                                            std::size_t len)
+void init(http_parser_settings &settings)
+{
+    http_parser_settings_init(&settings);
+}
+
+std::size_t execute(http_parser &parser, const http_parser_settings &settings,
+                    const std::uint8_t *data, std::size_t len)
 {
     return http_parser_execute(&parser, &settings,
                                reinterpret_cast<const char*>(data), len);

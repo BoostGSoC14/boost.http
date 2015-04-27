@@ -43,8 +43,8 @@ extern "C" {
 struct http_parser
 {
     unsigned int type : 2;
-    unsigned int flags : 6;
-    unsigned int state : 8;
+    unsigned int flags : 7;
+    unsigned int state : 7;
     unsigned int header_state : 8;
     unsigned int index : 8;
     std::uint32_t nread;
@@ -74,6 +74,8 @@ struct http_parser_settings
     http_cb      on_headers_complete;
     http_data_cb on_body;
     http_cb      on_message_complete;
+    http_cb      on_chunk_header;
+    http_cb      on_chunk_complete;
 };
 
 } // extern "C"
@@ -85,6 +87,7 @@ enum class parser_error
 };
 
 void init(http_parser &parser);
+void init(http_parser_settings &settings);
 std::size_t execute(http_parser &parser,
                     const http_parser_settings &settings,
                     const std::uint8_t *data, std::size_t len);

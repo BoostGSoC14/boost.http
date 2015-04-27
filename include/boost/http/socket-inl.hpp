@@ -675,6 +675,8 @@ detail::http_parser_settings basic_socket<Socket>::settings()
 {
     http_parser_settings settings;
 
+    init(settings);
+
     settings.on_message_begin = on_message_begin<Message>;
     settings.on_url = on_url<Message, String>;
     settings.on_header_field = on_header_field<Message>;
