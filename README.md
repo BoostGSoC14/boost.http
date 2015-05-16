@@ -1,5 +1,7 @@
 # Boost.Http
 
+[![Build Status](https://travis-ci.org/vinipsmaker/asiohttpserver.svg)](https://travis-ci.org/vinipsmaker/asiohttpserver)
+
 This library implements a core HTTP server for Boost that can be used from
 resource-constrained devices to powerful machines that have plenty of resources
 to make use of and can speed up the server (such as extra ram available to pools
