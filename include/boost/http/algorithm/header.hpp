@@ -258,7 +258,7 @@ bool asctime(const StringRef &value, posix_time::ptime &datetime)
 template<class String, unsigned N, class Unsigned>
 void append_number(String &string, Unsigned value)
 {
-    char buffer[N];
+    char buffer[(N > 0) ? N : 1];
     for (auto i = N;i;--i) {
         buffer[i-1] = '0' + (value % 10);
         value /= 10;

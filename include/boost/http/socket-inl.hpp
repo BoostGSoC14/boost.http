@@ -193,8 +193,8 @@ basic_socket<Socket>
     // TODO (C++14): replace by dynarray
     std::vector<asio::const_buffer> buffers(nbuffer_pieces);
 
-    buffers.push_back(string_literal_buffer((flags & HTTP_1_1)
-                                            ? "HTTP/1.1 " : "HTTP/1.0 "));
+    buffers.push_back((flags & HTTP_1_1) ? string_literal_buffer("HTTP/1.1 ")
+                      : string_literal_buffer("HTTP/1.0 "));
     buffers.push_back(asio::buffer(content_length_buffer.data(),
                                    content_length_delim));
     buffers.push_back(asio::buffer(reason_phrase.data(), reason_phrase.size()));
@@ -331,8 +331,8 @@ basic_socket<Socket>
     // TODO (C++14): replace by dynarray
     std::vector<asio::const_buffer> buffers(nbuffer_pieces);
 
-    buffers.push_back(string_literal_buffer((flags & HTTP_1_1)
-                                            ? "HTTP/1.1 " : "HTTP/1.0 "));
+    buffers.push_back((flags & HTTP_1_1) ? string_literal_buffer("HTTP/1.1 ")
+                      : string_literal_buffer("HTTP/1.0 "));
     buffers.push_back(asio::buffer(content_length_buffer));
     buffers.push_back(asio::buffer(reason_phrase.data(), reason_phrase.size()));
     buffers.push_back(crlf);
