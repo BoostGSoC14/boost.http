@@ -12,6 +12,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * [^[link reference.headers headers]]
 * [^[link reference.message message]]
 * [^[link reference.socket socket]]
+* [^[link reference.buffered_socket buffered_socket]]
 * [^[link reference.polymorphic_socket_base polymorphic_socket_base]]
 * [^[link reference.polymorphic_server_socket polymorphic_server_socket]]
 
@@ -21,6 +22,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 
 * [^[link reference.basic_message basic_message]]
 * [^[link reference.basic_socket basic_socket]]
+* [^[link reference.basic_buffered_socket basic_buffered_socket]]
 * [^[link reference.basic_polymorphic_socket_base
      basic_polymorphic_socket_base]]
 * [^[link reference.basic_polymorphic_server_socket
@@ -97,8 +99,25 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * [^[link reference.server_socket_adaptor_header
      <boost/http/server_socket_adaptor.hpp>]]
 * [^[link reference.socket_header <boost/http/socket.hpp>]]
+* [^[link reference.buffered_socket_header <boost/http/buffered_socket.hpp>]]
 * [^[link reference.status_code_header <boost/http/status_code.hpp>]]
 * [^[link reference.write_state_header <boost/http/write_state.hpp>]]
+
+[endsect]
+
+[section Macros]
+
+[variablelist
+
+[[`BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE`] [This macro defines the default
+buffer size for [^[link reference.basic_buffered_socket basic_buffered_socket]].
+It's safe to override this value (per using class or globally) and should be
+done before including the file [^[link reference.buffered_socket_header
+<boost/http/buffered_socket.hpp>]]. The default provided value (i.e.
+the non-overriden version) is unspecified (e.g. can change among versions and
+platforms).]]
+
+]
 
 [endsect]
 
@@ -107,12 +126,14 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 [include ref/headers.qbk]
 [include ref/message.qbk]
 [include ref/socket.qbk]
+[include ref/buffered_socket.qbk]
 [include ref/basic_polymorphic_socket_base.qbk]
 [include ref/basic_polymorphic_server_socket.qbk]
 [include ref/polymorphic_socket_base.qbk]
 [include ref/polymorphic_server_socket.qbk]
 [include ref/basic_message.qbk]
 [include ref/basic_socket.qbk]
+[include ref/basic_buffered_socket.qbk]
 [include ref/server_socket_adaptor.qbk]
 [include ref/header_to_ptime.qbk]
 [include ref/to_http_date.qbk]
@@ -150,5 +171,6 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 [include ref/read_state_header.qbk]
 [include ref/server_socket_adaptor_header.qbk]
 [include ref/socket_header.qbk]
+[include ref/buffered_socket_header.qbk]
 [include ref/status_code_header.qbk]
 [include ref/write_state_header.qbk]

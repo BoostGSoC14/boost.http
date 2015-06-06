@@ -272,6 +272,7 @@ Foundations for Asynchronous Operations, Revision 2].]]
 [section Models]
 
 * [^[link reference.basic_socket basic_socket]]
+* [^[link reference.basic_buffered_socket basic_buffered_socket]]
 * [^[link reference.polymorphic_server_socket polymorphic_server_socket]]
 * [^[link reference.server_socket_adaptor server_socket_adaptor]]
 

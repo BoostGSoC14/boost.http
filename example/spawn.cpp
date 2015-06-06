@@ -4,7 +4,7 @@
 #include <boost/utility/string_ref.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
-#include <boost/http/socket.hpp>
+#include <boost/http/buffered_socket.hpp>
 #include <boost/http/algorithm.hpp>
 
 using namespace std;
@@ -19,9 +19,7 @@ int main()
 
     auto work = [&acceptor](asio::yield_context yield) {
         while (true) {
-            char buffer[4];
-            http::socket socket(acceptor.get_io_service(),
-                                asio::buffer(buffer));
+            http::buffered_socket socket(acceptor.get_io_service());
             try {
                 std::string method;
                 std::string path;
