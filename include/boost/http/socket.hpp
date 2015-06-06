@@ -86,13 +86,13 @@ enum class parser_error
     cb_message_complete = 7  // HPE_CB_message_complete
 };
 
-void init(http_parser &parser);
-void init(http_parser_settings &settings);
-std::size_t execute(http_parser &parser,
-                    const http_parser_settings &settings,
-                    const std::uint8_t *data, std::size_t len);
-bool should_keep_alive(const http_parser &parser);
-bool body_is_final(const http_parser &parser);
+BOOST_HTTP_DECL void init(http_parser &parser);
+BOOST_HTTP_DECL void init(http_parser_settings &settings);
+BOOST_HTTP_DECL std::size_t execute(http_parser &parser,
+                                    const http_parser_settings &settings,
+                                    const std::uint8_t *data, std::size_t len);
+BOOST_HTTP_DECL bool should_keep_alive(const http_parser &parser);
+BOOST_HTTP_DECL bool body_is_final(const http_parser &parser);
 
 } // namespace detail
 

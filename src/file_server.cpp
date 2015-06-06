@@ -40,7 +40,7 @@ std::string file_server_category_impl::message(int condition) const noexcept
     }
 }
 
-const system::error_category& file_server_category()
+BOOST_HTTP_DECL const system::error_category& file_server_category()
 {
     static file_server_category_impl category;
     return category;

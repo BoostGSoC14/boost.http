@@ -16,6 +16,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/utility/string_ref.hpp>
 
+#include <boost/http/detail/config.hpp>
 #include <boost/http/algorithm/header.hpp>
 #include <boost/http/write_state.hpp>
 #include <boost/http/detail/constchar_helper.hpp>
@@ -63,7 +64,7 @@ struct is_error_condition_enum<boost::http::file_server_errc>
 } // namespace system
 namespace http {
 
-const system::error_category& file_server_category();
+BOOST_HTTP_DECL const system::error_category& file_server_category();
 
 inline system::error_code make_error_code(file_server_errc e)
 {

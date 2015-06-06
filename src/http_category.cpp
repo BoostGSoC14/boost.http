@@ -43,7 +43,7 @@ std::string http_category_impl::message(int condition) const noexcept
     }
 }
 
-const boost::system::error_category& http_category()
+BOOST_HTTP_DECL const boost::system::error_category& http_category()
 {
     static http_category_impl category;
     return category;

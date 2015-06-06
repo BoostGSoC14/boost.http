@@ -44,6 +44,14 @@ add_library("boost_http" ${library_SRC})
 set_property(TARGET "boost_http" PROPERTY CXX_STANDARD 11)
 set_property(TARGET "boost_http" PROPERTY CXX_STANDARD_REQUIRED ON)
 
+target_compile_definitions("boost_http"
+  PRIVATE BOOST_HTTP_SOURCE)
+
+if (BUILD_SHARED_LIBS)
+  target_compile_definitions("boost_http"
+    PRIVATE BOOST_HTTP_DYN_LINK)
+endif()
+
 target_link_libraries("boost_http"
   ${Boost_DATE_TIME_LIBRARY}
   ${Boost_FILESYSTEM_LIBRARY}

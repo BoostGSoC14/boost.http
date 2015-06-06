@@ -81,7 +81,7 @@ namespace boost {
 namespace http {
 namespace detail {
 
-void init(http_parser &parser)
+BOOST_HTTP_DECL void init(http_parser &parser)
 {
     http_parser_init(&parser, HTTP_REQUEST);
 
@@ -93,24 +93,25 @@ void init(http_parser &parser)
                   " Ryan Dahl's HTTP parser");
 }
 
-void init(http_parser_settings &settings)
+BOOST_HTTP_DECL void init(http_parser_settings &settings)
 {
     http_parser_settings_init(&settings);
 }
 
-std::size_t execute(http_parser &parser, const http_parser_settings &settings,
-                    const std::uint8_t *data, std::size_t len)
+BOOST_HTTP_DECL std::size_t execute(http_parser &parser,
+                                    const http_parser_settings &settings,
+                                    const std::uint8_t *data, std::size_t len)
 {
     return http_parser_execute(&parser, &settings,
                                reinterpret_cast<const char*>(data), len);
 }
 
-bool should_keep_alive(const http_parser &parser)
+BOOST_HTTP_DECL bool should_keep_alive(const http_parser &parser)
 {
     return http_should_keep_alive(&parser);
 }
 
-bool body_is_final(const http_parser &parser)
+BOOST_HTTP_DECL bool body_is_final(const http_parser &parser)
 {
     return http_body_is_final(&parser);
 }
