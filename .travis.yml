@@ -7,7 +7,7 @@ notifications:
 matrix:
   include:
     - os: linux
-      env: CC=gcc-4.9 CXX=g++-4.9
+      env: CC=gcc-4.9 CXX=g++-4.9 BUILD_TYPE=Debug
       addons: &gcc49
         apt:
           packages:
@@ -19,7 +19,19 @@ matrix:
         - sudo apt-get install -qq g++-4.9
 
     - os: linux
-      env: CC=gcc-5 CXX=g++-5
+      env: CC=gcc-4.9 CXX=g++-4.9 BUILD_TYPE=Release
+      addons: &gcc49
+        apt:
+          packages:
+            - libstdc++-5-dev
+          sources:
+            - ubuntu-toolchain-r-test
+      install:
+        - sudo apt-get update -qq
+        - sudo apt-get install -qq g++-4.9
+
+    - os: linux
+      env: CC=gcc-5 CXX=g++-5 BUILD_TYPE=Debug
       addons: &gcc5
         apt:
           packages:
@@ -29,7 +41,30 @@ matrix:
             - ubuntu-toolchain-r-test
 
     - os: linux
-      env: CC=clang-3.5 CXX=clang++-3.5
+      env: CC=gcc-5 CXX=g++-5 BUILD_TYPE=Release
+      addons: &gcc5
+        apt:
+          packages:
+            - g++-5
+            - libstdc++-5-dev
+          sources:
+            - ubuntu-toolchain-r-test
+
+    - os: linux
+      env: CC=clang-3.5 CXX=clang++-3.5 BUILD_TYPE=Debug
+      addons: &clang35
+        apt:
+          packages:
+            - clang-3.5
+          sources:
+            - llvm-toolchain-precise-3.5
+            - ubuntu-toolchain-r-test
+      install:
+        - sudo apt-get update -qq
+        - sudo apt-get install -qq g++-4.9
+
+    - os: linux
+      env: CC=clang-3.5 CXX=clang++-3.5 BUILD_TYPE=Release
       addons: &clang35
         apt:
           packages:
