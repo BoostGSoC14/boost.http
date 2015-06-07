@@ -61,7 +61,7 @@ before_install:
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export BOOST_ROOT="$(realpath boost-release-master)"; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pushd "${BOOST_ROOT}"; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then chmod +x bootstrap.sh; fi
- - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./bootstrap.sh; fi
+ - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./bootstrap.sh --with-libraries=container,context,coroutine,date_time,filesystem,system,test; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./b2; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then popd; fi
 
