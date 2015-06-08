@@ -1,6 +1,8 @@
 enable_testing()
 
-add_definitions(-DBOOST_TEST_DYN_LINK)
+if(NOT Boost_USE_STATIC_LIBS)
+  add_definitions(-DBOOST_TEST_DYN_LINK)
+endif()
 
 set(tests
   "errc"

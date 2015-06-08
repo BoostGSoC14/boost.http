@@ -39,7 +39,7 @@ set(library_SRC
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include" ${Boost_INCLUDE_DIR})
 
-add_library("boost_http" SHARED ${library_SRC})
+add_library("boost_http" ${library_SRC})
 
 set_property(TARGET "boost_http" PROPERTY CXX_STANDARD 11)
 set_property(TARGET "boost_http" PROPERTY CXX_STANDARD_REQUIRED ON)

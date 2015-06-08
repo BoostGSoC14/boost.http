@@ -57,6 +57,7 @@ $ make MAKEOPTIONS
 * [^-DCMAKE_BUILD_TYPE=MinSizeRel].
 * [^-DBUILD_TESTS=NO] to disable the build of the tests.
 * [^-DBUILD_EXAMPLES=NO] to disable the build of the examples.
+* [^-DBUILD_SHARED_LIBS=YES] to build a shared library.
 
 Options available under Windows:
 

@@ -102,6 +102,6 @@ before_install:
 
 script:
   - mkdir build && cd build
-  - /usr/local/bin/cmake -DBoost_NO_SYSTEM_PATHS=ON -DBOOST_ROOT="${BOOST_ROOT}" -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=ON ..
+  - /usr/local/bin/cmake -DBUILD_SHARED_LIBS=YES -DBoost_NO_SYSTEM_PATHS=ON -DBOOST_ROOT="${BOOST_ROOT}" -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=ON ..
   - export CTEST_OUTPUT_ON_FAILURE=TRUE
   - make && /usr/local/bin/ctest
