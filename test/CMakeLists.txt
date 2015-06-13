@@ -27,7 +27,8 @@ macro(add_test_target target)
     ${Boost_COROUTINE_LIBRARY}
     ${Boost_CONTEXT_LIBRARY})
 
-  add_test(NAME "${target}" COMMAND $<TARGET_FILE:${target}>)
+  add_test(NAME "${target}" COMMAND $<TARGET_FILE:${target}>
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:boost_http>)
 endmacro()
 
 foreach(test ${tests})
