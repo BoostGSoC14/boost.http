@@ -55,6 +55,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 http::basic_socket<mock_socket> socket(ios, inbuffer);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
+                            // first
                             "GET / HTTP/1.1\r\n"
                             "hOsT: \t \t  localhosT:8080  \t\r\n"
                             "X-men:  \t  the   beginning    \t   \r\n"
@@ -62,11 +63,13 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                             "x-code: meaw\r\n"
                             "X-ENEMY: y \t y,y\t\r\n"
                             "\r\n"
+                            // second
                             "POST /file_upload HTTP/1.1\r\n"
                             "Content-length: 4\r\n"
                             "host: canyoushowmewhereithurts.org\r\n"
                             "\r\n"
                             "ping"
+                            // third
                             "GET /whats_up HTTP/1.0\r\n"
                             "\r\n");
 
@@ -1169,5 +1172,82 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
     };
 
     spawn(ios, work);
+
+    auto work2 = [&ios](asio::yield_context yield) {
+        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                socket.next_layer().input_buffer.emplace_back();
+                fill_vector(socket.next_layer().input_buffer.front(),
+                            "POST /pink%20floyd/the%20wall HTTP/1.1\r\n"
+                            "Host: hyrule.org\r\n"
+                            "Connection: upgrade\r\n"
+                            "Content-length: 4\r\n"
+                            "Upgrade: h2c\r\n"
+                            "\r\n"
+                            "!git");
+
+                std::string method;
+                std::string path;
+                http::message message;
+
+                BOOST_REQUIRE(method.size() == 0);
+                BOOST_REQUIRE(path.size() == 0);
+
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                socket.async_read_request(method, path, message, yield);
+
+                BOOST_REQUIRE((socket.read_state()
+                               == http::read_state::message_ready)
+                              || (socket.read_state()
+                                  == http::read_state::empty));
+                BOOST_CHECK(socket.write_response_native_stream());
+                BOOST_CHECK(!http::request_continue_required(message));
+                BOOST_CHECK(http::request_upgrade_desired(message));
+                BOOST_CHECK(method == "POST");
+                BOOST_CHECK(path == "/pink%20floyd/the%20wall");
+                {
+                    http::headers expected_headers{
+                        {"host", "hyrule.org"},
+                        {"connection", "upgrade"},
+                        {"content-length", "4"},
+                        {"upgrade", "h2c"}
+                    };
+                    BOOST_CHECK(message.headers() == expected_headers);
+                }
+
+                while (socket.read_state() != http::read_state::empty)
+                    socket.async_read_some(message, yield);
+                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+
+                {
+                    vector<uint8_t> v{'!', 'g', 'i', 't'};
+                    BOOST_CHECK(message.body() == v);
+                }
+                BOOST_CHECK(message.trailers() == http::headers{});
+
+                BOOST_CHECK(socket.write_state() == http::write_state::empty);
+                http::message reply;
+                {
+                    const char body[] = "Sing now!\n";
+                    copy(body, body + sizeof(body) - 1,
+                         back_inserter(reply.body()));
+                }
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_CHECK(socket.write_state()
+                            == http::write_state::finished);
+                {
+                    vector<char> v;
+                    fill_vector(v,
+                                "HTTP/1.1 200 OK\r\n"
+                                "content-length: 10\r\n"
+                                "\r\n"
+                                "Sing now!\n");
+                    BOOST_CHECK(socket.next_layer().output_buffer == v);
+                }
+            });
+    };
+
+    spawn(ios, work2);
     ios.run();
 }
