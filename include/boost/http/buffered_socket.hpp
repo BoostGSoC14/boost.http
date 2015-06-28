@@ -15,8 +15,17 @@
 namespace boost {
 namespace http {
 
+namespace detail {
+template<std::size_t N>
+struct buffered_socket_wrapping_buffer {
+    char buffer[N];
+};
+} // namespace detail
+
 template<class Socket, std::size_t N = BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE>
-class basic_buffered_socket: private ::boost::http::basic_socket<Socket>
+class basic_buffered_socket
+    : private detail::buffered_socket_wrapping_buffer<N>
+    , private ::boost::http::basic_socket<Socket>
 {
     typedef ::boost::http::basic_socket<Socket> Parent;
 
@@ -40,18 +49,19 @@ public:
     using Parent::async_write_end_of_message;
 
     basic_buffered_socket(boost::asio::io_service &io_service)
-        : Parent(io_service, boost::asio::buffer(buffer))
+        : Parent(io_service, boost::asio::buffer(BufferParent::buffer))
     {}
 
     template<class... Args>
     basic_buffered_socket(Args&&... args)
-        : Parent(boost::asio::buffer(buffer), std::forward<Args>(args)...)
+        : Parent(boost::asio::buffer(BufferParent::buffer),
+                 std::forward<Args>(args)...)
     {}
 
     using Parent::next_layer;
 
 private:
-    char buffer[N];
+    typedef detail::buffered_socket_wrapping_buffer<N> BufferParent;
 };
 
 typedef basic_buffered_socket<boost::asio::ip::tcp::socket> buffered_socket;
