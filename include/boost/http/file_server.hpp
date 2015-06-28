@@ -757,8 +757,8 @@ struct on_async_response_transmit_file_multi
     const std::string file_size;
 };
 
-bool path_contains_file(const filesystem::path &dir,
-                        const filesystem::path &file)
+inline bool path_contains_file(const filesystem::path &dir,
+                               const filesystem::path &file)
 {
     /* If dir has more components than file, then file can't possibly
        reside in dir. */
