@@ -37,76 +37,6 @@ void clear_message(Message &m)
     m.trailers().clear();
 }
 
-struct use_yielded_future_t
-{
-    typedef typename asio::handler_type<asio::yield_context,
-                                        void(system::error_code)>::type
-    coro_handler_t;
-
-    struct Handler
-    {
-        Handler(use_yielded_future_t use_yielded_future)
-            : coro_handler(use_yielded_future.yield)
-        {}
-
-        void operator()(system::error_code ec)
-        {
-            coro_handler(ec);
-        }
-
-        coro_handler_t coro_handler;
-    };
-
-    use_yielded_future_t(asio::yield_context &yield) : yield(yield) {}
-
-    asio::yield_context &yield;
-};
-
-struct yielded_future
-{
-    typedef use_yielded_future_t::coro_handler_t coro_handler_t;
-    typedef asio::async_result<coro_handler_t> coro_result_t;
-
-    yielded_future(std::shared_ptr<coro_result_t> result) : result(result) {}
-
-    void get()
-    {
-        result->get();
-    }
-
-    std::shared_ptr<coro_result_t> result;
-};
-
-namespace boost {
-namespace asio {
-
-template<>
-struct handler_type<use_yielded_future_t, void(system::error_code)>
-{
-    typedef use_yielded_future_t::Handler type;
-};
-
-template<>
-struct async_result<use_yielded_future_t::Handler>
-{
-    typedef yielded_future type;
-
-    typedef yielded_future::coro_result_t coro_result_t;
-
-    async_result(use_yielded_future_t::Handler &handler)
-        : result(std::make_shared<coro_result_t>(handler.coro_handler))
-    {}
-
-    yielded_future get()
-    {
-        return yielded_future(result);
-    }
-
-    std::shared_ptr<coro_result_t> result;
-};
-
-} } // namespace boost::asio
-
 BOOST_AUTO_TEST_CASE(socket_ctor) {
     bool captured = false;
     try {
@@ -151,16 +81,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 BOOST_REQUIRE(path.size() == 0);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
-                {
-                    auto fut = socket
-                        .async_read_request(method, path, message,
-                                            use_yielded_future_t(yield));
-                    BOOST_REQUIRE(socket.write_state()
-                                  == http::write_state::finished);
-                    fut.get();
-                }
-                BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                socket.async_read_request(method, path, message, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(socket.write_response_native_stream());
