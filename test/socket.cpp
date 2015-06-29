@@ -18,7 +18,7 @@ void feed_with_buffer(F &&f)
 {
     char buffer[2048];
     for (int i = 1;i != 2048;++i) {
-        cout << "buffer_size = " << i << endl;
+        BOOST_TEST_MESSAGE("buffer_size = " << i);
         f(asio::buffer(buffer, /*i*/3));
     }
 }
