@@ -108,7 +108,12 @@ Foundations for Asynchronous Operations, Revision 2].]]
   Handler is called when the operation completes with an appropriate parameter.
 
   `method`, `path` and `m` are left in a unspecified state while the operation
-  is in progress.]
+  is in progress.
+
+  The ServerSocket object MUST prevent the user from issuing new replies while
+  the request isn't ready. The prevention MUST be done by changing the write
+  state to `write_state::finished` while the read_request operation is in
+  progress.]
 
  [By the time the handler is called, `method` value represents the read method,
   `path` represents the read url and all headers for the current request are
