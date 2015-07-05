@@ -26,6 +26,11 @@ typename asio::async_result<
 async_write_response(ServerSocket &socket, status_code sc,
                      const Message &message, CompletionToken &&token)
 {
+    static_assert(is_server_socket<ServerSocket>::value,
+                  "ServerSocket must fulfill the ServerSocket concept");
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     return socket.async_write_response(static_cast<std::uint_fast16_t>(sc),
                                        to_string<StringRef>(sc), message,
                                        std::forward<CompletionToken>(token));
@@ -39,6 +44,11 @@ typename asio::async_result<
 async_write_response_metadata(ServerSocket &socket, status_code sc,
                               const Message &message, CompletionToken &&token)
 {
+    static_assert(is_server_socket<ServerSocket>::value,
+                  "ServerSocket must fulfill the ServerSocket concept");
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     return socket
         .async_write_response_metadata(static_cast<std::uint_fast16_t>(sc),
                                        to_string<StringRef>(sc), message,

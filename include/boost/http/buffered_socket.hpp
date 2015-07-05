@@ -66,6 +66,10 @@ private:
 
 typedef basic_buffered_socket<boost::asio::ip::tcp::socket> buffered_socket;
 
+template<class Socket>
+struct is_server_socket<basic_buffered_socket<Socket>>: public std::true_type
+{};
+
 } // namespace http
 } // namespace boost
 

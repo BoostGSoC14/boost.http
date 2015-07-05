@@ -57,6 +57,9 @@ basic_socket<Socket>
 ::async_read_request(String &method, String &path, Message &message,
                      CompletionToken &&token)
 {
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
 
@@ -85,6 +88,9 @@ typename asio::async_result<
                                 void(system::error_code)>::type>::type
 basic_socket<Socket>::async_read_some(Message &message, CompletionToken &&token)
 {
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
 
@@ -111,6 +117,9 @@ typename asio::async_result<
 basic_socket<Socket>::async_read_trailers(Message &message,
                                           CompletionToken &&token)
 {
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
 
@@ -139,6 +148,9 @@ basic_socket<Socket>
                        const StringRef &reason_phrase, const Message &message,
                        CompletionToken &&token)
 {
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     using detail::string_literal_buffer;
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -279,6 +291,9 @@ basic_socket<Socket>
                                 const StringRef &reason_phrase,
                                 const Message &message, CompletionToken &&token)
 {
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     using detail::string_literal_buffer;
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -367,6 +382,9 @@ typename asio::async_result<
 basic_socket<Socket>::async_write(const Message &message,
                                   CompletionToken &&token)
 {
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     using detail::string_literal_buffer;
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -420,6 +438,9 @@ typename asio::async_result<
 basic_socket<Socket>::async_write_trailers(const Message &message,
                                            CompletionToken &&token)
 {
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     using detail::string_literal_buffer;
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;

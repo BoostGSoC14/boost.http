@@ -21,6 +21,9 @@ template<class Message>
 class basic_polymorphic_socket_base
 {
 public:
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     typedef Message message_type;
     typedef std::function<void(system::error_code)> callback_type;
 
@@ -73,6 +76,10 @@ public:
 };
 
 typedef basic_polymorphic_socket_base<message> polymorphic_socket_base;
+
+template<class Message>
+struct is_socket<basic_polymorphic_socket_base<Message>>: public std::true_type
+{};
 
 } // namespace http
 } // namespace boost

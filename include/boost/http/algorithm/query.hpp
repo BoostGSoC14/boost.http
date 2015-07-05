@@ -18,6 +18,9 @@ namespace http {
 template<class Message>
 bool request_continue_required(const Message &message)
 {
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     typedef decltype(*message.headers().begin()) value_type;
     auto values = message.headers().equal_range("expect");
 
@@ -30,6 +33,9 @@ template<class Message,
              typename Message::headers_type::mapped_type::value_type>>
 bool request_upgrade_desired(const Message &message)
 {
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     typedef typename Message::headers_type::value_type header_type;
 
     auto connection_headers = message.headers().equal_range("connection");

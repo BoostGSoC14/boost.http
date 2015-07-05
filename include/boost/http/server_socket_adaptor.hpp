@@ -16,6 +16,9 @@ class server_socket_adaptor
     : public basic_polymorphic_server_socket<Message>, private Socket
 {
 public:
+    static_assert(is_server_socket<Socket>::value,
+                  "Socket must fulfill the ServerSocket concept");
+
     using typename basic_polymorphic_server_socket<Message>::message_type;
     using typename basic_polymorphic_server_socket<Message>::callback_type;
     typedef Socket next_layer_type;
@@ -59,6 +62,9 @@ class server_socket_adaptor<std::reference_wrapper<Socket>, Message>
     : public basic_polymorphic_server_socket<Message>
 {
 public:
+    static_assert(is_server_socket<Socket>::value,
+                  "Socket must fulfill the ServerSocket concept");
+
     using typename basic_polymorphic_server_socket<Message>::message_type;
     using typename basic_polymorphic_server_socket<Message>::callback_type;
     typedef Socket next_layer_type;
@@ -100,6 +106,11 @@ public:
 private:
     std::reference_wrapper<Socket> wrapped_socket;
 };
+
+template<class Socket, class Message>
+struct is_server_socket<server_socket_adaptor<Socket, Message>>
+    : public std::true_type
+{};
 
 } // namespace http
 } // namespace boost

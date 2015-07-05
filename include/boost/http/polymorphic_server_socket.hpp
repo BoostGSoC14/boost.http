@@ -80,6 +80,11 @@ public:
 
 typedef basic_polymorphic_server_socket<message> polymorphic_server_socket;
 
+template<class Message>
+struct is_server_socket<basic_polymorphic_server_socket<Message>>
+    : public std::true_type
+{};
+
 } // namespace http
 } // namespace boost
 

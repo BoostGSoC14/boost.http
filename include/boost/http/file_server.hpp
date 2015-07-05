@@ -20,6 +20,7 @@
 #include <boost/http/algorithm/header.hpp>
 #include <boost/http/write_state.hpp>
 #include <boost/http/detail/constchar_helper.hpp>
+#include <boost/http/traits.hpp>
 
 #ifndef BOOST_HTTP_FILE_SERVER_BOUNDARY
 /* MUST NOT be empty and SHOULD have the smallest size possible (1).
@@ -790,6 +791,11 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                              Message &omessage, const filesystem::path &file,
                              bool is_head_request, CompletionToken &&token)
 {
+    static_assert(is_server_socket<ServerSocket>::value,
+                  "ServerSocket must fulfill the ServerSocket concept");
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     typedef typename Message::headers_type::value_type headers_value_type;
     typedef typename Message::headers_type::mapped_type String;
     typedef typename String::value_type CharT;
@@ -1256,6 +1262,11 @@ async_response_transmit_file(ServerSocket &socket, const Message &imessage,
                              Message &omessage, const filesystem::path &file,
                              CompletionToken &&token)
 {
+    static_assert(is_server_socket<ServerSocket>::value,
+                  "ServerSocket must fulfill the ServerSocket concept");
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     return async_response_transmit_file(socket, imessage, omessage, file,
                                         /*is_head_request=*/false,
                                         std::forward<CompletionToken>(token));
@@ -1283,6 +1294,11 @@ async_response_transmit_dir(ServerSocket &socket, const String &method,
                             const filesystem::path &root_dir, Predicate filter,
                             CompletionToken &&token)
 {
+    static_assert(is_server_socket<ServerSocket>::value,
+                  "ServerSocket must fulfill the ServerSocket concept");
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
 
@@ -1348,6 +1364,11 @@ async_response_transmit_dir(ServerSocket &socket, const String &method,
                             const filesystem::path &root_dir,
                             CompletionToken &&token)
 {
+    static_assert(is_server_socket<ServerSocket>::value,
+                  "ServerSocket must fulfill the ServerSocket concept");
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
     auto filter = [](const filesystem::path&){ return true; };
     return async_response_transmit_dir(socket, method, ipath, imessage,
                                        omessage, root_dir, filter, token);
