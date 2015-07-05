@@ -3,9 +3,10 @@
  #include <boost/http/socket.hpp>
 
 This template can be used to easily define classes fulfilling the strict [link
-reference.server_socket_concept [^ServerSocket] concept]. These classes exposes
-the =HTTP/1.1= wire format (i.e. a builtin/standalone HTTP server) into an
-easy-to-use API.
+reference.server_socket_concept [^ServerSocket] concept] and specializing the
+[^[link reference.is_server_socket is_server_socket]] trait. These classes
+exposes the =HTTP/1.1= wire format (i.e. a builtin/standalone HTTP server) into
+an easy-to-use API.
 
 The underlying I/O object is expected to have the following properties:
 

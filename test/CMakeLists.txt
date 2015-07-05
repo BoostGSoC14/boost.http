@@ -10,6 +10,7 @@ set(tests
   "datetime"
   "mocksocket"
   "socket"
+  "traits"
 )
 
 macro(add_test_target target)

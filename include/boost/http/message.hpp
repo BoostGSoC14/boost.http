@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <boost/asio/buffer.hpp>
 #include "headers.hpp"
+#include <boost/http/traits.hpp>
 
 namespace boost {
 namespace http {
@@ -38,6 +39,9 @@ private:
 };
 
 typedef basic_message<boost::http::headers, std::vector<std::uint8_t>> message;
+
+template<class Headers, class Body>
+struct is_message<basic_message<Headers, Body>>: public std::true_type {};
 
 } // namespace http
 } // namespace boost

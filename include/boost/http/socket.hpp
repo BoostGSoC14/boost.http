@@ -22,6 +22,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
+#include <boost/http/traits.hpp>
 #include <boost/http/read_state.hpp>
 #include <boost/http/write_state.hpp>
 #include <boost/http/message.hpp>
@@ -290,6 +291,9 @@ private:
 };
 
 typedef basic_socket<boost::asio::ip::tcp::socket> socket;
+
+template<class Socket>
+struct is_server_socket<basic_socket<Socket>>: public std::true_type {};
 
 } // namespace http
 } // namespace boost

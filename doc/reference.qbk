@@ -28,6 +28,9 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * [^[link reference.basic_polymorphic_server_socket
      basic_polymorphic_server_socket]]
 * [^[link reference.server_socket_adaptor server_socket_adaptor]]
+* [^[link reference.is_message is_message]]
+* [^[link reference.is_socket is_socket]]
+* [^[link reference.is_server_socket is_server_socket]]
 
 [endsect]
 
@@ -102,6 +105,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * [^[link reference.buffered_socket_header <boost/http/buffered_socket.hpp>]]
 * [^[link reference.status_code_header <boost/http/status_code.hpp>]]
 * [^[link reference.write_state_header <boost/http/write_state.hpp>]]
+* [^[link reference.traits_header <boost/http/traits.hpp>]]
 
 [endsect]
 
@@ -174,3 +178,7 @@ platforms).]]
 [include ref/buffered_socket_header.qbk]
 [include ref/status_code_header.qbk]
 [include ref/write_state_header.qbk]
+[include ref/traits_header.qbk]
+[include ref/is_message.qbk]
+[include ref/is_socket.qbk]
+[include ref/is_server_socket.qbk]

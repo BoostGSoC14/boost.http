@@ -3,7 +3,8 @@
  #include <boost/http/message.hpp>
 
 This template can be used to easily define classes fulfilling the [link
-reference.message_concept [^Message] concept].
+reference.message_concept [^Message] concept] and specializing the [^[link
+reference.is_message is_message]] trait.
 
 [section Template parameters]
 
