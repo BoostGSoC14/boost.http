@@ -56,8 +56,8 @@ case, giving the user the opportunity to send custom 404 messages.]
 [caution This function will call the handler with
 `file_server_category::file_type_not_supported` if resolution finishes but this
 function cannot process the result because the file is not regular (directories,
-block devices, links...). The channel is also left untouched, giving the user
-the opportunity to use another HTTP consumer.]
+block devices...). The channel is also left untouched, giving the user the
+opportunity to use another HTTP consumer.]
 
 [section Template parameters]
 

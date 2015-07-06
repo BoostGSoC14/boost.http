@@ -11,6 +11,7 @@ set(tests
   "mocksocket"
   "socket"
   "traits"
+  "file_server"
 )
 
 macro(add_test_target target)

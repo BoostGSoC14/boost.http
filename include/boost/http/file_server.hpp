@@ -9,12 +9,16 @@
 // TODO (Boost 1.5X): replace by AFIO?
 #include <boost/filesystem/fstream.hpp>
 #include <memory>
+#include <array>
 
 #include <boost/system/error_code.hpp>
 #include <boost/asio/async_result.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/utility/string_ref.hpp>
+#include <boost/algorithm/string/find_iterator.hpp>
+#include <boost/algorithm/string/finder.hpp>
+#include <boost/algorithm/cxx14/equal.hpp>
 
 #include <boost/http/detail/config.hpp>
 #include <boost/http/algorithm/header.hpp>
@@ -758,6 +762,98 @@ struct on_async_response_transmit_file_multi
     const std::string file_size;
 };
 
+template<class CharT>
+filesystem::path
+resolve_dots_or_throw_not_found(const std::basic_string<CharT> &ipath)
+{
+    using boost::algorithm::split_iterator;
+    using boost::algorithm::first_finder;
+    using boost::algorithm::equal;
+
+    typedef std::basic_string<CharT> StringT;
+    typedef split_iterator<typename StringT::const_iterator>
+        string_split_iterator;
+
+    filesystem::path ret;
+
+    std::array<CharT, 1> dot{'.'};
+    std::array<CharT, 2> dot_dot{'.', '.'};
+
+    for (string_split_iterator it =
+             make_split_iterator(ipath, first_finder("/", is_iequal()));
+         it != string_split_iterator();
+         ++it) {
+        if (equal(it->begin(), it->end(), dot.begin(), dot.end()))
+            continue;
+
+        if (equal(it->begin(), it->end(), dot_dot.begin(), dot_dot.end())) {
+            if (ret.has_filename()) {
+                ret.remove_filename();
+            } else {
+                throw system::system_error{system::error_code{file_server_errc
+                            ::file_not_found}};
+            }
+        } else {
+            ret.append(it->begin(), it->end());
+        }
+    }
+
+    return ret;
+}
+
+template<class T>
+typename std::enable_if<std::is_same<typename std::decay<T>::type,
+                                     char*>::value
+                        || std::is_same<typename std::decay<T>::type,
+                                        wchar_t*>::value
+                        || std::is_same<typename std::decay<T>::type,
+                                        char16_t*>::value
+                        || std::is_same<typename std::decay<T>::type,
+                                        char32_t*>::value,
+                        filesystem::path>::type
+resolve_dots_or_throw_not_found(const T &convertibleToPath)
+{
+    typedef std::basic_string<typename std::remove_pointer<
+        typename std::decay<T>::type>::type> StringT;
+    return resolve_dots_or_throw_not_found(StringT{convertibleToPath});
+}
+
+template<class T>
+typename std::enable_if<!std::is_same<typename std::decay<T>::type,
+                                      char*>::value
+                        && !std::is_same<typename std::decay<T>::type,
+                                         wchar_t*>::value
+                        && !std::is_same<typename std::decay<T>::type,
+                                         char16_t*>::value
+                        && !std::is_same<typename std::decay<T>::type,
+                                         char32_t*>::value,
+                        filesystem::path>::type
+resolve_dots_or_throw_not_found(const T &convertibleToPath)
+{
+    using boost::algorithm::equal;
+
+    filesystem::path ipath = convertibleToPath;
+    filesystem::path ret;
+
+    for (const auto &e: ipath) {
+        if (e == ".")
+            continue;
+
+        if (e == "..") {
+            if (ret.has_filename()) {
+                ret.remove_filename();
+            } else {
+                throw system::system_error{system::error_code{file_server_errc
+                            ::file_not_found}};
+            }
+        } else {
+            ret /= e;
+        }
+    }
+
+    return ret;
+}
+
 inline bool path_contains_file(const filesystem::path &dir,
                                const filesystem::path &file)
 {
@@ -1316,9 +1412,11 @@ async_response_transmit_dir(ServerSocket &socket, const String &method,
 
     try {
         auto canonical_root = canonical(root_dir);
-        auto canonical_file = canonical(root_dir / ipath);
+        auto canonical_file = canonical_root
+            / detail::resolve_dots_or_throw_not_found(ipath);
 
-        if (!detail::path_contains_file(canonical_root, canonical_file)) {
+        if (!detail::path_contains_file(canonical_root, canonical_file)
+            || !exists(canonical_file)) {
             socket.get_io_service().post([handler]() mutable {
                     handler(system::error_code{file_server_errc
                                 ::file_not_found});
@@ -1345,6 +1443,12 @@ async_response_transmit_dir(ServerSocket &socket, const String &method,
                                      is_head, handler);
     } catch(filesystem::filesystem_error &e) {
         auto err = e.code();
+        socket.get_io_service().post([handler,err]() mutable {
+                handler(err);
+            });
+    } catch(system::system_error &e) {
+        auto err = e.code();
+        std::cout << e.what() << std::endl;
         socket.get_io_service().post([handler,err]() mutable {
                 handler(err);
             });
