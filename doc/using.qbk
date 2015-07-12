@@ -14,7 +14,7 @@ The full list of dependencies is:
 
 * CMake 3.1.0 or more recent[footnote for the build system]. It's going to be
   replaced later.
-* Boost
+* Boost 1.57 or more recent.
   * algorithm, container, string_ref, ASIO, date_time and system[footnote Used
     in the core library.].
   * unit_test_framework[footnote For tests.].
