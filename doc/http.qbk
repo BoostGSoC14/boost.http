@@ -14,6 +14,11 @@
     ]
 ]
 
+[warning This is not an official Boost C++ library. It wasn't reviewed and can't
+be downloaded from www.boost.org.
+[@http://www.boost.org/community/review_schedule.html This library will be
+reviewed eventually].]
+
 [:This library boils down to providing HTTP producers (e.g. HTTP standalone
 servers) and concepts to permit user-provided producers to collaborate
 (i.e. communicate) with any other written HTTP consumer. A few HTTP consumers
