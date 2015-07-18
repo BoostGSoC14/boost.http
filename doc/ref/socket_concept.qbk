@@ -20,6 +20,27 @@ should provide.
   written as soon as convenient. If this property holds, the user MAY safely use
   the socket to transmit a live video stream, for instance.]]
 
+[[Message metadata]
+ [The HTTP status line plus the header section.]]
+
+[[Atomic message]
+ [A message which is issued and fully know with a single API call.
+
+  Every message is either atomic or chunked.]]
+
+[[Chunked message]
+ [A message which is issued among several API calls.
+
+  Every message is either atomic or chunked.
+
+  Chunked messages are useful if you don't know the message in advance
+  (e.g. video streaming). These messages can only be used if native stream is
+  supported.
+
+  You always need to be prepared to receive chunked messages and it's only
+  useful to differ operations which only apply to atomic messages or chunked
+  messages when you're about to send a message.]]
+
 ]
 
 [endsect]
@@ -126,8 +147,8 @@ Foundations for Asynchronous Operations, Revision 2].]]
  [`AsyncResultType`]
  [`a.write_state() == write_state ::metadata_issued`]
  [Initiate an asynchronous operation to write a chunk of the HTTP body data
-  payload. Handler is called when the operation completes with an appropriate
-  parameter.
+  payload (chunked message). Handler is called when the operation completes with
+  an appropriate parameter.
 
   `cm.body()` MUST *NOT* be modified while the operation is in progress.]
 
@@ -144,9 +165,9 @@ Foundations for Asynchronous Operations, Revision 2].]]
 [[`a.async_write_trailers(cm, token)`]
  [`AsyncResultType`]
  [`a.write_state() == write_state ::metadata_issued`]
- [Initiate an asynchronous operation to write the trailer part of the
-  message. Handler is called when the operation completes with an appropriate
-  parameter.
+ [Initiate an asynchronous operation to write the trailer part of the message
+  (chunked message). Handler is called when the operation completes with an
+  appropriate parameter.
 
   `cm.trailers()` MUST *NOT* be modified while the operation is in progress.]
  [[itemized_list
@@ -164,9 +185,9 @@ Foundations for Asynchronous Operations, Revision 2].]]
 [[`a.async_write_end_of_message (token)`]
  [`AsyncResultType`]
  [`a.write_state() == write_state ::metadata_issued`]
- [Initiate an asynchronous operation to signalize the sent message is
-  complete. Handler is called when the operation completes with an appropriate
-  parameter.]
+ [Initiate an asynchronous operation to signalize the sent message is complete
+  (chunked message). Handler is called when the operation completes with an
+  appropriate parameter.]
  [[itemized_list
   [`a.write_state() == write_state::finished`]
   [By the time the operation completes, the message is considered complete, if
@@ -196,6 +217,10 @@ Foundations for Asynchronous Operations, Revision 2].]]
 
 # The `Socket` object MUST *NOT* insert HTTP headers with empty keys (i.e. `""`)
   or empty values (i.e. `""`) in message objects provided by the user.
+
+# You MUST *NOT* write messages with the `"transfer-encoding: chunked"` header.
+
+# You MUST *NOT* write *atomic* messages with the `"transfer-encoding"` header.
 
 [endsect]
 

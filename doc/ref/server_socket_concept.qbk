@@ -127,8 +127,9 @@ Foundations for Asynchronous Operations, Revision 2].]]
 [[`a.async_write_response(sc, reason_phrase, cm, token)`] [`AsyncResultType`]
  [`a.write_state() == write_state::empty
    || a.write_state() == write_state::continue_issued`]
- [Initiate an asynchronous operation to write the response message. Handler is
-  called when the operation completes with an appropriate parameter.
+ [Initiate an asynchronous operation to write the response message (atomic
+  message). Handler is called when the operation completes with an appropriate
+  parameter.
 
   `reason_phrase` and `cm` MUST *NOT* be modified while the operation is in
   progress.]
@@ -166,9 +167,9 @@ Foundations for Asynchronous Operations, Revision 2].]]
     || a.write_state() == write_state::continue_issued)
    && a.write_response_native_stream() == true`]
 
- [Initiate an asynchronous operation to write the response metadata (status line
-  plus header section). Handler is called when the operation completes with an
-  appropriate parameter.
+ [Initiate an asynchronous operation to write the response metadata (chunked
+  message). Handler is called when the operation completes with an appropriate
+  parameter.
 
   `reason_phrase` and `cm.headers()` MUST *NOT* be modified while the operation
   is in progress.]
