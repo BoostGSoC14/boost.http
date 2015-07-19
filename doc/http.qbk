@@ -14,20 +14,53 @@
     ]
 ]
 
+[:This library can be used to create applications that need to expose services
+through HTTP (e.g. embeddable ReST services).]
+
 [warning This is not an official Boost C++ library. It wasn't reviewed and can't
 be downloaded from www.boost.org.
 [@http://www.boost.org/community/review_schedule.html This library will be
 reviewed eventually].]
 
-[:This library boils down to providing HTTP producers (e.g. HTTP standalone
-servers) and concepts to permit user-provided producers to collaborate
-(i.e. communicate) with any other written HTTP consumer. A few HTTP consumers
-(e.g. file server) are also provided to increase your productivity. It's fine to
-use this library to write a web chat application.]
+Among its features:
 
-This library is not about writing template-driven web pages, but it is about
-HTTP. You should be able to do things like video live streaming via HTTP (try to
-do that with old school web frameworks).
+* Designed for multiple backends, such HTTP/2, and FastGCI.
+  * Choose between compile-time and runtime polymorphism. Adapters are provided.
+  * What about a message passing framework with auto load balancing for free in
+    the future?
+* Support for modern HTTP features.
+  * Persistent streams.
+  * Chunked entities.
+  * [^100-continue] status.
+  * HTTP upgrade.
+  * Pipelining.
+* Fully asynchronous design.
+  * Extensible asyncrhonous model inherited from ASIO.
+    * Futures, *coroutines* and much more.
+* Lightweight standalone server.
+  * The underlying socket type is customizable, so you can also use a
+    [^queue_socket][footnote Useful to avoid the gotchas of ASIO composed
+    operations. See [@http://sourceforge.net/p/asio/mailman/message/32259256/]
+    for more information.][footnote See an example at
+    [@http://sourceforge.net/p/axiomq/code/ci/master/tree/include/axiomq/basic_queue_socket.hpp].].
+* SSL support.
+* Simple API that unifies HTTP messages and HTTP chunking.
+  * You can handle the request as soon as the metadata is available (request
+    line plus header section).
+  * It handles normal HTTP requests, HTTP chunking, and progressive downloading.
+* Flexible static file server with support for conditional requests, partial
+  download and ETag recognition.
+  * You can use the default file resolver or provide one yourself.
+  * You can adapt the default resolver.
+  * You can add a last hook to customize the response message before the file is
+    served.
+  * Stateless abstractions, relying on OS capabilities to provide cache.
+* Obsessive customization points, so you only pay for what you use (and it's
+  very unlikely the behaviour you need won't be usable).
+
+Conceptually Boost.Http is a Boost.Asio socket for HTTP, which means can
+leverage Boost.Asio features such as SSL and coroutines, and it integrates
+seemlessly with other Boost.Asio sockets.
 
 [variablelist
 
