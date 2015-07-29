@@ -73,6 +73,9 @@ seemlessly with other Boost.Asio sockets.
 [[[link tutorial Tutorial]]
  [Learn the basics.]]
 
+[[[link design_choices Design choices]]
+ [See the rationale for the possibly creative choices.]]
+
 [/ [[[link examples Examples]]
  [A few examples.]] ]
 
@@ -84,6 +87,7 @@ seemlessly with other Boost.Asio sockets.
 [include introduction.qbk]
 [include using.qbk]
 [include tutorial.qbk]
+[include design.qbk]
 [/
 [include examples.qbk]
 ]
