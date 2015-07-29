@@ -226,6 +226,15 @@ library who will beat C servers in every aspect.
 For type safety sake, the HTTP first line (request line or response's status
 line) isn't part of the HTTP message object, as its attributes are variant.
 
+As per [@https://tools.ietf.org/html/rfc7230#section-3.2.2 RFC 7230], ["a server
+MUST NOT apply a request to the target resource until the entire request header
+section is received, since later header fields might include conditionals,
+authentication credentials, or deliberately misleading duplicate header fields
+that would impact request processing], so we define an interface who will only
+expose a message once the complete header section is ready. The message body can
+be progressively received later. The API also unifies HTTP messages and HTTP
+chunking.
+
 [endsect]
 
 [endsect]
