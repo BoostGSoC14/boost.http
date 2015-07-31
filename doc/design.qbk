@@ -235,6 +235,12 @@ expose a message once the complete header section is ready. The message body can
 be progressively received later. The API also unifies HTTP messages and HTTP
 chunking.
 
+URL-decomposed objects aren't used because all an HTTP backend needs is some
+string-like container to push bytes. This container can implement an in-place
+URL parsing algorithm and it is all solved. The generic HTTP backends you find
+in Boost.Http won't care about the url concrete type and you don't need to
+expect any barrier from this side.
+
 [endsect]
 
 [endsect]
@@ -252,6 +258,7 @@ chunking.
 * Expose an HTTP parser based on Boost.Spirit.
 * Increase test coverage a lot.
 * Benchmarks.
+* Compress replies.
 * WebDAV (it will depend on Boost.XML, which doesn't exist yet).
 * World domination.
 
