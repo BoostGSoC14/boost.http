@@ -31,6 +31,12 @@ asio::io_service& server_socket_adaptor<Socket, Message>::get_io_service()
 }
 
 template<class Socket, class Message>
+bool server_socket_adaptor<Socket, Message>::is_open() const
+{
+    return Socket::is_open();
+}
+
+template<class Socket, class Message>
 read_state server_socket_adaptor<Socket, Message>::read_state() const
 {
     return Socket::read_state();
@@ -144,6 +150,13 @@ asio::io_service& server_socket_adaptor<std::reference_wrapper<Socket>, Message>
 ::get_io_service()
 {
     return wrapped_socket.get().get_io_service();
+}
+
+template<class Socket, class Message>
+bool server_socket_adaptor<std::reference_wrapper<Socket>, Message>
+::is_open() const
+{
+    return wrapped_socket.get().is_open();
 }
 
 template<class Socket, class Message>

@@ -17,7 +17,7 @@ public:
     {
         auto self = shared_from_this();
         try {
-            while (true) {
+            while (self->socket.is_open()) {
                 cout << "--\n[" << self->counter
                      << "] About to receive a new message" << endl;
                 self->socket.async_read_request(self->method, self->path,
@@ -85,10 +85,7 @@ public:
                                                   yield);
             }
         } catch (system::system_error &e) {
-            if (e.code()
-                != system::error_code{http::http_errc::stream_finished}
-                && e.code()
-                != system::error_code{asio::error::eof}) {
+            if (e.code() != system::error_code{asio::error::eof}) {
                 cerr << '[' << self->counter << "] Aborting on exception: "
                      << e.what() << endl;
                 std::exit(1);
@@ -98,7 +95,7 @@ public:
             }
 
             self->socket.next_layer()
-            .shutdown(asio::ip::tcp::socket::shutdown_both);
+                .shutdown(asio::ip::tcp::socket::shutdown_both);
             self->socket.next_layer().close();
         } catch (std::exception &e) {
             cerr << '[' << self->counter << "] Aborting on exception: "

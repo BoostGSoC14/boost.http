@@ -105,6 +105,7 @@ public:
 
     // ### QUERY FUNCTIONS ###
 
+    bool is_open() const;
     http::read_state read_state() const;
     http::write_state write_state() const;
     bool write_response_native_stream() const;
@@ -192,6 +193,8 @@ public:
     next_layer_type &next_layer();
     const next_layer_type &next_layer() const;
 
+    void open();
+
 private:
     typedef detail::http_parser http_parser;
     typedef detail::http_parser_settings http_parser_settings;
@@ -259,6 +262,7 @@ private:
     void invoke_handler(Handler &&handler);
 
     Socket channel;
+    bool is_open_ = true;
     http::read_state istate;
 
     // TODO: maybe replace by buffersequence to allow scatter-gather operations

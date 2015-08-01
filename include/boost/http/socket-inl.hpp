@@ -25,6 +25,12 @@ bool has_connection_close(const Headers &headers)
 } // namespace detail
 
 template<class Socket>
+bool basic_socket<Socket>::is_open() const
+{
+    return channel.is_open() && is_open_;
+}
+
+template<class Socket>
 read_state basic_socket<Socket>::read_state() const
 {
     return istate;
@@ -236,14 +242,11 @@ basic_socket<Socket>
     if (!implicit_content_length)
         buffers.push_back(asio::buffer(message.body()));
 
-    auto flags = this->flags;
     asio::async_write(channel, buffers,
-                      [handler,flags]
+                      [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
-        if (ec || flags & KEEP_ALIVE)
-            handler(ec);
-        else
-            handler(system::error_code{http_errc::stream_finished});
+        is_open_ = flags & KEEP_ALIVE;
+        handler(ec);
     });
 
     return result.get();
@@ -482,14 +485,11 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
 
     buffers.push_back(crlf);
 
-    auto flags = this->flags;
     asio::async_write(channel, buffers,
-                      [handler,flags]
+                      [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
-        if (ec || flags & KEEP_ALIVE)
-            handler(ec);
-        else
-            handler(system::error_code{http_errc::stream_finished});
+        is_open_ = flags & KEEP_ALIVE;
+        handler(ec);
     });
 
     return result.get();
@@ -519,14 +519,11 @@ basic_socket<Socket>
 
     auto last_chunk = string_literal_buffer("0\r\n\r\n");
 
-    auto flags = this->flags;
     asio::async_write(channel, last_chunk,
-                      [handler,flags]
+                      [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
-        if (ec || flags & KEEP_ALIVE)
-            handler(ec);
-        else
-            handler(system::error_code{http_errc::stream_finished});
+        is_open_ = flags & KEEP_ALIVE;
+        handler(ec);
     });
 
     return result.get();
@@ -574,6 +571,12 @@ template<class Socket>
 const Socket &basic_socket<Socket>::next_layer() const
 {
     return channel;
+}
+
+template<class Socket>
+void basic_socket<Socket>::open()
+{
+    is_open_ = true;
 }
 
 template<class Socket>

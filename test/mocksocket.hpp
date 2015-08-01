@@ -9,6 +9,11 @@ public:
         io_service(io_service)
     {}
 
+    bool is_open() const
+    {
+        return true;
+    }
+
     template<class MutableBufferSequence, class CompletionToken>
     typename boost::asio::async_result<
         typename boost::asio::handler_type<

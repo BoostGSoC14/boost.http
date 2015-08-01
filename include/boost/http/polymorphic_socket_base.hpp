@@ -29,6 +29,7 @@ public:
 
     // ### ABI-stable interface ###
     virtual asio::io_service& get_io_service() = 0;
+    virtual bool is_open() const = 0;
     virtual http::read_state read_state() const = 0;
     virtual http::write_state write_state() const = 0;
     virtual void async_read_some(message_type &message,

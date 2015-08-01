@@ -86,11 +86,8 @@ int main(int argc, char *argv[])
                 http::async_response_transmit_file(socket, message, reply, file,
                                                    yield);
             } catch (system::system_error &e) {
-                if (e.code()
-                    != system::error_code{http::http_errc::stream_finished}) {
-                    cerr << "Aborting on exception: " << e.what() << endl;
-                    std::exit(1);
-                }
+                cerr << "Aborting on exception: " << e.what() << endl;
+                std::exit(1);
 
                 socket.next_layer()
                 .shutdown(asio::ip::tcp::socket::shutdown_both);

@@ -44,18 +44,6 @@ The traits `boost::system::is_error_code_enum` and
  HTTP client and later started to behave as an HTTP server, or vice versa, on
  the same channel.]]
 
-[[`stream_finished`][It indicates the end of the HTTP stream on the underlying
- connection or events with similar semantic.
-
- The user should free the resources after detecting this error (`SSL::shutdown`,
- `TCP::shutdown`, `TCP::close`...).
-
- [caution If you're implementing an HTTP producer, you MUST *NOT* use this value
-  if the operations didn't completed properly.]
-
- [note Maybe you'll find this behaviour similar to `boost::asio::error::eof` or
-  `boost::asio::error::operation_aborted`.]]]
-
 ]
 
 [endsect]

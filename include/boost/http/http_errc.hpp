@@ -17,8 +17,7 @@ enum class http_errc {
     native_stream_unsupported,
     parsing_error,
     buffer_exhausted,
-    wrong_direction,
-    stream_finished
+    wrong_direction
 };
 
 inline boost::system::error_code make_error_code(http_errc e)

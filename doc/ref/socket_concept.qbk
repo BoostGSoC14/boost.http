@@ -91,6 +91,8 @@ Foundations for Asynchronous Operations, Revision 2].]]
  type of message.] [Must be a type fulfilling the [link
  reference.message_concept [^Message] concept].] []]
 
+[[`ca.is_open()`] [`bool`] [] [Determine whether the socket is open.] []]
+
 [[`ca.read_state()`] [[^[link reference.read_state read_state]]] []
  [Returns the state associated with the `Socket` meaningful for reading
   operations.] []]

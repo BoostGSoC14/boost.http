@@ -35,9 +35,6 @@ std::string http_category_impl::message(int condition) const noexcept
     case static_cast<int>(http_errc::wrong_direction):
         return "You're trying to use a server channel in client mode or vice"
             " versa!";
-    case static_cast<int>(http_errc::stream_finished):
-        return "Issued operations have completed, but the underlying stream"
-            " finished and can no longer be used";
     default:
         return "undefined";
     }

@@ -60,6 +60,10 @@ These are the functions that subclasses need to implement in order to lose the
  [This function presents no differences (besides mandatory virtual) from the one
   with the same name found on the [link reference.socket_concept [^Socket]
   concept].]]
+[[`virtual bool is_open() const = 0`]
+ [This function presents no differences (besides mandatory virtual) from the one
+  with the same name found on the [link reference.socket_concept [^Socket]
+  concept].]]
 [[`virtual read_state read_state() const = 0`]
  [This function presents no differences (besides mandatory virtual) from the one
   with the same name found on the [link reference.socket_concept [^Socket]

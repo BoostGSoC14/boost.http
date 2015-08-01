@@ -94,6 +94,8 @@ See the [link reference.socket_concept [^Socket] concept].
 
 [`asio::io_service& get_io_service()`]
 
+[`bool is_open() const`]
+
 [`read_state read_state() const`]
 
 [`write_state write_state() const`]

@@ -34,6 +34,7 @@ public:
 
     typedef Socket next_layer_type;
 
+    using Parent::is_open;
     using Parent::read_state;
     using Parent::write_state;
     using Parent::write_response_native_stream;

@@ -208,17 +208,9 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 }
                 BOOST_REQUIRE(captured);
 
-                captured = false;
-                try {
-                    socket.async_write_response(200, string_ref("OK"), reply,
-                                                yield);
-                } catch(system::system_error &e) {
-                    BOOST_REQUIRE(e.code()
-                                  == system::error_code{http::http_errc
-                                                        ::stream_finished});
-                    captured = true;
-                }
-                BOOST_REQUIRE(captured);
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_REQUIRE(!socket.is_open());
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -465,17 +457,9 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 }
                 BOOST_REQUIRE(captured);
 
-                captured = false;
-                try {
-                    socket.async_write_response(200, string_ref("OK"), reply,
-                                                yield);
-                } catch(system::system_error &e) {
-                    BOOST_REQUIRE(e.code()
-                                  == system::error_code{http::http_errc
-                                                        ::stream_finished});
-                    captured = true;
-                }
-                BOOST_REQUIRE(captured);
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_REQUIRE(!socket.is_open());
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -849,19 +833,11 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                          back_inserter(reply.body()));
                 }
 
-                {
-                    bool captured = false;
-                    try {
-                        socket.async_write_response(200, string_ref("OK"),
-                                                    reply, yield);
-                    } catch(system::system_error &e) {
-                        BOOST_REQUIRE(e.code()
-                                      == system::error_code{http::http_errc
-                                                            ::stream_finished});
-                        captured = true;
-                    }
-                    BOOST_REQUIRE(captured);
-                }
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_REQUIRE(!socket.is_open());
+                socket.open();
+                BOOST_REQUIRE(socket.is_open());
 
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
@@ -906,19 +882,11 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
 
                 reply.headers().emplace("connection", "close");
 
-                {
-                    bool captured = false;
-                    try {
-                        socket.async_write_response(200, string_ref("OK"),
-                                                    reply, yield);
-                    } catch(system::system_error &e) {
-                        BOOST_REQUIRE(e.code()
-                                      == system::error_code{http::http_errc
-                                                            ::stream_finished});
-                        captured = true;
-                    }
-                    BOOST_REQUIRE(captured);
-                }
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_REQUIRE(!socket.is_open());
+                socket.open();
+                BOOST_REQUIRE(socket.is_open());
 
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
@@ -955,19 +923,9 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                          back_inserter(reply.body()));
                 }
 
-                {
-                    bool captured = false;
-                    try {
-                        socket.async_write_response(200, string_ref("OK"),
-                                                    reply, yield);
-                    } catch(system::system_error &e) {
-                        BOOST_REQUIRE(e.code()
-                                      == system::error_code{http::http_errc
-                                              ::stream_finished});
-                        captured = true;
-                    }
-                    BOOST_REQUIRE(captured);
-                }
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_REQUIRE(!socket.is_open());
 
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
@@ -1145,17 +1103,9 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                          back_inserter(reply.body()));
                 }
 
-                bool captured = false;
-                try {
-                    socket.async_write_response(200, string_ref("OK"), reply,
-                                                yield);
-                } catch(system::system_error &e) {
-                    BOOST_REQUIRE(e.code()
-                                  == system::error_code{http::http_errc
-                                                        ::stream_finished});
-                    captured = true;
-                }
-                BOOST_REQUIRE(captured);
+                socket.async_write_response(200, string_ref("OK"), reply,
+                                            yield);
+                BOOST_REQUIRE(!socket.is_open());
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {

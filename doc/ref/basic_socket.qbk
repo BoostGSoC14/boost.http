@@ -91,6 +91,14 @@ The underlying I/O object is expected to have the following properties:
 [[`const next_layer_type &next_layer() const`][Returns a reference to the
  underlying stream.]]
 
+[[`void open()`][Change socket state to open.
+
+[note See `is_open()`]
+
+[warning You MUST cancel current ongoing operations and wait for their
+completion handlers to be called before call this function. Otherwise, undefined
+behaviour is invoked.]]]
+
 ]
 
 [section `Socket` concept]
@@ -100,6 +108,8 @@ See the [link reference.socket_concept [^Socket] concept].
 [itemized_list
 
 [`asio::io_service& get_io_service()`]
+
+[`bool is_open() const`]
 
 [`read_state read_state() const`]
 
