@@ -158,6 +158,58 @@ With such very generalized abstractions, you may be worried about the need to
 type too much to get something done. This is being solved by providing higher
 level flexible abstractions, such as the file server you can already find.
 
+[section The what]
+
+[$bnf.svg [format SVG]]
+
+The above image shows an overview of how to build HTTP servers using Boost.Http.
+
+Let's assume you're going to use the provided `http::socket`, suitable for
+embedding HTTP servers in your application.
+
+You must instantiate a TCP socket acceptor and accept new connections. You
+should handle all connections concurrently.
+
+Each connection you handle is a pipeline of request-reply pair. To receive the
+full request, your action may be required at several points. First, you should
+receive the request metadata, then it may be necessary to issue a 100-continue
+response. Then you need to issue reads for the body and the trailers until the
+whole request has been received.
+
+You're finally able to send the reply. You have two options, atomic messages or
+chunked messages. Chunked messages are not always available and must check if
+they can be used for each request you receive, using
+`write_response_native_stream()`.
+
+If you spread the handling logic among several functions, a good approach would
+be to always share the triplet
+`<communication channel, request message, response message>` around.
+
+Still missing is URL parsing and request routing, so you must do this yourself,
+possibly managing pools of message and socket objects.
+
+This system allows you to implement powerful schedulers doing fair share of
+resources over different IPs, whether the requests originate from HTTP or HTTPS,
+using all cores of your CPU and deferring new work when the work load is too
+high. You should be able to do all fine-grained tuning you need and also easily
+create higher level that are suitable for your application. Not only that, this
+library could become an interoperability layer for all higher-level that web
+application developers create.
+
+Also, if you pay attention, you'll realize that this proposal just expose HTTP
+with a message oriented abstraction. All procedures in the diagram are related
+to HTTP events and actions. And this is a modern API and you can use pretty much
+every modern HTTP feature (persistent streams & HTTP pipelining, chunked
+entities, 100-continue status, ...). And you won't handle any parsing or
+low-level detail at all. It's abstracted enough to allow alternative backends.
+
+However, this can easily become a callback hell, and futures wouldn't help much,
+given the need to use `while`-constructs. If you use coroutines, there is hope
+your code will be readable. Boost.Http follows Asio extensible asynchronous
+model and you're free to use callbacks, futures, coroutines or others.
+
+[endsect]
+
 [section The why]
 
 Boost.Http provides an HTTP socket, which can be used to manage a pipeline of
@@ -248,6 +300,27 @@ string-like container to push bytes. This container can implement an in-place
 URL parsing algorithm and it is all solved. The generic HTTP backends you find
 in Boost.Http won't care about the url concrete type and you don't need to
 expect any barrier from this side.
+
+[endsect]
+
+[section The when]
+
+I couldn't resist the temptation of adding a ["/when/] named section after I
+already had written a ["/what/] and a ["/why/] section.
+
+Just too much research time went into this proposal. Really, a lot of time. I
+developed some broken HTTP projects some years ago, learned a lot of design with
+really different approaches (PHP, Django, Node.js) trying to solve this problem,
+developed my own serious project ([@https://github.com/vinipsmaker/tufao Tufão])
+and continued to study and research a lot (the HTTP spec resurrection project,
+or RFC7230, helped *a lot*). I've gathered info around where interoperability
+may be a problem if API doesn't help and what features will be desired, sooner
+or later, by users, among other data. I've done real effort to gather feedback
+from C++ programmers for quite a while already.
+
+A special thanks to Bjørn Reese for mentoring me on Asio quirks and API general
+design, the feedback which changed the proposal the most. Also a special thanks
+to any friend who helped to maintain my mind at a happy state.
 
 [endsect]
 
