@@ -158,13 +158,17 @@ With such very generalized abstractions, you may be worried about the need to
 type too much to get something done. This is being solved by providing higher
 level flexible abstractions, such as the file server you can already find.
 
-[section The Boost.Http design]
+[section The why]
 
 Boost.Http provides an HTTP socket, which can be used to manage a pipeline of
 HTTP messages (i.e. an HTTP request or an HTTP reply). HTTP is stateless and
 each message coming from the same socket is independent. The HTTP socket from
 Boost.Http is a concept and specific implementations from this concept may
-provide more guarantees about the communication properties. The provided
+provide more guarantees about the communication properties. The reasons to
+provide few guarantees are (`#1`) because we want a common denominator from
+which we can provide implementation for multiple communication channels and
+(`#2`) because implementation details are usually not required for the
+application, which is only interested in a high-level abstraction. The provided
 `boost::http::basic_socket` implementation will handle actual HTTP traffic from
 TCP sockets and you can use it to handle `HTTP/1.0` and `HTTP/1.1` traffic from
 TCP and SSL sockets.
@@ -174,7 +178,8 @@ interaction and react appropriately. There are rules regarding when the socket
 can mutate and change its states. Once you request the socket to read a new HTTP
 request, you'll be notified as soon as the request metadata (request line and
 HTTP headers) are ready, then you can progressively download the body and react
-appropriately.
+appropriately. This idea is very useful to improve communication between the
+library authors and application authors and also helps to create some tests.
 
 You'll have to inspect the socket to know whether the current message-exchange
 requires `100-continue`, allows chunked entities (streaming response) and alike.
@@ -182,14 +187,17 @@ There is like two kind of replies. With atomic replies, you write the whole
 message at once. With chunked message, you compose a message spreading its
 construction among several API calls. You may want to use chunked messages when
 you don't know the whole body in advance (e.g. reading a file, video live
-stream...), but chunked messages can only be used in certain message exchanges.
+stream...), but chunked messages can only be used in certain message
+exchanges. The reason behind providing two kind of replies is to properly
+support a wider range of HTTP communication channels.
 
 You create one HTTP socket for each HTTP client and should handle them all
 concurrently. In case you're using the embeddable HTTP server backend, you must
 use an acceptor to initialize the `basic_socket`s' `next_layer()` and then
 consume them. `basic_socket` templatize the underlying internal socket, so you
 can use SSL, queue wrapping socket (to work around Asio's composed operations)
-and so on.
+and so on. The intention of Boost.Http is not only to generalize over data
+structures and HTTP backends, but about any place where it may be helpful.
 
 The choice to represent the HTTP messages in separate objects and the whole
 combination of this design ease supports for HTTP pipelining a lot. In passive
