@@ -15,61 +15,65 @@ class connection: public std::enable_shared_from_this<connection>
 public:
     void operator()(asio::yield_context yield)
     {
-        auto guard = shared_from_this();
+        auto self = shared_from_this();
         try {
             while (true) {
-                cout << '[' << counter << "] About to receive a new message"
-                     << endl;
-                socket.async_read_request(method, path, message, yield);
-                //message.body().clear(); // freeing not used resources
+                cout << "--\n[" << self->counter
+                     << "] About to receive a new message" << endl;
+                self->socket.async_read_request(self->method, self->path,
+                                                self->message, yield);
+                //self->message.body().clear(); // freeing not used resources
 
-                if (http::request_continue_required(message)) {
-                    cout << '[' << counter
+                if (http::request_continue_required(self->message)) {
+                    cout << '[' << self->counter
                          << "] Continue required. About to send"
                         " \"100-continue\""
                          << std::endl;
-                    socket.async_write_response_continue(yield);
+                    self->socket.async_write_response_continue(yield);
                 }
 
-                while (socket.read_state() != http::read_state::empty) {
-                    cout << '[' << counter << "] Message not fully received"
-                         << endl;
-                    switch (socket.read_state()) {
+                while (self->socket.read_state() != http::read_state::empty) {
+                    cout << '[' << self->counter
+                         << "] Message not fully received" << endl;
+                    switch (self->socket.read_state()) {
                     case http::read_state::message_ready:
-                        cout << '[' << counter << "] About to receive some body"
-                             << endl;
-                        socket.async_read_some(message, yield);
+                        cout << '[' << self->counter
+                             << "] About to receive some body" << endl;
+                        self->socket.async_read_some(self->message, yield);
                         break;
                     case http::read_state::body_ready:
-                        cout << '[' << counter << "] About to receive trailers"
-                             << endl;
-                        socket.async_read_trailers(message, yield);
+                        cout << '[' << self->counter
+                             << "] About to receive trailers" << endl;
+                        self->socket.async_read_trailers(self->message, yield);
                         break;
                     default:;
                     }
                 }
 
                 //cout << "BODY:==";
-                //for (const auto &e: message.body()) {
+                //for (const auto &e: self->message.body()) {
                 //    cout << char(e);
                 //}
                 //cout << "==" << endl;
 
-                cout << '[' << counter << "] Message received. State = "
-                     << int(socket.read_state()) << endl;
-                cout << '[' << counter << "] Method: " << method << endl;
-                cout << '[' << counter << "] Path: " << path << endl;
+                cout << '[' << self->counter << "] Message received. State = "
+                     << int(self->socket.read_state()) << endl;
+                cout << '[' << self->counter << "] Method: " << self->method
+                     << endl;
+                cout << '[' << self->counter << "] Path: " << self->path
+                     << endl;
                 {
-                    auto host = message.headers().find("host");
-                    if (host != message.headers().end())
-                        cout << '[' << counter << "] Host header: "
+                    auto host = self->message.headers().find("host");
+                    if (host != self->message.headers().end())
+                        cout << '[' << self->counter << "] Host header: "
                              << host->second << endl;
                 }
 
-                std::cout << '[' << counter << "] Write state = "
-                          << int(socket.write_state()) << std::endl;
+                std::cout << '[' << self->counter << "] Write state = "
+                          << int(self->socket.write_state()) << std::endl;
 
-                cout << '[' << counter << "] About to send a reply" << endl;
+                cout << '[' << self->counter << "] About to send a reply"
+                     << endl;
 
                 http::message reply;
                 //reply.headers().emplace("connection", "close");
@@ -77,25 +81,28 @@ public:
                 std::copy(body, body + sizeof(body) - 1,
                           std::back_inserter(reply.body()));
 
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                self->socket.async_write_response(200, string_ref("OK"), reply,
+                                                  yield);
             }
         } catch (system::system_error &e) {
             if (e.code()
-                != system::error_code{http::http_errc::stream_finished}) {
-                cerr << '[' << counter << "] Aborting on exception: "
+                != system::error_code{http::http_errc::stream_finished}
+                && e.code()
+                != system::error_code{asio::error::eof}) {
+                cerr << '[' << self->counter << "] Aborting on exception: "
                      << e.what() << endl;
                 std::exit(1);
             } else {
-                cout << '[' << counter << "] Closing connection" << endl;
+                cout << '[' << self->counter << "] Closing connection because: "
+                     << e.what() << endl;
             }
 
-            socket.next_layer()
+            self->socket.next_layer()
             .shutdown(asio::ip::tcp::socket::shutdown_both);
-            socket.next_layer().close();
+            self->socket.next_layer().close();
         } catch (std::exception &e) {
-            cerr << '[' << counter << "] Aborting on exception: " << e.what()
-                 << endl;
+            cerr << '[' << self->counter << "] Aborting on exception: "
+                 << e.what() << endl;
             std::exit(1);
         }
     }
