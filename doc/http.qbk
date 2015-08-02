@@ -64,9 +64,6 @@ seemlessly with other Boost.Asio sockets.
 
 [variablelist
 
-[[[link introduction Introduction]]
- [Explains the objectives and expectations.]]
-
 [[[link using Using]]
  [Requirements and installation.]]
 
@@ -84,7 +81,6 @@ seemlessly with other Boost.Asio sockets.
 
 ]
 
-[include introduction.qbk]
 [include using.qbk]
 [include tutorial.qbk]
 [include design.qbk]
