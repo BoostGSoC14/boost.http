@@ -6,6 +6,8 @@
 
  enum class write_state
 
+[$write_state.svg [format SVG]]
+
 Represents the current state in the HTTP outgoing response or HTTP outgoing
 request.
 

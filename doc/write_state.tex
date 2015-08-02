@@ -1,0 +1,22 @@
+\documentclass{article}
+\usepackage[letterpaper, landscape, margin=0.5in]{geometry}
+\usepackage{tikz}
+\usepackage{tikz-uml}
+
+\begin{document}
+\begin{tikzpicture}
+\begin{umlstate}[x=5, y=5, name=empty]{empty} \end{umlstate}
+\begin{umlstate}[x=0, y=0, name=continue]{continue\_{}issued} \end{umlstate}
+\begin{umlstate}[x=10, y=-5, name=metadata]{metadata\_{}issued} \end{umlstate}
+\begin{umlstate}[x=20, y=-10, name=finished]{finished} \end{umlstate}
+
+\umlHVtrans[arg=write\_{}response\_{}continue, pos=0.5]{empty}{continue}
+\umlVHtrans[arg=write\_{}response\_{}metadata, pos=0.5]{empty}{metadata}
+\umlVHtrans[arg=write\_{}response\_{}metadata, pos=0.95]{continue}{metadata}
+\umlVHtrans[arg=write\_{}response, pos=0.75]{continue}{finished}
+\umlHVtrans[arg=write\_{}response, pos=0.5]{empty}{finished}
+\umlVHtrans[arg=write\_{}trailers, pos=0.5]{metadata}{finished}
+\umlVHtrans[arg=write\_{}end\_{}of\_{}message, pos=0.75]{metadata}{finished}
+\umltrans[recursive=170|110|2cm, arg=write, pos=2, recursive direction=right to top]{metadata}{metadata}
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,22 @@
+\documentclass{article}
+\usepackage[letterpaper, landscape, margin=0.5in]{geometry}
+\usepackage{tikz}
+\usepackage{tikz-uml}
+
+\begin{document}
+\begin{tikzpicture}
+\begin{umlstate}[x=0, y=5, name=empty]{empty} \end{umlstate}
+\begin{umlstate}[x=5, y=0, name=message]{message\_{}ready} \end{umlstate}
+\begin{umlstate}[x=10, y=-5, name=body]{body\_{}ready} \end{umlstate}
+\begin{umlstate}[x=15, y=-10, name=finished]{finished} \end{umlstate}
+
+\umlHVtrans[arg=read\_{}request, pos=0.5]{empty}{message}
+\umlHVtrans[]{empty}{body}
+\umlHVtrans[]{empty}{finished}
+
+\umlVHtrans[arg=read\_{}some, pos=0.5]{message}{body}
+\umlVHtrans[]{message}{finished}
+
+\umlHVtrans[arg=read\_{}trailers, pos=0.5]{body}{finished}
+\end{tikzpicture}
+\end{document}

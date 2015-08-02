@@ -6,6 +6,8 @@
 
  enum class read_state
 
+[$read_state.svg [format SVG]]
+
 Represents the current state in the HTTP incoming request or HTTP incoming
 response.
 
