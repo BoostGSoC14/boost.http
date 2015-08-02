@@ -1,0 +1,17 @@
+\documentclass{article}
+\usepackage[letterpaper, landscape, margin=2in]{geometry}
+\usepackage[rounded]{syntax}
+
+\begin{document}
+\begin{syntdiag}
+<server> ::= \begin{rep} <pipeline> \end{rep}
+\\
+<pipeline> ::= \begin{rep} <request> \end{rep}
+\\
+<request> ::= <request metadata> \begin{stack} \\ <100-continue> \end{stack} \begin{stack} \\ <body> \end{stack} \begin{stack} \\ <trailers> \end{stack} <end-of-message>
+\\
+<request metadata> ::= <method> <path> <header section>
+\\
+<body> ::= \begin{rep} <chunk> \end{rep}
+\end{syntdiag}
+\end{document}

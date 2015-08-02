@@ -160,7 +160,7 @@ level flexible abstractions, such as the file server you can already find.
 
 [section The what]
 
-[$bnf.svg [format SVG]]
+[$request%20handling.svg [format SVG]]
 
 The above image shows an overview of how to build HTTP servers using Boost.Http.
 
@@ -195,6 +195,8 @@ high. You should be able to do all fine-grained tuning you need and also easily
 create higher level that are suitable for your application. Not only that, this
 library could become an interoperability layer for all higher-level that web
 application developers create.
+
+[$request.svg [format SVG]]
 
 Also, if you pay attention, you'll realize that this proposal just expose HTTP
 with a message oriented abstraction. All procedures in the diagram are related

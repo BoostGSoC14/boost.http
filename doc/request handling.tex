@@ -4,18 +4,6 @@
 
 \begin{document}
 \begin{syntdiag}
-<server> ::= \begin{rep} <pipeline> \end{rep}
-\\
-<pipeline> ::= \begin{rep} <request> \end{rep}
-\\
-<request> ::= <request metadata> \begin{stack} \\ <100-continue> \end{stack} \begin{stack} \\ <body> \end{stack} \begin{stack} \\ <trailers> \end{stack} <end-of-message>
-\\
-<request metadata> ::= <method> <path> <header section>
-\\
-<body> ::= \begin{rep} <chunk> \end{rep}
-\end{syntdiag}
-
-\begin{syntdiag}
 <request handling> ::= \tok{is_open()} \tok{async_read_request()} \begin{stack} \\ \tok{request_continue_required()} \tok{async_write_response_continue()} \end{stack} \begin{rep} <read_state() is NOT empty> \end{rep} \tok{read_state() == read_state::empty} <write_response>
 \\
 <read_state() is NOT empty> ::= \begin{stack} \tok{read_state() == read_state::message_ready} \tok{async_read_some()} \\ \tok{read_state() == read_state::body_ready} \tok{async_read_trailers()} \end{stack}
