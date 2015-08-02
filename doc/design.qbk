@@ -210,6 +210,67 @@ model and you're free to use callbacks, futures, coroutines or others.
 
 [endsect]
 
+[section ASIO familiarity]
+
+This library may be very pleasant to use for any ASIO-centered mind.
+
+* Completion tokens received as the last argument for aync functions.
+* Async operations have the `async_` prefix.
+* User control the bufferring mechanism, passing the opaque asio::buffer type.
+* User provides /output/ arguments as references and they'll be "filled" by the
+  time the operation completes.
+* Memory management is left for the user.
+* An active model is presented.
+* Similar nomenclature.
+
+/The ASIO way/ saved us from many problems that otherwise would force us to
+propose solutions to already know problems such as:
+
+* Object pools.
+* Deferring acceptance to later on high load scenarios.
+* HTTP pipelining problems.
+* Partially filling response objects from different layers of abstractions.
+* A wrapping/wrapped socket can take care of tasks such as
+  synchronization/queueing and timeout.
+
+[endsect]
+
+[section The mysterious/weird/news API]
+
+One of the maybe surprising things to start with is the use of highly structured
+objects as opposed to things like opaque buffers. You pass a message object to
+the initiating function and you'll have a fully decomposed object with an URL, a
+method and even an associative container for the headers!!!
+
+If you do have special memory requirements for the messages, you're free to
+implementing an alternative container, as long as it fulfills the documented
+`Message` concept. Connections channels and HTTP messages are *not* coupled
+together. You can reuse these pieces in many many different contexts.
+
+The uncoupled architecture is more general and it is the default mode, but let's
+say you work at a more constrained environment where memory copying is banned,
+for instance. You could provide your HTTP backend (e.g. a non-copying embedded
+server) tied to your specific HTTP message type implementing our ideas and you
+still may benefit from this libray. This library provides some HTTP algorithms
+and some HTTP algorithms (e.g. file server) and these abstractions will save
+some time from you.
+
+Another difference in this library is the presence of an associated state for
+reading and writing messages. I believe this abstraction can be extended to also
+support very simple HTTP clients. To avoid confusion, if some member-function
+cannot be used for both modes (clients and servers), it'll have one of the
+following prefixes:
+
+* async_read_request
+* async_read_response
+* async_write_request
+* async_write_response
+
+We gave special attention to `read_state` and `write_state` to make sure it'll
+also be usable for *simple* and asynchronous HTTP clients.
+
+[endsect]
+
 [section The why]
 
 Boost.Http provides an HTTP socket, which can be used to manage a pipeline of
@@ -301,6 +362,10 @@ URL parsing algorithm and it is all solved. The generic HTTP backends you find
 in Boost.Http won't care about the url concrete type and you don't need to
 expect any barrier from this side.
 
+We do not use the message itself as a buffer object while we're parsing the
+connection stream. We require a separate buffer to be able to properly handle
+HTTP pipelining (and futurely multiplexing in =HTTP/2.0=).
+
 [endsect]
 
 [section The when]
@@ -332,11 +397,11 @@ to any friend who helped to maintain my mind at a happy state.
 * Client-side HTTP.
 * `HTTP/2.0`.
 * Request-router.
-* Forms.
-* Cookies and sessions.
+* Forms and file uploads.
+* Cookies and sessions (RFC 6265).
 * WebSocket.
 * Alternative backends.
-* Expose an HTTP parser based on Boost.Spirit.
+* Expose an HTTP parser based on Boost.Spirit (maybe [@https://github.com/felipealmeida/http-parsers Felipe Almeida's]).
 * Increase test coverage a lot.
 * Benchmarks.
 * Compress replies.
