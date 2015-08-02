@@ -62,6 +62,9 @@ Foundations for Asynchronous Operations, Revision 2].]]
 
 [[Expression] [Return type] [Precondition] [Semantics] [Postcondition]]
 
+[[`std::is_base_of<std::true_type, boost::http::is_server_socket<X>>`]
+ [`std::true_type`] [] [] []]
+
 [[`X::method_server_type`] []
  [`ServerSocket` only supports operations involving a single type of method.]
  [Must be a type fulfilling the requirements for the `String` concept (i.e.

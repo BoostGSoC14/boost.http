@@ -105,6 +105,9 @@ uppercase char(s) invoke undefined behaviour.]]
  [Semantics]
  [Postcondition]]
 
+[[`std::is_base_of<std::true_type, boost::http::is_message<X>>`]
+ [`std::true_type`] [] [] []]
+
 [[`X::headers_type`] [`Headers`] [] [] []]
 
 [[`X::body_type`] [`Body`] [] [] []]

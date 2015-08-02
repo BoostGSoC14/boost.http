@@ -83,6 +83,9 @@ Foundations for Asynchronous Operations, Revision 2].]]
 
 [[Expression] [Return type] [Precondition] [Semantics] [Postcondition]]
 
+[[`std::is_base_of<std::true_type, boost::http::is_socket<X>>`]
+ [`std::true_type`] [] [] []]
+
 [[`a.get_io_service()`] [`asio::io_service&`] [] [Returns the `io_service`
  object through which the handlers of asynchronous operations will be invoked.]
  []]
