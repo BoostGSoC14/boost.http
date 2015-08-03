@@ -22,32 +22,43 @@ be downloaded from www.boost.org.
 [@http://www.boost.org/community/review_schedule.html This library will be
 reviewed eventually].]
 
+Conceptually Boost.Http is a Boost.Asio socket for HTTP, which means can
+leverage Boost.Asio features such as SSL and coroutines, and it integrates
+seemlessly with other Boost.Asio sockets.
+
 Among its features:
 
-* Designed for multiple backends, such HTTP/2, and FastGCI.
-  * Choose between compile-time and runtime polymorphism. Adapters are provided.
-  * What about a message passing framework with auto load balancing for free in
-    the future?
 * Support for modern HTTP features.
-  * Persistent streams.
-  * Chunked entities.
+  * Pipelining and persistent connection, where the same connection can be used
+    to serve HTTP multiple requests.
+  *  Chunking, where the HTTP body can be split into smaller pieces that are
+     sent one by one. This is useful for building event listeners.
+  * Upgrading, where the HTTP protocol can be changed into another protocol such
+    as WebSockets.
+  * Security, where SSL is used to encrypt the traffic.
   * [^100-continue] status.
-  * HTTP upgrade.
-  * Pipelining.
-* Fully asynchronous design.
-  * Extensible asyncrhonous model inherited from ASIO.
-    * Futures, *coroutines* and much more.
+* Lean API that unifies HTTP messages and HTTP chunking.
+  * You can handle the request as soon as the metadata is available (request
+    line plus header section).
+  * There is only one API to acquire the request body. This API allows
+    progressive downloading.
+  * The response body can be be generated wholesale for normal HTTP responses,
+    or be split into smaller pieces using HTTP chunking.
+* Extensible asynchronous design inherited from ASIO.
+  * Interaction via futures, coroutines, or callbacks.
+  * Various HTTP server architectures are possible, whether multi-threaded
+    servers (one thread per request, either with or without a thread-pool), one
+    coroutine per request, or completely single-threaded.
+  * Seamless integration with other non-HTTP ASIO services.
+
+Boost.Http also provides a couple of special-purpose server classes:
+
 * Lightweight standalone server.
   * The underlying socket type is customizable, so you can also use a
     [^queue_socket][footnote Useful to avoid the gotchas of ASIO composed
     operations. See [@http://sourceforge.net/p/asio/mailman/message/32259256/]
     for more information.][footnote See an example at
     [@http://sourceforge.net/p/axiomq/code/ci/master/tree/include/axiomq/basic_queue_socket.hpp].].
-* SSL support.
-* Simple API that unifies HTTP messages and HTTP chunking.
-  * You can handle the request as soon as the metadata is available (request
-    line plus header section).
-  * It handles normal HTTP requests, HTTP chunking, and progressive downloading.
 * Flexible static file server with support for conditional requests, partial
   download and ETag recognition.
   * You can use the default file resolver or provide one yourself.
@@ -55,12 +66,10 @@ Among its features:
   * You can add a last hook to customize the response message before the file is
     served.
   * Stateless abstractions, relying on OS capabilities to provide cache.
-* Obsessive customization points, so you only pay for what you use (and it's
-  very unlikely the behaviour you need won't be usable).
 
-Conceptually Boost.Http is a Boost.Asio socket for HTTP, which means can
-leverage Boost.Asio features such as SSL and coroutines, and it integrates
-seemlessly with other Boost.Asio sockets.
+Boost.Http has been designed for multiple backends, such HTTP/2, and FastGCI,
+which can be added in the future. You can choose between compile-time and
+runtime polymorphism. Adapters are provided.
 
 [variablelist
 
