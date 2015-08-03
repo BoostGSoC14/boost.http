@@ -246,6 +246,8 @@ basic_socket<Socket>
                       [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
         is_open_ = flags & KEEP_ALIVE;
+        if (!is_open_)
+            channel.close();
         handler(ec);
     });
 
@@ -489,6 +491,8 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
                       [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
         is_open_ = flags & KEEP_ALIVE;
+        if (!is_open_)
+            channel.close();
         handler(ec);
     });
 
@@ -523,6 +527,8 @@ basic_socket<Socket>
                       [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
         is_open_ = flags & KEEP_ALIVE;
+        if (!is_open_)
+            channel.close();
         handler(ec);
     });
 

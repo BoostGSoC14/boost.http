@@ -14,6 +14,8 @@ public:
         return true;
     }
 
+    void close() {}
+
     template<class MutableBufferSequence, class CompletionToken>
     typename boost::asio::async_result<
         typename boost::asio::handler_type<

@@ -89,14 +89,9 @@ public:
                 cerr << '[' << self->counter << "] Aborting on exception: "
                      << e.what() << endl;
                 std::exit(1);
-            } else {
-                cout << '[' << self->counter << "] Closing connection because: "
-                     << e.what() << endl;
             }
 
-            self->socket.next_layer()
-                .shutdown(asio::ip::tcp::socket::shutdown_both);
-            self->socket.next_layer().close();
+            cout << '[' << self->counter << "] Error: " << e.what() << endl;
         } catch (std::exception &e) {
             cerr << '[' << self->counter << "] Aborting on exception: "
                  << e.what() << endl;
