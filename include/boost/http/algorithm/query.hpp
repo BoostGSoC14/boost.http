@@ -21,7 +21,6 @@ bool request_continue_required(const Message &message)
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    typedef decltype(*message.headers().begin()) value_type;
     auto values = message.headers().equal_range("expect");
 
     return std::distance(values.first, values.second) == 1

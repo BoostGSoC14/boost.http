@@ -649,8 +649,8 @@ void basic_socket<Socket>
                                         "This server only supports HTTP/1.0 and"
                                         " HTTP/1.1\n");
             asio::async_write(channel, asio::buffer(error_message),
-                              [this,handler](system::error_code ignored_ec,
-                                             std::size_t bytes_transferred)
+                              [this,handler](system::error_code /*ignored_ec*/,
+                                             std::size_t /*bytes_transferred*/)
                               mutable {
                 handler(system::error_code{http_errc::parsing_error});
             });
