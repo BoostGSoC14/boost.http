@@ -121,9 +121,8 @@ String to_string(status_code sc)
         return "Not Extended";
     case status_code::network_authentication_required:
         return "Network Authentication Required";
-    default:
-        return "";
     }
+    return "";
 }
 
 } // namespace http
