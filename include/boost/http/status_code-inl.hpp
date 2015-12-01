@@ -122,6 +122,7 @@ String to_string(status_code sc)
     case status_code::network_authentication_required:
         return "Network Authentication Required";
     }
+    return "";
 }
 
 } // namespace http
