@@ -7,7 +7,7 @@ configuration:
   - Release
 
 os:
-  - Visual Studio 2015 RC
+  - Visual Studio 2015 Update 1
 
 branches:
   except:
