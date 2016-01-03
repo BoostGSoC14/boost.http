@@ -2,8 +2,8 @@
 
 [![Join the chat at https://gitter.im/BoostGSoC14/boost.http](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/BoostGSoC14/boost.http?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Build Status](https://travis-ci.org/vinipsmaker/asiohttpserver.svg)](https://travis-ci.org/vinipsmaker/asiohttpserver)
-[![Build status](https://ci.appveyor.com/api/projects/status/0bkoiqxndehg2mj9?svg=true)](https://ci.appveyor.com/project/vinipsmaker/boost-http)
+[![Build Status](https://travis-ci.org/vinipsmaker/asiohttpserver.svg?branch=master)](https://travis-ci.org/vinipsmaker/asiohttpserver)
+[![Build status](https://ci.appveyor.com/api/projects/status/0bkoiqxndehg2mj9/branch/master?svg=true)](https://ci.appveyor.com/project/vinipsmaker/boost-http)
 
 This library implements a core HTTP server for Boost that can be used from
 resource-constrained devices to powerful machines that have plenty of resources
