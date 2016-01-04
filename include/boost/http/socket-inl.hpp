@@ -350,7 +350,8 @@ basic_socket<Socket>
         + 1;
 
     // TODO (C++14): replace by dynarray
-    std::vector<asio::const_buffer> buffers(nbuffer_pieces);
+    std::vector<asio::const_buffer> buffers;
+    buffers.reserve(nbuffer_pieces);
 
     buffers.push_back((flags & HTTP_1_1) ? string_literal_buffer("HTTP/1.1 ")
                       : string_literal_buffer("HTTP/1.0 "));
@@ -475,7 +476,8 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
         + 1;
 
     // TODO (C++14): replace by dynarray
-    std::vector<asio::const_buffer> buffers(nbuffer_pieces);
+    std::vector<asio::const_buffer> buffers;
+    buffers.reserve(nbuffer_pieces);
 
     buffers.push_back(last_chunk);
 
