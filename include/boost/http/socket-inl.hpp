@@ -816,6 +816,10 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
             "PROPPATCH",
             "SEARCH",
             "UNLOCK",
+            "BIND",
+            "REBIND",
+            "UNBIND",
+            "ACL",
             "REPORT",
             "MKACTIVITY",
             "CHECKOUT",
@@ -826,7 +830,9 @@ int basic_socket<Socket>::on_headers_complete(http_parser *parser)
             "UNSUBSCRIBE",
             "PATCH",
             "PURGE",
-            "MKCALENDAR"
+            "MKCALENDAR",
+            "LINK",
+            "UNLINK"
         };
         const auto &m = methods[parser->method];
         method->append(m.data, m.size);
