@@ -44,10 +44,11 @@ extern "C" {
 struct http_parser
 {
     unsigned int type : 2;
-    unsigned int flags : 7;
+    unsigned int flags : 8;
     unsigned int state : 7;
-    unsigned int header_state : 8;
-    unsigned int index : 8;
+    unsigned int header_state : 7;
+    unsigned int index : 7;
+    unsigned int lenient_http_headers : 1;
     std::uint32_t nread;
     std::uint64_t content_length;
     unsigned short http_major;
