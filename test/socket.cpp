@@ -37,6 +37,89 @@ void clear_message(Message &m)
     m.trailers().clear();
 }
 
+struct outer_storage
+{
+    typedef typename asio::handler_type<asio::yield_context,
+                                        void(system::error_code)>::type
+    coro_handler_t;
+    typedef asio::async_result<coro_handler_t> coro_result_t;
+
+    outer_storage(asio::yield_context &yield)
+        : handler(yield)
+        , result(handler)
+    {}
+
+    coro_handler_t handler;
+    coro_result_t result;
+};
+
+struct use_yielded_future_t
+{
+    typedef typename asio::handler_type<asio::yield_context,
+                                        void(system::error_code)>::type
+    coro_handler_t;
+
+    struct Handler
+    {
+        Handler(use_yielded_future_t use_yielded_future)
+            : storage(use_yielded_future.storage)
+            , coro_handler(std::move(use_yielded_future.storage.handler))
+        {}
+
+        void operator()(system::error_code ec)
+        {
+            coro_handler(ec);
+        }
+
+        outer_storage &storage;
+        coro_handler_t coro_handler;
+    };
+
+    use_yielded_future_t(outer_storage &storage) : storage(storage) {}
+
+    outer_storage &storage;
+};
+
+struct yielded_future
+{
+    yielded_future(outer_storage &storage) : storage(storage) {}
+
+    void get()
+    {
+        storage.result.get();
+    }
+
+    outer_storage &storage;
+};
+
+namespace boost {
+namespace asio {
+
+template<>
+struct handler_type<use_yielded_future_t, void(system::error_code)>
+{
+    typedef use_yielded_future_t::Handler type;
+};
+
+template<>
+struct async_result<use_yielded_future_t::Handler>
+{
+    typedef yielded_future type;
+
+    async_result(use_yielded_future_t::Handler &handler)
+        : storage(handler.storage)
+    {}
+
+    yielded_future get()
+    {
+        return yielded_future(storage);
+    }
+
+    outer_storage &storage;
+};
+
+} } // namespace boost::asio
+
 BOOST_AUTO_TEST_CASE(socket_ctor) {
     bool captured = false;
     try {
@@ -81,7 +164,17 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 BOOST_REQUIRE(path.size() == 0);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                {
+                    outer_storage storage(yield);
+                    auto fut = socket
+                        .async_read_request(method, path, message,
+                                            use_yielded_future_t(storage));
+                    BOOST_REQUIRE(socket.write_state()
+                                  == http::write_state::finished);
+                    fut.get();
+                }
+                BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(socket.write_response_native_stream());
