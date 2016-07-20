@@ -1,0 +1,13 @@
+builds
+bin
+doc/bin
+doc/docbook-dtd-4.2
+doc/docbook-xml-4.2.zip
+doc/docbook-xsl-1.75.2.tar.gz
+doc/docbook-xsl-1.75.2
+doc/docbook
+doc/fop-0.94-bin-jdk1.4.tar.gz
+doc/fop-0.94
+doc/html-doxygen
+doc/html
+doc/user-config-backup.jam
