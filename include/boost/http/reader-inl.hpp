@@ -1,11 +1,11 @@
 #ifndef BOOST_HTTP_DETAIL_UNREACHABLE
 #ifdef NDEBUG
-#define BOOST_HTTP_DETAIL_UNREACHABLE() ((void)0)
+#define BOOST_HTTP_DETAIL_UNREACHABLE(m) ((void)0)
 #else
 #define BOOST_HTTP_DETAIL_STRINGIFY_AUX(x) #x
 #define BOOST_HTTP_DETAIL_STRINGIFY(x) BOOST_HTTP_DETAIL_STRINGIFY_AUX(x)
 #define BOOST_HTTP_DETAIL_LINE_STR BOOST_HTTP_DETAIL_STRINGIFY(__LINE__)
-#define BOOST_HTTP_DETAIL_UNREACHABLE() (throw __FILE__ ":" BOOST_HTTP_DETAIL_LINE_STR "[Boost.Http] UNREACHABLE assertion triggered!")
+#define BOOST_HTTP_DETAIL_UNREACHABLE(m) (throw __FILE__ ":" BOOST_HTTP_DETAIL_LINE_STR ": UNREACHABLE: " m)
 #endif // NDEBUG
 #endif // BOOST_HTTP_DETAIL_UNREACHABLE
 
@@ -590,7 +590,7 @@ inline void request_reader::next()
                             code_ = token::code::error_invalid_data;
                             return;
                         default:
-                            BOOST_HTTP_DETAIL_UNREACHABLE();
+                            BOOST_HTTP_DETAIL_UNREACHABLE("");
                         }
                     } else if (iequals(field, "Content-Length")) {
                         switch (body_type) {
@@ -608,7 +608,7 @@ inline void request_reader::next()
                             ;
                             break;
                         default:
-                            BOOST_HTTP_DETAIL_UNREACHABLE();
+                            BOOST_HTTP_DETAIL_UNREACHABLE("");
                         }
                     }
                 } else if (c == '\r') {
@@ -802,7 +802,9 @@ inline void request_reader::next()
                     code_ = token::code::end_of_headers;
                     break;
                 default:
-                    BOOST_HTTP_DETAIL_UNREACHABLE();
+                    BOOST_HTTP_DETAIL_UNREACHABLE("READING_* variants should be"
+                                                  " cleared when the field"
+                                                  " value is read");
                 }
                 token_size_ = 2;
             }
@@ -1101,7 +1103,8 @@ inline void request_reader::next()
     case ERRORED:
         ;
     }
-    BOOST_HTTP_DETAIL_UNREACHABLE();
+    BOOST_HTTP_DETAIL_UNREACHABLE("The function should have already returned"
+                                  " once the token was determined");
 }
 
 } // namespace boost
