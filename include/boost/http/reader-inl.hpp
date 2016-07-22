@@ -156,11 +156,17 @@ bool from_decimal_string(string_ref in, Target &out)
     return true;
 }
 
+enum FromHexStringResult {
+    HEXSTRING_INVALID,
+    HEXSTRING_OK,
+    HEXSTRING_OVERFLOW
+};
+
 template<class Target>
-bool from_hex_string(string_ref in, Target &out)
+FromHexStringResult from_hex_string(string_ref in, Target &out)
 {
     if (in.size() == 0)
-        return false;
+        return HEXSTRING_INVALID;
 
     out = 0;
 
@@ -168,7 +174,7 @@ bool from_hex_string(string_ref in, Target &out)
         in.remove_prefix(1);
 
     if (in.size() == 0)
-        return true;
+        return HEXSTRING_OK;
 
     Target digit = 1;
 
@@ -189,16 +195,16 @@ bool from_hex_string(string_ref in, Target &out)
             }
             break;
         default:
-            return false;
+            return HEXSTRING_INVALID;
         }
 
         if (std::numeric_limits<Target>::max() / digit < value)
-            return false;
+            return HEXSTRING_OVERFLOW;
 
         value *= digit;
 
         if (std::numeric_limits<Target>::max() - value < out)
-            return false;
+            return HEXSTRING_OVERFLOW;
 
         out += value;
 
@@ -206,14 +212,14 @@ bool from_hex_string(string_ref in, Target &out)
             break;
         } else {
             if (std::numeric_limits<Target>::max() / 16 < digit)
-                return false;
+                return HEXSTRING_OVERFLOW;
             else
                 digit *= 16;
 
             --i;
         }
     }
-    return true;
+    return HEXSTRING_OK;
 }
 
 enum DecodeTransferEncodingResult {
@@ -853,16 +859,20 @@ inline void request_reader::next()
                 }
 
                 const char *str = asio::buffer_cast<const char*>(ibuffer) + idx;
-                if (!detail::from_hex_string(string_ref(str, token_size_),
-                                             body_size)) {
+                switch (detail::from_hex_string(string_ref(str, token_size_),
+                                                body_size)) {
+                case detail::HEXSTRING_INVALID:
+                case detail::HEXSTRING_OVERFLOW:
+                    // TODO: proper error notification
                     state = ERRORED;
                     code_ = token::code::error_invalid_data;
                     return;
+                case detail::HEXSTRING_OK:
+                    state = EXPECT_CHUNK_EXT;
+                    code_ = token::code::skip;
+                    return;
                 }
-
-                state = EXPECT_CHUNK_EXT;
-                code_ = token::code::skip;
-                return;
+                BOOST_HTTP_DETAIL_UNREACHABLE("internal error. UB?");
             }
             token_size_ = i - idx;
             return;
