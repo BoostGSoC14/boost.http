@@ -93,6 +93,14 @@ private:
     };
 
     enum {
+        HTTP_1_0,
+        NOT_HTTP_1_0_AND_HOST_NOT_READ,
+        NOT_HTTP_1_0_AND_HOST_READ
+    } version;
+
+    // State that needs to be reset at every new request {{{
+
+    enum {
         // Initial state
         NO_BODY,
         // Set after decoding the field value {{{
@@ -106,7 +114,11 @@ private:
         // }}}
     } body_type;
 
+    /* This state is special as it is allowed to keep garbage while
+       `body_type == NO_BODY`. */
     uint_least64_t body_size;
+
+    // }}}
 
     State state;
 

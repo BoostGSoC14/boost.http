@@ -530,6 +530,10 @@ inline void request_reader::next()
                 code_ = token::code::version;
                 idx = i;
                 token_size_ = 1;
+
+                version
+                    = (value<token::version>() == 0)
+                    ? HTTP_1_0 : NOT_HTTP_1_0_AND_HOST_NOT_READ;
             }
             return;
         }
@@ -586,7 +590,10 @@ inline void request_reader::next()
                        - CHUNKED_ENCODING_READ
                        - RANDOM_ENCODING_READ */
                     string_ref field = value<token::field_name>();
-                    if (iequals(field, "Transfer-Encoding")) {
+                    if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ
+                        && iequals(field, "Host")) {
+                        version = NOT_HTTP_1_0_AND_HOST_READ;
+                    } else if (iequals(field, "Transfer-Encoding")) {
                         switch (body_type) {
                         case CONTENT_LENGTH_READ:
                             /* Transfer-Encoding overrides Content-Length
@@ -798,6 +805,12 @@ inline void request_reader::next()
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
             } else {
+                if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ) {
+                    state = ERRORED;
+                    code_ = token::code::error_invalid_data;
+                    return;
+                }
+
                 switch (body_type) {
                 case RANDOM_ENCODING_READ:
                     state = ERRORED;
