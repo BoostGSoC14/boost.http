@@ -21,7 +21,7 @@ TEST_CASE("Utility test functions", "[misc]")
     REQUIRE(asio::buffer_size(my_buffer("Nu")) == 2);
 }
 
-TEST_CASE("Unreachable macro", "[misc]")
+TEST_CASE("Unreachable macro", "[detail]")
 {
 #define BOOST_HTTP_SPONSOR "[random string]: anarchy is coming"
     try {
@@ -34,7 +34,7 @@ TEST_CASE("Unreachable macro", "[misc]")
 #undef BOOST_HTTP_SPONSOR
 }
 
-TEST_CASE("decode_transfer_encoding", "[misc]")
+TEST_CASE("decode_transfer_encoding", "[detail]")
 {
     // REMAINDER: there can never be beginning or trailing OWS in header fields
 
@@ -283,6 +283,11 @@ TEST_CASE("decode_transfer_encoding", "[misc]")
     CHECK(decode_transfer_encoding("a chunked b,   chunked") == CHUNKED_AT_END);
     CHECK(decode_transfer_encoding("chunked b,   chunked") == CHUNKED_AT_END);
     CHECK(decode_transfer_encoding("a chunked,   chunked") == CHUNKED_AT_END);
+}
+
+TEST_CASE("from_hex_string", "[detail]")
+{
+    
 }
 
 TEST_CASE("Parse 2 simple pipelined non-fragmented/whole requests",
