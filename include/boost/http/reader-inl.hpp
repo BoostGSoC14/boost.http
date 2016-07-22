@@ -105,10 +105,14 @@ inline bool is_chunk_ext_char(unsigned char c)
     }
 }
 
-// TODO: unit test it like the other `from_decimal_string` abstraction found in
-// Boost.Http
+enum FromDecimalString {
+    DECSTRING_INVALID,
+    DECSTRING_OK,
+    DECSTRING_OVERFLOW
+};
+
 template<class Target>
-bool from_decimal_string(string_ref in, Target &out)
+FromDecimalString from_decimal_string(string_ref in, Target &out)
 {
     out = 0;
 
@@ -116,7 +120,7 @@ bool from_decimal_string(string_ref in, Target &out)
         in.remove_prefix(1);
 
     if (in.size() == 0)
-        return true;
+        return DECSTRING_OK;
 
     Target digit = 1;
 
@@ -129,16 +133,16 @@ bool from_decimal_string(string_ref in, Target &out)
             value = in[i] - '0';
             break;
         default:
-            return false;
+            return DECSTRING_INVALID;
         }
 
         if (std::numeric_limits<Target>::max() / digit < value)
-            return false;
+            return DECSTRING_OVERFLOW;
 
         value *= digit;
 
         if (std::numeric_limits<Target>::max() - value < out)
-            return false;
+            return DECSTRING_OVERFLOW;
 
         out += value;
 
@@ -146,14 +150,14 @@ bool from_decimal_string(string_ref in, Target &out)
             break;
         } else {
             if (std::numeric_limits<Target>::max() / 10 < digit)
-                return false;
+                return DECSTRING_OVERFLOW;
             else
                 digit *= 10;
 
             --i;
         }
     }
-    return true;
+    return DECSTRING_OK;
 }
 
 enum FromHexStringResult {
@@ -722,9 +726,14 @@ inline void request_reader::next()
                            impact the performance of the interaction with a
                            proper and conforming HTTP participant. And we should
                            minimmize the DoS attack surface too. */
-                        if (!detail::from_decimal_string(field, body_size)) {
+                        switch (detail::from_decimal_string(field, body_size)) {
+                        case detail::DECSTRING_INVALID:
+                        case detail::DECSTRING_OVERFLOW:
+                            // TODO: proper error notification
                             state = ERRORED;
                             code_ = token::code::error_invalid_data;
+                        case detail::DECSTRING_OK:
+                            ;
                         }
                         break;
                     case READING_ENCODING:
