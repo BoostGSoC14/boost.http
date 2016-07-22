@@ -615,7 +615,6 @@ inline void request_reader::next()
                         case RANDOM_ENCODING_READ:
                             /* Transfer-Encoding overrides Content-Length
                                (section 3.3.3 of RFC7230) */
-                            ;
                             break;
                         default:
                             BOOST_HTTP_DETAIL_UNREACHABLE("");
@@ -733,7 +732,7 @@ inline void request_reader::next()
                             state = ERRORED;
                             code_ = token::code::error_invalid_data;
                         case detail::DECSTRING_OK:
-                            ;
+                            break;
                         }
                         break;
                     case READING_ENCODING:
@@ -750,7 +749,7 @@ inline void request_reader::next()
                         }
                         break;
                     default:
-                        ;
+                        break;
                     }
                 } else {
                     state = ERRORED;
@@ -1120,7 +1119,7 @@ inline void request_reader::next()
             return;
         }
     case ERRORED:
-        ;
+        break;
     }
     BOOST_HTTP_DETAIL_UNREACHABLE("The function should have already returned"
                                   " once the token was determined");
