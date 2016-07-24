@@ -451,14 +451,17 @@ inline void request_reader::next()
             return;
         }
     case EXPECT_SP_AFTER_METHOD:
+        if (code_ != token::code::error_insufficient_data) {
+            idx += token_size_;
+            token_size_ = 0;
+            code_ = token::code::error_insufficient_data;
+        }
         {
-            size_type i = idx + token_size_;
             unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
             if (detail::is_sp(c)) {
                 state = EXPECT_REQUEST_TARGET;
                 code_ = token::code::skip;
-                idx = i;
                 token_size_ = 1;
             } else {
                 state = ERRORED;
@@ -518,17 +521,20 @@ inline void request_reader::next()
             return;
         }
     case EXPECT_VERSION:
+        if (code_ != token::code::error_insufficient_data) {
+            idx += token_size_;
+            token_size_ = 0;
+            code_ = token::code::error_insufficient_data;
+        }
         {
-            size_type i = idx + token_size_;
             unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
             if (c < '0' || c > '9') {
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
             } else {
                 state = EXPECT_CRLF_AFTER_VERSION;
                 code_ = token::code::version;
-                idx = i;
                 token_size_ = 1;
 
                 version
@@ -642,9 +648,16 @@ inline void request_reader::next()
         token_size_ = asio::buffer_size(ibuffer) - idx;
         return;
     case EXPECT_COLON:
-        {
+        if (code_ != token::code::error_insufficient_data) {
             idx += token_size_;
-            token_size_ = 1;
+            token_size_ = 0;
+            /* It doesn't make much sense because there is enough data from now
+               on, but I'm refactoring the code to have this block of code in
+               all cases. The second step will be to put this chunk of code out
+               of the switch. */
+            code_ = token::code::error_insufficient_data;
+        }
+        {
             unsigned char c
                 = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
             if (c != ':') {
@@ -654,6 +667,7 @@ inline void request_reader::next()
             }
             state = EXPECT_OWS_AFTER_COLON;
             code_ = token::code::skip;
+            token_size_ = 1;
             if (idx + 1 == buffer_size(ibuffer))
                 return;
         }
@@ -1027,9 +1041,16 @@ inline void request_reader::next()
         token_size_ = asio::buffer_size(ibuffer) - idx;
         return;
     case EXPECT_TRAILER_COLON:
-        {
+        if (code_ != token::code::error_insufficient_data) {
             idx += token_size_;
-            token_size_ = 1;
+            token_size_ = 0;
+            /* It doesn't make much sense because there is enough data from now
+               on, but I'm refactoring the code to have this block of code in
+               all cases. The second step will be to put this chunk of code out
+               of the switch. */
+            code_ = token::code::error_insufficient_data;
+        }
+        {
             unsigned char c
                 = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
             if (c != ':') {
@@ -1039,6 +1060,7 @@ inline void request_reader::next()
             }
             state = EXPECT_OWS_AFTER_TRAILER_COLON;
             code_ = token::code::skip;
+            token_size_ = 1;
             if (idx + 1 == buffer_size(ibuffer))
                 return;
         }
