@@ -134,93 +134,93 @@ TEST_CASE("decode_transfer_encoding", "[detail]")
 
     // CHUNKED_INVALID
 
-    CHECK(decode_transfer_encoding("chunded,chunked") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chUNded,CHunked") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded ,CHUNKED") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("CHUNDED   ,chunked") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("CHUNDed, cHUnked") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("ChUNDed,   cHUnKed") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,say what") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded, say what") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,   say what") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded ,say what") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded   ,say what") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,chunded,chunked") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,chUNded,CHunked") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,chunded ,CHUNKED")
+    CHECK(decode_transfer_encoding("chunked,chunked") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chUNked,CHunked") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked ,CHUNKED") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("CHUNKED   ,chunked") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("CHUNKed, cHUnked") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("ChUNKed,   cHUnKed") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked,say what") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked, say what") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked,   say what") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked ,say what") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked   ,say what") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding(",   ,,chunked,chunked") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding(",   ,,chUNked,CHunked") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding(",   ,,chunked ,CHUNKED")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,CHUNDED   ,chunked")
+    CHECK(decode_transfer_encoding(",   ,,CHUNKED   ,chunked")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,CHUNDed, cHUnked")
+    CHECK(decode_transfer_encoding(",   ,,CHUNKed, cHUnked")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,ChUNDed,   cHUnKed")
+    CHECK(decode_transfer_encoding(",   ,,ChUNKed,   cHUnKed")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,chunded,say what")
+    CHECK(decode_transfer_encoding(",   ,,chunKed,say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,CHUNDED, say what")
+    CHECK(decode_transfer_encoding(",   ,,CHUNKED, say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,chunded,   say what")
+    CHECK(decode_transfer_encoding(",   ,,chunked,   say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(",   ,,CHUNDED ,say what")
+    CHECK(decode_transfer_encoding(",   ,,CHUNKED ,say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   chunded   ,say what")
+    CHECK(decode_transfer_encoding(", ,   chunked   ,say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   chunDED,chunked") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   chUNded,CHunked") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   chunded ,CHUNKED")
+    CHECK(decode_transfer_encoding(", ,   chunKED,chunked") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding(", ,   chUNked,CHunked") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding(", ,   chunked ,CHUNKED")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   CHUNDED   ,chunked")
+    CHECK(decode_transfer_encoding(", ,   CHUNKED   ,chunked")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   CHUNDed, cHUnked")
+    CHECK(decode_transfer_encoding(", ,   CHUNKed, cHUnked")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   ChUNDed,   cHUnKed")
+    CHECK(decode_transfer_encoding(", ,   ChUNKed,   cHUnKed")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   chunded,say what")
+    CHECK(decode_transfer_encoding(", ,   chunked,say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   CHUNDED, say what")
+    CHECK(decode_transfer_encoding(", ,   CHUNKED, say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   chunded,   say what")
+    CHECK(decode_transfer_encoding(", ,   chunked,   say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   CHUNDED ,say what")
+    CHECK(decode_transfer_encoding(", ,   CHUNKED ,say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding(", ,   chunded   ,say what")
+    CHECK(decode_transfer_encoding(", ,   chunked   ,say what")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,chunked,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chUNded,CHunked,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded ,CHUNKED,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("CHUNDED   ,chunked,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("CHUNDed, cHUnked,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("ChUNDed,   cHUnKed,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,say what,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded, say what,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,   say what,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded ,say what,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded   ,say what,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,chunked ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chUNded,CHunked ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded ,CHUNKED ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("CHUNDED   ,chunked ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("CHUNDed, cHUnked ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("ChUNDed,   cHUnKed ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,say what ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded, say what ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,   say what ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded ,say what ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded   ,say what ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,chunked   ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chUNded,CHunked   ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded ,CHUNKED   ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("CHUNDED   ,chunked   ,")
+    CHECK(decode_transfer_encoding("chunked,chunked,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chUNked,CHunked,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked ,CHUNKED,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("CHUNKED   ,chunked,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("CHUNKed, cHUnked,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("ChUNKed,   cHUnKed,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked,say what,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked, say what,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked,   say what,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked ,say what,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked   ,say what,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked,chunked ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chUNked,CHunked ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked ,CHUNKED ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("CHUNKED   ,chunked ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("CHUNKed, cHUnked ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("ChUNKed,   cHUnKed ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked,say what ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked, say what ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked,   say what ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked ,say what ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked   ,say what ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked,chunked   ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chUNked,CHunked   ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked ,CHUNKED   ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("CHUNKED   ,chunked   ,")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("CHUNDed, cHUnked   ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("ChUNDed,   cHUnKed   ,")
+    CHECK(decode_transfer_encoding("CHUNKed, cHUnked   ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("ChUNKed,   cHUnKed   ,")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,say what   ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded, say what   ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded,   say what   ,")
+    CHECK(decode_transfer_encoding("chunked,say what   ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked, say what   ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked,   say what   ,")
           == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded ,say what   ,") == CHUNKED_INVALID);
-    CHECK(decode_transfer_encoding("chunded   ,say what   ,")
+    CHECK(decode_transfer_encoding("chunked ,say what   ,") == CHUNKED_INVALID);
+    CHECK(decode_transfer_encoding("chunked   ,say what   ,")
           == CHUNKED_INVALID);
 
     // CHUNKED_AT_END
