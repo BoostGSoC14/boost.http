@@ -232,48 +232,67 @@ enum DecodeTransferEncodingResult {
     CHUNKED_INVALID
 };
 
+struct decode_transfer_encoding_p
+{
+    struct state
+    {
+        state()
+            : count(0)
+            , res(CHUNKED_NOT_FOUND)
+        {}
+
+        unsigned count;
+        DecodeTransferEncodingResult res;
+    };
+
+    static const bool STOP_ITER = true;
+    static const bool PROC_ITER = false;
+
+    decode_transfer_encoding_p(state &s)
+        : count(s.count)
+        , res(s.res)
+    {}
+
+    bool operator()(string_ref v) const
+    {
+        using boost::algorithm::iequals;
+
+        // All transfer-coding names are case-insensitive (section 4 of RFC7230)
+        if (!iequals(v, "chunked")) {
+            if (count == 1) {
+                /* If any transfer coding other than chunked is applied to a
+                   request payload body, the sender MUST apply chunked as the
+                   final transfer coding (section 3.3.1 of RFC7230) */
+                res = CHUNKED_INVALID;
+                return STOP_ITER;
+            }
+
+            return PROC_ITER;
+        }
+
+        ++count;
+
+        if (count == 2) {
+            /* A sender MUST NOT apply chunked more than once to a message body
+               (section 3.3.1 of RFC7230) */
+            res = CHUNKED_INVALID;
+            return STOP_ITER;
+        }
+
+        res = CHUNKED_AT_END;
+        return PROC_ITER;
+    }
+
+    unsigned &count;
+    DecodeTransferEncodingResult &res;
+};
+
 DecodeTransferEncodingResult decode_transfer_encoding(string_ref field)
 {
-    // All transfer-coding names are case-insensitive (section 4 of RFC7230)
-    iterator_range<const char*> res = ifind_first(field, "chunked");
-    if (res.empty())
-        return CHUNKED_NOT_FOUND;
-
-    std::size_t idx = &res.front() - &field[0];
-    string_ref tail = field;
-    tail.remove_prefix(idx + string_ref("chunked").size());
-
-    /* A sender MUST NOT apply chunked more than once to a message body (section
-       3.3.1 of RFC7230) */
-    if (!ifind_first(tail, "chunked").empty())
-        return CHUNKED_INVALID;
-
-    /* If any transfer coding other than chunked is applied to a request payload
-       body, the sender MUST apply chunked as the final transfer coding (section
-       3.3.1 of RFC7230) */
-    for (size_t i = 0 ; i != tail.size() ; ++i) {
-        if (!is_ows(tail[i]) || tail[i] != ',')
-            return CHUNKED_INVALID;
-    }
-
-    if (idx != 0) {
-        string_ref head(&field[0], idx);
-
-        for (size_t i = head.size() - 1 ; ; ) {
-            if (head[i] == ',')
-                break;
-
-            if (!is_ows(head[i]))
-                return CHUNKED_INVALID;
-
-            if (i == 0)
-                break;
-            else
-                --i;
-        }
-    }
-
-    return CHUNKED_AT_END;
+    decode_transfer_encoding_p::state p_state;
+    decode_transfer_encoding_p p(p_state);
+    header_value_any_of(field, p);
+    return p.res;
 }
 
 } // namespace detail
