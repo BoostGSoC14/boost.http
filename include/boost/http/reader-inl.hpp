@@ -667,9 +667,24 @@ inline void request_reader::next()
             }
             state = EXPECT_OWS_AFTER_COLON;
             code_ = token::code::skip;
-            token_size_ = 1;
-            if (idx + 1 == buffer_size(ibuffer))
-                return;
+
+            size_type i = idx + 1;
+            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
+                unsigned char c
+                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                if (!detail::is_ows(c)) {
+                    if (detail::is_nonnull_field_value_char(c)) {
+                        state = EXPECT_FIELD_VALUE;
+                        break;
+                    } else {
+                        state = ERRORED;
+                        code_ = token::code::error_invalid_data;
+                        return;
+                    }
+                }
+            }
+            token_size_ = i - idx;
+            return;
         }
     case EXPECT_OWS_AFTER_COLON:
         {
@@ -1060,9 +1075,24 @@ inline void request_reader::next()
             }
             state = EXPECT_OWS_AFTER_TRAILER_COLON;
             code_ = token::code::skip;
-            token_size_ = 1;
-            if (idx + 1 == buffer_size(ibuffer))
-                return;
+
+            size_type i = idx + 1;
+            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
+                unsigned char c
+                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                if (!detail::is_ows(c)) {
+                    if (detail::is_nonnull_field_value_char(c)) {
+                        state = EXPECT_TRAILER_VALUE;
+                        break;
+                    } else {
+                        state = ERRORED;
+                        code_ = token::code::error_invalid_data;
+                        return;
+                    }
+                }
+            }
+            token_size_ = i - idx;
+            return;
         }
     case EXPECT_OWS_AFTER_TRAILER_COLON:
         {
