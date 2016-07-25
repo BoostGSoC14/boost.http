@@ -653,14 +653,8 @@ inline void request_reader::next()
                 unsigned char c
                     = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
                 if (!detail::is_ows(c)) {
-                    if (detail::is_nonnull_field_value_char(c)) {
-                        state = EXPECT_FIELD_VALUE;
-                        break;
-                    } else {
-                        state = ERRORED;
-                        code_ = token::code::error_invalid_data;
-                        return;
-                    }
+                    state = EXPECT_FIELD_VALUE;
+                    break;
                 }
             }
             token_size_ = i - idx;
@@ -673,17 +667,16 @@ inline void request_reader::next()
                 unsigned char c
                     = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
                 if (!detail::is_ows(c)) {
-                    if (detail::is_nonnull_field_value_char(c)) {
-                        state = EXPECT_FIELD_VALUE;
-                        break;
-                    } else {
-                        state = ERRORED;
-                        code_ = token::code::error_invalid_data;
-                        return;
-                    }
+                    state = EXPECT_FIELD_VALUE;
+                    break;
                 }
             }
+            code_ = token::code::skip;
             token_size_ = i - idx;
+
+            if (token_size_ == 0)
+                return next();
+
             return;
         }
     case EXPECT_FIELD_VALUE:
@@ -998,14 +991,8 @@ inline void request_reader::next()
                 unsigned char c
                     = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
                 if (!detail::is_ows(c)) {
-                    if (detail::is_nonnull_field_value_char(c)) {
-                        state = EXPECT_TRAILER_VALUE;
-                        break;
-                    } else {
-                        state = ERRORED;
-                        code_ = token::code::error_invalid_data;
-                        return;
-                    }
+                    state = EXPECT_TRAILER_VALUE;
+                    break;
                 }
             }
             token_size_ = i - idx;
@@ -1018,17 +1005,16 @@ inline void request_reader::next()
                 unsigned char c
                     = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
                 if (!detail::is_ows(c)) {
-                    if (detail::is_nonnull_field_value_char(c)) {
-                        state = EXPECT_TRAILER_VALUE;
-                        break;
-                    } else {
-                        state = ERRORED;
-                        code_ = token::code::error_invalid_data;
-                        return;
-                    }
+                    state = EXPECT_TRAILER_VALUE;
+                    break;
                 }
             }
+            code_ = token::code::skip;
             token_size_ = i - idx;
+
+            if (token_size_ == 0)
+                return next();
+
             return;
         }
     case EXPECT_TRAILER_VALUE:
