@@ -1241,8 +1241,6 @@ TEST_CASE("Parse 2 simple pipelined non-fragmented/whole requests",
     REQUIRE(parser.token_size() == 2);
     REQUIRE(parser.expected_token() == http::token::code::field_name);
 
-    // shit happens
-
     parser.next();
 
     REQUIRE(parser.code() == http::token::code::field_name);
@@ -1269,8 +1267,6 @@ TEST_CASE("Parse 2 simple pipelined non-fragmented/whole requests",
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 2);
     REQUIRE(parser.expected_token() == http::token::code::field_name);
-
-    // and shit is overcome
 
     parser.next();
 
