@@ -455,7 +455,7 @@ inline void request_reader::next()
                 unsigned char c
                     = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
                 if (!detail::is_tchar(c)) {
-                    if (i != 0) {
+                    if (i != idx) {
                         state = EXPECT_SP_AFTER_METHOD;
                         code_ = token::code::method;
                         token_size_ = i - idx;
@@ -511,9 +511,10 @@ inline void request_reader::next()
             for ( ; i != count ; ++i) {
                 unsigned char c
                     = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-                if (c != skip[i]) {
+                if (c != skip[i - idx]) {
                     state = ERRORED;
                     code_ = token::code::error_invalid_data;
+                    return;
                 }
             }
             token_size_ = i - idx;
@@ -550,9 +551,10 @@ inline void request_reader::next()
             for ( ; i != count ; ++i) {
                 unsigned char c
                     = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-                if (c != skip[i]) {
+                if (c != skip[i - idx]) {
                     state = ERRORED;
                     code_ = token::code::error_invalid_data;
+                    return;
                 }
             }
             token_size_ = i - idx;
