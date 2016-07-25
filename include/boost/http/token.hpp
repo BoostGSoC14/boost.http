@@ -25,6 +25,13 @@ struct code
         error_insufficient_data,
         error_invalid_data,
 
+        /* It's only an error on versions more recent than HTTP/1.0 */
+        error_no_host_found,
+
+        error_invalid_content_length,
+        error_content_length_overflow,
+        error_invalid_transfer_encoding,
+
         field_name,
         field_value,
         body_chunk,

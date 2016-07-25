@@ -599,7 +599,8 @@ inline void request_reader::next()
                             break;
                         case CHUNKED_ENCODING_READ:
                             state = ERRORED;
-                            code_ = token::code::error_invalid_data;
+                            code_
+                                = token::code::error_invalid_transfer_encoding;
                             return;
                         default:
                             BOOST_HTTP_DETAIL_UNREACHABLE("");
@@ -611,7 +612,7 @@ inline void request_reader::next()
                             break;
                         case CONTENT_LENGTH_READ:
                             state = ERRORED;
-                            code_ = token::code::error_invalid_data;
+                            code_ = token::code::error_invalid_content_length;
                             return;
                         case CHUNKED_ENCODING_READ:
                         case RANDOM_ENCODING_READ:
@@ -731,10 +732,13 @@ inline void request_reader::next()
                            minimmize the DoS attack surface too. */
                         switch (detail::from_decimal_string(field, body_size)) {
                         case detail::DECSTRING_INVALID:
-                        case detail::DECSTRING_OVERFLOW:
-                            // TODO: proper error notification
                             state = ERRORED;
-                            code_ = token::code::error_invalid_data;
+                            code_ = token::code::error_invalid_content_length;
+                            break;
+                        case detail::DECSTRING_OVERFLOW:
+                            state = ERRORED;
+                            code_ = token::code::error_content_length_overflow;
+                            break;
                         case detail::DECSTRING_OK:
                             break;
                         }
@@ -743,7 +747,8 @@ inline void request_reader::next()
                         switch (detail::decode_transfer_encoding(field)) {
                         case detail::CHUNKED_INVALID:
                             state = ERRORED;
-                            code_ = token::code::error_invalid_data;
+                            code_
+                                = token::code::error_invalid_transfer_encoding;
                             break;
                         case detail::CHUNKED_NOT_FOUND:
                             body_type = RANDOM_ENCODING_READ;
@@ -792,14 +797,14 @@ inline void request_reader::next()
             } else {
                 if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ) {
                     state = ERRORED;
-                    code_ = token::code::error_invalid_data;
+                    code_ = token::code::error_no_host_found;
                     return;
                 }
 
                 switch (body_type) {
                 case RANDOM_ENCODING_READ:
                     state = ERRORED;
-                    code_ = token::code::error_invalid_data;
+                    code_ = token::code::error_invalid_transfer_encoding;
                     return;
                 case NO_BODY:
                     state = EXPECT_METHOD;
