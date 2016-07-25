@@ -490,7 +490,7 @@ TEST_CASE("from_hex_string", "[detail]")
     REQUIRE(out == 5);
 }
 
-TEST_CASE("Parse 2 simple pipelined non-fragmented/whole requests",
+TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
           "[parser,good]")
 {
     http::request_reader parser;
