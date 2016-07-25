@@ -624,8 +624,6 @@ inline void request_reader::next()
                         }
                     }
                 } else if (c == '\r') {
-                    /* TODO: `token_size_` could be set to `0` so I could move
-                       `advance_token()` out of the switch */
                     state = EXPECT_CRLF_AFTER_HEADERS;
                     next();
                 } else {
@@ -966,8 +964,6 @@ inline void request_reader::next()
                     code_ = token::code::field_name;
                     token_size_ = i - idx;
                 } else if (c == '\r') {
-                    /* TODO: `token_size_` could be set to `0` so I could move
-                       `advance_token()` out of the switch */
                     state = EXPECT_CRLF_AFTER_TRAILERS;
                     next();
                 } else {
