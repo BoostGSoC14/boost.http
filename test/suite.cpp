@@ -1777,4 +1777,1739 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::error_invalid_data);
     }
+
+    SECTION("Forbidden whitespace before field name") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.1\r\n"
+                " host: burn.burn\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_invalid_data);
+    }
+
+    SECTION("Invalid field name") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.1\r\n"
+                "@host: burn.burn\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_invalid_data);
+    }
+
+    SECTION("Empty field name") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.1\r\n"
+                ": burn.burn\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_invalid_data);
+    }
+
+    SECTION("Forbidden whitespace after field name") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.1\r\n"
+                "host : burn.burn\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_invalid_data);
+    }
+
+    SECTION("Invalid field value") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.1\r\n"
+                "host:     ""\x7F""burn.burn\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_invalid_data);
+    }
+
+    SECTION("Invalid data after field value") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.1\r\n"
+                "host:     burn.burn\x7F\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_invalid_data);
+    }
+
+    SECTION("Invalid CRLF after field value") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.1\r\n"
+                "host:     burn.burn\r \n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_invalid_data);
+    }
+
+    SECTION("Obsolete line folding in field value") {
+        /* Deprecated (respond with 400 bad request) in section 2.3.4 of
+           RFC7230. */
+        my_copy(buf, idx,
+                "GET / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                " spanned over multiple lines\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_invalid_data);
+    }
+
+    SECTION("HTTP/1.0 with no host **is** okay") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.0\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 0);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::end_of_message);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::method);
+    }
+
+    SECTION("HTTP/1.1 with no host is **NOT** okay") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.1\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_no_host_found);
+    }
+
+    SECTION("HTTP/1.2 with no host is **NOT** okay") {
+        my_copy(buf, idx,
+                "GET / HTTP/1.2\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 3);
+        REQUIRE(parser.value<http::token::method>() == "GET");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::error_no_host_found);
+    }
+
+    SECTION("Multiple Content-Length #1") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Content-Length: 2, 3\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 14);
+        REQUIRE(parser.value<http::token::field_name>() == "Content-Length");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_content_length);
+    }
+
+    SECTION("Multiple Content-Length #2") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Content-Length: 2\r\n"
+                "contenT-lengtH: 3\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 14);
+        REQUIRE(parser.value<http::token::field_name>() == "Content-Length");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::field_value>() == "2");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_content_length);
+    }
+
+    SECTION("Invalid Content-Length #1") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Content-Length: -2\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 14);
+        REQUIRE(parser.value<http::token::field_name>() == "Content-Length");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_content_length);
+    }
+
+    SECTION("Invalid Content-Length #2") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Content-Length: B\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 14);
+        REQUIRE(parser.value<http::token::field_name>() == "Content-Length");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_content_length);
+    }
+
+    SECTION("Invalid Content-Length #3") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Content-Length: 3F\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 14);
+        REQUIRE(parser.value<http::token::field_name>() == "Content-Length");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_content_length);
+    }
+
+    SECTION("Content-Length overflow") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Content-Length: 99999999999999999999999999999\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 14);
+        REQUIRE(parser.value<http::token::field_name>() == "Content-Length");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_content_length_overflow);
+    }
+
+    SECTION("Invalid Transfer-Encoding #1") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Transfer-Encoding: chunked,not,at,the,end\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::field_name>() == "Transfer-Encoding");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_transfer_encoding);
+    }
+
+    SECTION("Invalid Transfer-Encoding #2") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Transfer-Encoding: chunked i am not\r\n"
+                "transfeR-encodinG: chunked,not,at,the,end\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::field_name>() == "Transfer-Encoding");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 16);
+        REQUIRE(parser.value<http::token::field_value>() == "chunked i am not");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::field_name>() == "transfeR-encodinG");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_transfer_encoding);
+    }
+
+    SECTION("Invalid Transfer-Encoding #3") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Transfer-Encoding: chunked i am not\r\n"
+                "transfeR-encodinG: chunked\r\n"
+                "transfeR-Encoding: not,at,the,end\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::field_name>() == "Transfer-Encoding");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 16);
+        REQUIRE(parser.value<http::token::field_value>() == "chunked i am not");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::field_name>() == "transfeR-encodinG");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 7);
+        REQUIRE(parser.value<http::token::field_value>() == "chunked");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_transfer_encoding);
+    }
+
+    SECTION("Invalid Transfer-Encoding #4") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Transfer-Encoding: chunked , chunked\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::field_name>() == "Transfer-Encoding");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_transfer_encoding);
+    }
+
+    SECTION("Invalid Transfer-Encoding #5") {
+        my_copy(buf, idx,
+                "POST / HTTP/1.1\r\n"
+                "host:     burn.burn\r\n"
+                "Transfer-Encoding: vini patented encoding\r\n"
+                "\r\n");
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::method);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::method>() == "POST");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::request_target);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::request_target);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::request_target>() == "/");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 8);
+        REQUIRE(parser.expected_token() == http::token::code::version);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::version);
+        REQUIRE(parser.token_size() == 1);
+        REQUIRE(parser.value<http::token::version>() == 1);
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 4);
+        REQUIRE(parser.value<http::token::field_name>() == "host");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 6);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 9);
+        REQUIRE(parser.value<http::token::field_value>() == "burn.burn");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::field_name>() == "Transfer-Encoding");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_value);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.token_size() == 22);
+        REQUIRE(parser.value<http::token::field_value>()
+                == "vini patented encoding");
+        REQUIRE(parser.expected_token() == http::token::code::skip);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::field_name);
+
+        parser.next();
+
+        REQUIRE(parser.code()
+                == http::token::code::error_invalid_transfer_encoding);
+    }
 }
