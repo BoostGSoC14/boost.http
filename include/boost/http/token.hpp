@@ -31,6 +31,7 @@ struct code
         error_invalid_content_length,
         error_content_length_overflow,
         error_invalid_transfer_encoding,
+        error_chunk_size_overflow,
 
         field_name,
         field_value,

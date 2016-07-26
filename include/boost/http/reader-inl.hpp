@@ -856,10 +856,12 @@ inline void request_reader::next()
                 switch (detail::from_hex_string(string_ref(str, token_size_),
                                                 body_size)) {
                 case detail::HEXSTRING_INVALID:
-                case detail::HEXSTRING_OVERFLOW:
-                    // TODO: proper error notification
                     state = ERRORED;
                     code_ = token::code::error_invalid_data;
+                    return;
+                case detail::HEXSTRING_OVERFLOW:
+                    state = ERRORED;
+                    code_ = token::code::error_chunk_size_overflow;
                     return;
                 case detail::HEXSTRING_OK:
                     state = EXPECT_CHUNK_EXT;
