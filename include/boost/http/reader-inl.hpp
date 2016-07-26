@@ -428,25 +428,20 @@ token::code::value request_reader::expected_token() const
 inline void request_reader::set_buffer(asio::const_buffer ibuffer)
 {
     this->ibuffer = ibuffer;
-    next();
+    idx = 0;
 }
 
 inline void request_reader::next()
 {
-    if (state == ERRORED)
+    if (state == ERRORED || asio::buffer_size(ibuffer) == 0)
         return;
-
-    if (asio::buffer_size(ibuffer) == 0) {
-        code_ = token::code::error_insufficient_data;
-        token_size_ = 0;
-        return;
-    }
 
     if (code_ != token::code::error_insufficient_data) {
         idx += token_size_;
         token_size_ = 0;
         code_ = token::code::error_insufficient_data;
     }
+
     switch (state) {
     case EXPECT_METHOD:
         {

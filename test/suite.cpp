@@ -554,6 +554,8 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
                                 "a7b3fef7ab    \t\t\t\t   \t \r\n"
                                 "\r\n"));
 
+    parser.next();
+
     REQUIRE(parser.code() == http::token::code::method);
     REQUIRE(parser.token_size() == 3);
     REQUIRE(parser.value<http::token::method>() == "GET");
@@ -1311,6 +1313,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
     REQUIRE(parser.expected_token() == http::token::code::method);
 
     parser.set_buffer(asio::buffer(buf));
+    parser.next();
 
     REQUIRE(parser.code() == http::token::code::method);
     REQUIRE(parser.token_size() == 3);
