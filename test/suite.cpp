@@ -24,8 +24,23 @@ void my_copy(std::vector<CharT> &out, std::size_t out_idx, const char (&in)[N])
 
 TEST_CASE("Utility test functions", "[misc]")
 {
-    REQUIRE(asio::buffer_size(my_buffer("")) == 0);
-    REQUIRE(asio::buffer_size(my_buffer("Nu")) == 2);
+    CHECK(asio::buffer_size(my_buffer("")) == 0);
+    CHECK(asio::buffer_size(my_buffer("Nu")) == 2);
+
+    {
+        std::vector<char> buf(10, 'c');
+        my_copy(buf, 0, "a");
+        REQUIRE(buf[0] == 'a');
+        REQUIRE(buf[1] == 'c');
+        my_copy(buf, 2, "bb");
+        REQUIRE(buf[0] == 'a');
+        REQUIRE(buf[1] == 'c');
+        REQUIRE(buf[2] == 'b');
+        REQUIRE(buf[3] == 'b');
+        REQUIRE(buf[4] == 'c');
+        my_copy(buf, 0, "");
+        REQUIRE(buf[0] == 'a');
+    }
 }
 
 TEST_CASE("Unreachable macro", "[detail]")
