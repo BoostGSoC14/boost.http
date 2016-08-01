@@ -817,3 +817,139 @@ TEST_CASE("A big buffer of messages described declaratively and tested with"
                   make_end_of_message(2)
               });
 }
+
+TEST_CASE("Lots of messages described declaratively and tested with varying"
+          " buffer sizes (bad input version)", "[parser,bad]")
+{
+    my_tester("GET / HTTP/1.1\r\n"
+              "host: localhost\r\n"
+              "\r \n",
+              {
+                  make_method("GET"),
+                  make_skip(1),
+                  make_request_target("/"),
+                  make_skip(8),
+                  make_version(1),
+                  make_skip(2),
+                  make_field_name("host"),
+                  make_skip(2),
+                  make_field_value("localhost"),
+                  make_skip(2),
+                  make_error(http::token::code::error_invalid_data)
+              });
+    my_tester("GET / HTTP/1.1\r\n"
+              "host: localhost\r \n"
+              "\r\n",
+              {
+                  make_method("GET"),
+                  make_skip(1),
+                  make_request_target("/"),
+                  make_skip(8),
+                  make_version(1),
+                  make_skip(2),
+                  make_field_name("host"),
+                  make_skip(2),
+                  make_field_value("localhost"),
+                  make_error(http::token::code::error_invalid_data)
+              });
+    my_tester("GET / HTTP/1.1\r\n"
+              "host: ""\x7F""localhost\r \n"
+              "\r\n",
+              {
+                  make_method("GET"),
+                  make_skip(1),
+                  make_request_target("/"),
+                  make_skip(8),
+                  make_version(1),
+                  make_skip(2),
+                  make_field_name("host"),
+                  make_skip(2),
+                  make_error(http::token::code::error_invalid_data)
+              });
+    my_tester("GET / HTTP/1.1\r\n"
+              "host : localhost\r \n"
+              "\r\n",
+              {
+                  make_method("GET"),
+                  make_skip(1),
+                  make_request_target("/"),
+                  make_skip(8),
+                  make_version(1),
+                  make_skip(2),
+                  make_field_name("host"),
+                  make_error(http::token::code::error_invalid_data)
+              });
+    my_tester("GET / HTTP/1.1\r\n"
+              "@host: localhost\r \n"
+              "\r\n",
+              {
+                  make_method("GET"),
+                  make_skip(1),
+                  make_request_target("/"),
+                  make_skip(8),
+                  make_version(1),
+                  make_skip(2),
+                  make_error(http::token::code::error_invalid_data)
+              });
+    my_tester("GET / HTTP/1.1\r \n"
+              "host: localhost\r \n"
+              "\r\n",
+              {
+                  make_method("GET"),
+                  make_skip(1),
+                  make_request_target("/"),
+                  make_skip(8),
+                  make_version(1),
+                  make_error(http::token::code::error_invalid_data)
+              });
+    my_tester("GET / HTTP/1.x\r\n"
+              "host: localhost\r\n"
+              "\r\n",
+              {
+                  make_method("GET"),
+                  make_skip(1),
+                  make_request_target("/"),
+                  make_skip(8),
+                  make_error(http::token::code::error_invalid_data)
+              });
+    my_tester("GET / HTTP|1.1\r\n"
+              "host: localhost\r\n"
+              "\r\n",
+              {
+                  make_method("GET"),
+                  make_skip(1),
+                  make_request_target("/"),
+                  make_error(http::token::code::error_invalid_data)
+              });
+    my_tester("POST / HTTP/1.1\r\n"
+              "host: localhost\r\n"
+              "Content-length: 999999999999999999999999999999999999999999\r\n"
+              "\r\n"
+              "ping",
+              {
+                  make_method("POST"),
+                  make_skip(1),
+                  make_request_target("/"),
+                  make_skip(8),
+                  make_version(1),
+                  make_skip(2),
+                  make_field_name("host"),
+                  make_skip(2),
+                  make_field_value("localhost"),
+                  make_skip(2),
+                  make_field_name("Content-length"),
+                  make_skip(2),
+                  make_error(http::token::code::error_content_length_overflow)
+              });
+    my_tester("GET /happy HTTP/1.1\r\n"
+              "\r\n",
+              {
+                  make_method("GET"),
+                  make_skip(1),
+                  make_request_target("/happy"),
+                  make_skip(8),
+                  make_version(1),
+                  make_skip(2),
+                  make_error(http::token::code::error_no_host)
+              });
+}
