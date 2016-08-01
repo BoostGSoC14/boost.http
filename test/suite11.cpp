@@ -70,8 +70,8 @@ namespace Catch {
             return "error_insufficient_data";
         case http::token::code::error_invalid_data:
             return "error_invalid_data";
-        case http::token::code::error_no_host_found:
-            return "error_no_host_found";
+        case http::token::code::error_no_host:
+            return "error_no_host";
         case http::token::code::error_invalid_content_length:
             return "error_invalid_content_length";
         case http::token::code::error_content_length_overflow:
@@ -455,7 +455,7 @@ void my_tester(const char (&input)[N],
                 ++chunk_size;
                 continue;
             case http::token::code::error_invalid_data:
-            case http::token::code::error_no_host_found:
+            case http::token::code::error_no_host:
             case http::token::code::error_invalid_content_length:
             case http::token::code::error_content_length_overflow:
             case http::token::code::error_invalid_transfer_encoding:

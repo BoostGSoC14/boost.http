@@ -805,7 +805,7 @@ inline void request_reader::next()
             } else {
                 if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ) {
                     state = ERRORED;
-                    code_ = token::code::error_no_host_found;
+                    code_ = token::code::error_no_host;
                     return;
                 }
 

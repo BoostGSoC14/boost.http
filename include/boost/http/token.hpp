@@ -26,7 +26,7 @@ struct code
         error_invalid_data,
 
         /* It's only an error on versions more recent than HTTP/1.0 */
-        error_no_host_found,
+        error_no_host,
 
         error_invalid_content_length,
         error_content_length_overflow,

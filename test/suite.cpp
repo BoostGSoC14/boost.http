@@ -2388,7 +2388,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::error_no_host_found);
+        REQUIRE(parser.code() == http::token::code::error_no_host);
     }
 
     SECTION("HTTP/1.2 with no host is **NOT** okay") {
@@ -2437,7 +2437,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::error_no_host_found);
+        REQUIRE(parser.code() == http::token::code::error_no_host);
     }
 
     SECTION("Multiple Content-Length #1") {
