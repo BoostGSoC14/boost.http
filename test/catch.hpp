@@ -1,6 +1,6 @@
 /*
- *  Catch v1.5.0
- *  Generated: 2016-04-25 18:56:14.308559
+ *  Catch v1.5.6
+ *  Generated: 2016-06-09 19:20:41.460328
  *  ----------------------------------------------------------
  *  This file has been merged from multiple headers. Please don't edit it directly
  *  Copyright (c) 2012 Two Blue Cubes Ltd. All rights reserved.
@@ -106,8 +106,16 @@
 
 // All the C++11 features can be disabled with CATCH_CONFIG_NO_CPP11
 
-#if defined(__cplusplus) && __cplusplus >= 201103L
-#  define CATCH_CPP11_OR_GREATER
+#ifdef __cplusplus
+
+#  if __cplusplus >= 201103L
+#    define CATCH_CPP11_OR_GREATER
+#  endif
+
+#  if __cplusplus >= 201402L
+#    define CATCH_CPP14_OR_GREATER
+#  endif
+
 #endif
 
 #ifdef __clang__
@@ -2065,7 +2073,7 @@ namespace Catch {
             __catchResult.useActiveException( Catch::ResultDisposition::Normal ); \
         } \
         INTERNAL_CATCH_REACT( __catchResult ) \
-    } while( Catch::isTrue( false && static_cast<bool>(expr) ) ) // expr here is never evaluated at runtime but it forces the compiler to give it a look
+    } while( Catch::isTrue( false && !!(expr) ) ) // expr here is never evaluated at runtime but it forces the compiler to give it a look
 
 ///////////////////////////////////////////////////////////////////////////////
 #define INTERNAL_CATCH_IF( expr, resultDisposition, macroName ) \
@@ -3450,7 +3458,7 @@ namespace Catch {
     };
 
     class DebugOutStream : public IStream {
-        std::auto_ptr<StreamBufBase> m_streamBuf;
+        CATCH_AUTO_PTR( StreamBufBase ) m_streamBuf;
         mutable std::ostream m_os;
     public:
         DebugOutStream();
@@ -3598,7 +3606,7 @@ namespace Catch {
         }
         ConfigData m_data;
 
-        std::auto_ptr<IStream const> m_stream;
+        CATCH_AUTO_PTR( IStream const ) m_stream;
         TestSpec m_testSpec;
     };
 
@@ -3618,7 +3626,7 @@ namespace Catch {
 #define STITCH_CLARA_OPEN_NAMESPACE namespace Catch {
 // #included from: ../external/clara.h
 
-// Version 0.0.2.3
+// Version 0.0.2.4
 
 // Only use header guard if we are not using an outer namespace
 #if !defined(TWOBLUECUBES_CLARA_H_INCLUDED) || defined(STITCH_CLARA_OPEN_NAMESPACE)
@@ -4177,7 +4185,7 @@ namespace Clara {
             }
         }
         Mode handleOpt( std::size_t i, char c, std::string const& arg, std::vector<Token>& tokens ) {
-            if( std::string( " \t:=\0", 5 ).find( c ) == std::string::npos )
+            if( std::string( ":=\0", 3 ).find( c ) == std::string::npos )
                 return mode;
 
             std::string optName = arg.substr( from, i-from );
@@ -4191,7 +4199,7 @@ namespace Clara {
             return None;
         }
         Mode handlePositional( std::size_t i, char c, std::string const& arg, std::vector<Token>& tokens ) {
-            if( inQuotes || std::string( " \t\0", 3 ).find( c ) == std::string::npos )
+            if( inQuotes || std::string( "\0", 1 ).find( c ) == std::string::npos )
                 return mode;
 
             std::string data = arg.substr( from, i-from );
@@ -5253,6 +5261,8 @@ namespace Catch
         bool aborting;
     };
 
+    class MultipleReporters;
+
     struct IStreamingReporter : IShared {
         virtual ~IStreamingReporter();
 
@@ -5280,6 +5290,8 @@ namespace Catch
         virtual void testRunEnded( TestRunStats const& testRunStats ) = 0;
 
         virtual void skipTest( TestCaseInfo const& testInfo ) = 0;
+
+        virtual MultipleReporters* tryAsMulti() { return CATCH_NULL; }
     };
 
     struct IReporterFactory : IShared {
@@ -5497,6 +5509,10 @@ namespace TestCaseTracking {
         virtual void addChild( Ptr<ITracker> const& child ) = 0;
         virtual ITracker* findChild( std::string const& name ) = 0;
         virtual void openChild() = 0;
+
+        // Debug/ checking
+        virtual bool isSectionTracker() const = 0;
+        virtual bool isIndexTracker() const = 0;
     };
 
     class TrackerContext {
@@ -5621,6 +5637,10 @@ namespace TestCaseTracking {
                     m_parent->openChild();
             }
         }
+
+        virtual bool isSectionTracker() const CATCH_OVERRIDE { return false; }
+        virtual bool isIndexTracker() const CATCH_OVERRIDE { return false; }
+
         void open() {
             m_runState = Executing;
             moveToThis();
@@ -5684,13 +5704,16 @@ namespace TestCaseTracking {
         {}
         virtual ~SectionTracker();
 
+        virtual bool isSectionTracker() const CATCH_OVERRIDE { return true; }
+
         static SectionTracker& acquire( TrackerContext& ctx, std::string const& name ) {
             SectionTracker* section = CATCH_NULL;
 
             ITracker& currentTracker = ctx.currentTracker();
             if( ITracker* childTracker = currentTracker.findChild( name ) ) {
-                section = dynamic_cast<SectionTracker*>( childTracker );
-                assert( section );
+                assert( childTracker );
+                assert( childTracker->isSectionTracker() );
+                section = static_cast<SectionTracker*>( childTracker );
             }
             else {
                 section = new SectionTracker( name, ctx, &currentTracker );
@@ -5715,13 +5738,16 @@ namespace TestCaseTracking {
         {}
         virtual ~IndexTracker();
 
+        virtual bool isIndexTracker() const CATCH_OVERRIDE { return true; }
+
         static IndexTracker& acquire( TrackerContext& ctx, std::string const& name, int size ) {
             IndexTracker* tracker = CATCH_NULL;
 
             ITracker& currentTracker = ctx.currentTracker();
             if( ITracker* childTracker = currentTracker.findChild( name ) ) {
-                tracker = dynamic_cast<IndexTracker*>( childTracker );
-                assert( tracker );
+                assert( childTracker );
+                assert( childTracker->isIndexTracker() );
+                tracker = static_cast<IndexTracker*>( childTracker );
             }
             else {
                 tracker = new IndexTracker( name, ctx, &currentTracker, size );
@@ -6421,13 +6447,31 @@ namespace Catch {
 #include <iostream>
 #include <algorithm>
 
+#ifdef CATCH_CPP14_OR_GREATER
+#include <random>
+#endif
+
 namespace Catch {
 
-    struct LexSort {
-        bool operator() (TestCase i,TestCase j) const { return (i<j);}
-    };
     struct RandomNumberGenerator {
-        int operator()( int n ) const { return std::rand() % n; }
+        typedef int result_type;
+
+        result_type operator()( result_type n ) const { return std::rand() % n; }
+
+#ifdef CATCH_CPP14_OR_GREATER
+        static constexpr result_type min() { return 0; }
+        static constexpr result_type max() { return 1000000; }
+        result_type operator()() const { return std::rand() % max(); }
+#endif
+        template<typename V>
+        static void shuffle( V& vector ) {
+            RandomNumberGenerator rng;
+#ifdef CATCH_CPP14_OR_GREATER
+            std::shuffle( vector.begin(), vector.end(), rng );
+#else
+            std::random_shuffle( vector.begin(), vector.end(), rng );
+#endif
+        }
     };
 
     inline std::vector<TestCase> sortTests( IConfig const& config, std::vector<TestCase> const& unsortedTestCases ) {
@@ -6436,14 +6480,12 @@ namespace Catch {
 
         switch( config.runOrder() ) {
             case RunTests::InLexicographicalOrder:
-                std::sort( sorted.begin(), sorted.end(), LexSort() );
+                std::sort( sorted.begin(), sorted.end() );
                 break;
             case RunTests::InRandomOrder:
                 {
                     seedRng( config );
-
-                    RandomNumberGenerator rng;
-                    std::random_shuffle( sorted.begin(), sorted.end(), rng );
+                    RandomNumberGenerator::shuffle( sorted );
                 }
                 break;
             case RunTests::InDeclarationOrder:
@@ -6462,13 +6504,15 @@ namespace Catch {
             it != itEnd;
             ++it ) {
             std::pair<std::set<TestCase>::const_iterator, bool> prev = seenFunctions.insert( *it );
-            if( !prev.second ){
-                Catch::cerr()
-                << Colour( Colour::Red )
-                << "error: TEST_CASE( \"" << it->name << "\" ) already defined.\n"
-                << "\tFirst seen at " << prev.first->getTestCaseInfo().lineInfo << "\n"
-                << "\tRedefined at " << it->getTestCaseInfo().lineInfo << std::endl;
-                exit(1);
+            if( !prev.second ) {
+                std::ostringstream ss;
+
+                ss  << Colour( Colour::Red )
+                    << "error: TEST_CASE( \"" << it->name << "\" ) already defined.\n"
+                    << "\tFirst seen at " << prev.first->getTestCaseInfo().lineInfo << "\n"
+                    << "\tRedefined at " << it->getTestCaseInfo().lineInfo << std::endl;
+
+                throw std::runtime_error(ss.str());
             }
         }
     }
@@ -7527,7 +7571,7 @@ namespace Catch {
         return os;
     }
 
-    Version libraryVersion( 1, 5, 0, "", 0 );
+    Version libraryVersion( 1, 5, 6, "", 0 );
 
 }
 
@@ -8506,13 +8550,18 @@ public: // IStreamingReporter
                 ++it )
             (*it)->skipTest( testInfo );
     }
+
+    virtual MultipleReporters* tryAsMulti() CATCH_OVERRIDE {
+        return this;
+    }
+
 };
 
 Ptr<IStreamingReporter> addReporter( Ptr<IStreamingReporter> const& existingReporter, Ptr<IStreamingReporter> const& additionalReporter ) {
     Ptr<IStreamingReporter> resultingReporter;
 
     if( existingReporter ) {
-        MultipleReporters* multi = dynamic_cast<MultipleReporters*>( existingReporter.get() );
+        MultipleReporters* multi = existingReporter->tryAsMulti();
         if( !multi ) {
             multi = new MultipleReporters;
             resultingReporter = Ptr<IStreamingReporter>( multi );
