@@ -422,6 +422,8 @@ token::code::value request_reader::expected_token() const
     case EXPECT_BODY:
     case EXPECT_CHUNK_DATA:
         return token::code::body_chunk;
+    case EXPECT_EOM:
+        return token::code::end_of_message;
     }
 }
 
@@ -433,14 +435,27 @@ inline void request_reader::set_buffer(asio::const_buffer ibuffer)
 
 inline void request_reader::next()
 {
-    if (state == ERRORED || asio::buffer_size(ibuffer) == 0)
+    if (state == ERRORED)
         return;
+
+    // This is a 0-sized token. Therefore, it is handled sooner.
+    if (state == EXPECT_EOM) {
+        body_type = NO_BODY;
+        state = EXPECT_METHOD;
+        code_ = token::code::end_of_message;
+        idx += token_size_;
+        token_size_ = 0;
+        return;
+    }
 
     if (code_ != token::code::error_insufficient_data) {
         idx += token_size_;
         token_size_ = 0;
         code_ = token::code::error_insufficient_data;
     }
+
+    if (asio::buffer_size(ibuffer) == 0)
+        return;
 
     switch (state) {
     case EXPECT_METHOD:
@@ -829,13 +844,13 @@ inline void request_reader::next()
                                             body_size);
             body_size -= token_size_;
 
-            if (body_size == 0) {
-                body_type = NO_BODY;
-                state = EXPECT_METHOD;
-            }
+            if (body_size == 0)
+                state = EXPECT_EOM;
 
             return;
         }
+    case EXPECT_EOM:
+        BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
     case EXPECT_CHUNK_SIZE:
         {
             size_type i = idx + token_size_;

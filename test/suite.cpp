@@ -755,6 +755,12 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
         REQUIRE(body[2] == 'n');
         REQUIRE(body[3] == 'g');
     }
+    REQUIRE(parser.expected_token() == http::token::code::end_of_message);
+
+    parser.next();
+
+    REQUIRE(parser.code() == http::token::code::end_of_message);
+    REQUIRE(parser.token_size() == 0);
     REQUIRE(parser.expected_token() == http::token::code::method);
 
     // THIRD REQUEST
