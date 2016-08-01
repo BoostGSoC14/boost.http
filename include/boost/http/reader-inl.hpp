@@ -454,7 +454,7 @@ inline void request_reader::next()
         code_ = token::code::error_insufficient_data;
     }
 
-    if (asio::buffer_size(ibuffer) == 0)
+    if (idx == asio::buffer_size(ibuffer))
         return;
 
     switch (state) {
