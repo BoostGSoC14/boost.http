@@ -26,10 +26,14 @@ set(tests
   "suite"
 )
 
-macro(add_test_target target)
+set(tests11
+  "suite11"
+)
+
+macro(add_test_target target version)
   add_executable("${target}" "${target}.cpp")
 
-  set_property(TARGET "${target}" PROPERTY CXX_STANDARD 98)
+  set_property(TARGET "${target}" PROPERTY CXX_STANDARD ${version})
   set_property(TARGET "${target}" PROPERTY CXX_STANDARD_REQUIRED ON)
 
   target_include_directories("${target}"
@@ -46,7 +50,11 @@ macro(add_test_target target)
 endmacro()
 
 foreach(test ${tests})
-  add_test_target("${test}")
+  add_test_target("${test}" 98)
+endforeach()
+
+foreach(test ${tests11})
+  add_test_target("${test}" 11)
 endforeach()
 
 include(CTest)
