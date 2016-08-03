@@ -306,6 +306,16 @@ request_reader::request_reader()
     , token_size_(0)
 {}
 
+inline void request_reader::reset()
+{
+    body_type = NO_BODY;
+    state = EXPECT_METHOD;
+    code_ = token::code::error_insufficient_data;
+    idx = 0;
+    token_size_ = 0;
+    ibuffer = asio::const_buffer();
+}
+
 token::code::value request_reader::code() const
 {
     return code_;

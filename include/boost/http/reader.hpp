@@ -37,6 +37,8 @@ public:
 
     request_reader();
 
+    void reset();
+
     // Inspect current token
     token::code::value code() const;
     size_type token_size() const;
