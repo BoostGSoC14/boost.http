@@ -18,31 +18,28 @@ struct code
 {
     enum value
     {
-        end_of_message,
-        // used to skip unneeded bytes so user can keep buffer small when asking
-        // for more data
-        skip,
         error_insufficient_data,
         error_invalid_data,
-
         /* It's only an error on versions more recent than HTTP/1.0 */
         error_no_host,
-
         error_invalid_content_length,
         error_content_length_overflow,
         error_invalid_transfer_encoding,
         error_chunk_size_overflow,
-
-        field_name,
-        field_value,
-        body_chunk,
-        end_of_headers,
-        end_of_body,
+        // used to skip unneeded bytes so user can keep buffer small when asking
+        // for more data
+        skip,
         method,
         request_target,
         version,
         status_code,
         reason_phrase,
+        field_name,
+        field_value,
+        end_of_headers,
+        body_chunk,
+        end_of_body,
+        end_of_message
     };
 };
 
