@@ -287,7 +287,7 @@ struct decode_transfer_encoding_p
     DecodeTransferEncodingResult &res;
 };
 
-DecodeTransferEncodingResult decode_transfer_encoding(string_ref field)
+inline DecodeTransferEncodingResult decode_transfer_encoding(string_ref field)
 {
     decode_transfer_encoding_p::state p_state;
     decode_transfer_encoding_p p(p_state);
@@ -316,7 +316,7 @@ inline void request_reader::reset()
     ibuffer = asio::const_buffer();
 }
 
-token::code::value request_reader::code() const
+inline token::code::value request_reader::code() const
 {
     return code_;
 }
@@ -396,7 +396,7 @@ asio::const_buffer request_reader::value<token::body_chunk>() const
     return asio::buffer(ibuffer + idx, token_size_);
 }
 
-token::code::value request_reader::expected_token() const
+inline token::code::value request_reader::expected_token() const
 {
     switch (state) {
     case ERRORED:
