@@ -39,7 +39,6 @@ public:
 
     // Inspect current token
     token::code::value code() const;
-    system::error_code error() const BOOST_NOEXCEPT;
     size_type token_size() const;
     template<class T>
     typename T::type value() const;
@@ -51,8 +50,6 @@ public:
        should never happens to deliver body chunks as they're notified in
        chunks. */
     token::code::value expected_token() const;
-
-    // Error handling
 
     // Consumes current element and goes to the next one
     void next();
