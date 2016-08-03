@@ -925,12 +925,14 @@ inline void request_reader::next()
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
             } else {
-                if (body_size)
+                if (body_size != 0) {
                     state = EXPECT_CHUNK_DATA;
-                else
+                    code_ = token::code::skip;
+                } else {
                     state = EXPECT_TRAILER_NAME;
+                    code_ = token::code::end_of_body;
+                }
 
-                code_ = token::code::skip;
                 token_size_ = 2;
             }
             return;

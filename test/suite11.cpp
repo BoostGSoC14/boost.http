@@ -88,6 +88,8 @@ namespace Catch {
             return "body_chunk";
         case http::token::code::end_of_headers:
             return "end_of_headers";
+        case http::token::code::end_of_body:
+            return "end_of_body";
         case http::token::code::method:
             return "method";
         case http::token::code::request_target:
@@ -175,6 +177,16 @@ struct end_of_headers
     std::size_t size;
 };
 
+struct end_of_body
+{
+    bool operator==(const end_of_body &o) const
+    {
+        return size == o.size;
+    }
+
+    std::size_t size;
+};
+
 struct method
 {
     bool operator==(const method &o) const
@@ -233,6 +245,7 @@ typedef variant<
     field_value,
     body_chunk,
     end_of_headers,
+    end_of_body,
     method,
     request_target,
     version,
@@ -264,6 +277,9 @@ std::ostream& operator<<(std::ostream &os, const value &v)
             },
             [&os](const end_of_headers &v) {
                 os << "end_of_headers(size = " << v.size << ")";
+            },
+            [&os](const end_of_body &v) {
+                os << "end_of_body(size = " << v.size << ")";
             },
             [&os](const method &v) {
                 os << "method(\"" << v.value << "\")";
@@ -365,6 +381,13 @@ my_token::value make_body_chunk(asio::const_buffer value)
 my_token::value make_end_of_headers(std::size_t size)
 {
     my_token::end_of_headers t;
+    t.size = size;
+    return t;
+}
+
+my_token::value make_end_of_body(std::size_t size)
+{
+    my_token::end_of_body t;
     t.size = size;
     return t;
 }
@@ -500,6 +523,9 @@ void my_tester(const char (&input)[N],
             case http::token::code::end_of_headers:
                 output.push_back(make_end_of_headers(parser.token_size()));
                 break;
+            case http::token::code::end_of_body:
+                output.push_back(make_end_of_body(parser.token_size()));
+                break;
             case http::token::code::method:
                 {
                     auto value = parser.value<http::token::method>();
@@ -629,7 +655,8 @@ TEST_CASE("Lots of messages described declaratively and tested with varying"
                   make_body_chunk("pedia"),
                   make_skip(5),
                   make_body_chunk(" in\r\n\r\nchunks."),
-                  make_skip(5),
+                  make_skip(3),
+                  make_end_of_body(2),
                   make_end_of_message(2)
               });
     my_tester("POST /american_jesus HTTP/1.1\r\n"
@@ -671,7 +698,8 @@ TEST_CASE("Lots of messages described declaratively and tested with varying"
                   make_body_chunk("pedia"),
                   make_skip(5),
                   make_body_chunk(" in\r\n\r\nchunks."),
-                  make_skip(5),
+                  make_skip(3),
+                  make_end_of_body(2),
                   make_field_name("X-Group"),
                   make_skip(2),
                   make_field_value("hack'n'cast"),
@@ -784,7 +812,8 @@ TEST_CASE("A big buffer of messages described declaratively and tested with"
                   make_body_chunk("pedia"),
                   make_skip(5),
                   make_body_chunk(" in\r\n\r\nchunks."),
-                  make_skip(5),
+                  make_skip(3),
+                  make_end_of_body(2),
                   make_end_of_message(2),
 
                   // fourth request
@@ -809,7 +838,8 @@ TEST_CASE("A big buffer of messages described declaratively and tested with"
                   make_body_chunk("pedia"),
                   make_skip(5),
                   make_body_chunk(" in\r\n\r\nchunks."),
-                  make_skip(5),
+                  make_skip(3),
+                  make_end_of_body(2),
                   make_field_name("X-Group"),
                   make_skip(2),
                   make_field_value("hack'n'cast"),

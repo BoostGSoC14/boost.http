@@ -1010,7 +1010,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     parser.next();
 
-    REQUIRE(parser.code() == http::token::code::skip);
+    REQUIRE(parser.code() == http::token::code::end_of_body);
     REQUIRE(parser.token_size() == 2);
     REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -1267,7 +1267,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     parser.next();
 
-    REQUIRE(parser.code() == http::token::code::skip);
+    REQUIRE(parser.code() == http::token::code::end_of_body);
     REQUIRE(parser.token_size() == 2);
     REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -3652,7 +3652,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
         REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -4451,7 +4451,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
         REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -4618,7 +4618,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
         REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -4785,7 +4785,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
         REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -4952,7 +4952,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
         REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -5126,7 +5126,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
         REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -5306,7 +5306,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
         REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -5493,7 +5493,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
         REQUIRE(parser.expected_token() == http::token::code::field_name);
 
@@ -5681,7 +5681,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
         REQUIRE(parser.expected_token() == http::token::code::field_name);
 

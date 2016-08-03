@@ -37,6 +37,7 @@ struct code
         field_value,
         body_chunk,
         end_of_headers,
+        end_of_body,
         method,
         request_target,
         version,
