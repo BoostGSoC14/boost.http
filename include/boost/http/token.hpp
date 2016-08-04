@@ -75,6 +75,16 @@ struct end_of_headers
     static const token::code::value code = token::code::end_of_headers;
 };
 
+struct end_of_body
+{
+    static const token::code::value code = token::code::end_of_body;
+};
+
+struct end_of_message
+{
+    static const token::code::value code = token::code::end_of_message;
+};
+
 struct method
 {
     typedef boost::string_ref type;
