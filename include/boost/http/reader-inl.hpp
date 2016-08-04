@@ -432,6 +432,8 @@ inline token::code::value request_reader::expected_token() const
     case EXPECT_BODY:
     case EXPECT_CHUNK_DATA:
         return token::code::body_chunk;
+    case EXPECT_END_OF_BODY:
+        return token::code::end_of_body;
     case EXPECT_END_OF_MESSAGE:
         return token::code::end_of_message;
     }
@@ -449,13 +451,22 @@ inline void request_reader::next()
         return;
 
     // This is a 0-sized token. Therefore, it is handled sooner.
-    if (state == EXPECT_END_OF_MESSAGE) {
+    switch (state) {
+    case EXPECT_END_OF_BODY:
+        state = EXPECT_END_OF_MESSAGE;
+        code_ = token::code::end_of_body;
+        idx += token_size_;
+        token_size_ = 0;
+        return;
+    case EXPECT_END_OF_MESSAGE:
         body_type = NO_BODY;
         state = EXPECT_METHOD;
         code_ = token::code::end_of_message;
         idx += token_size_;
         token_size_ = 0;
         return;
+    default:
+        break;
     }
 
     if (code_ != token::code::error_insufficient_data) {
@@ -825,22 +836,20 @@ inline void request_reader::next()
                     code_ = token::code::error_invalid_transfer_encoding;
                     return;
                 case NO_BODY:
-                    state = EXPECT_METHOD;
-                    code_ = token::code::end_of_message;
+                    state = EXPECT_END_OF_BODY;
                     break;
                 case CHUNKED_ENCODING_READ:
                     state = EXPECT_CHUNK_SIZE;
-                    code_ = token::code::end_of_headers;
                     break;
                 case CONTENT_LENGTH_READ:
                     state = EXPECT_BODY;
-                    code_ = token::code::end_of_headers;
                     break;
                 default:
                     BOOST_HTTP_DETAIL_UNREACHABLE("READING_* variants should be"
                                                   " cleared when the field"
                                                   " value is read");
                 }
+                code_ = token::code::end_of_headers;
                 token_size_ = 2;
             }
             return;
@@ -855,10 +864,12 @@ inline void request_reader::next()
             body_size -= token_size_;
 
             if (body_size == 0)
-                state = EXPECT_END_OF_MESSAGE;
+                state = EXPECT_END_OF_BODY;
 
             return;
         }
+    case EXPECT_END_OF_BODY:
+        BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
     case EXPECT_END_OF_MESSAGE:
         BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
     case EXPECT_CHUNK_SIZE:

@@ -562,9 +562,17 @@ void my_tester(const char (&input)[N],
             parser.set_buffer(asio::buffer(buffer_view, parser.token_size()));
             parser.next();
             if (parser.code() != http::token::code::error_insufficient_data) {
-                // The only token which can be 0-sized in current implementation
-                assert(parser.code() == http::token::code::end_of_message);
-                output.push_back(make_end_of_message(0));
+                switch (parser.code()) {
+                case http::token::code::end_of_body:
+                    output.push_back(make_end_of_body(0));
+                    break;
+                case http::token::code::end_of_message:
+                    output.push_back(make_end_of_message(0));
+                    break;
+                default:
+                    FAIL("token \"" << Catch::toString(parser.code())
+                         <<  "\" cannot be 0-sized in current implementation.");
+                }
             }
 
             chunk_size = init_chunk_size;
@@ -592,7 +600,9 @@ TEST_CASE("Lots of messages described declaratively and tested with varying"
                   make_skip(2),
                   make_field_value("localhost"),
                   make_skip(2),
-                  make_end_of_message(2)
+                  make_end_of_headers(2),
+                  make_end_of_body(0),
+                  make_end_of_message(0)
               });
     my_tester("POST / HTTP/1.1\r\n"
               "host: localhost\r\n"
@@ -616,6 +626,7 @@ TEST_CASE("Lots of messages described declaratively and tested with varying"
                   make_skip(2),
                   make_end_of_headers(2),
                   make_body_chunk("ping"),
+                  make_end_of_body(0),
                   make_end_of_message(0)
               });
     my_tester("POST /american_jesus HTTP/1.1\r\n"
@@ -770,7 +781,9 @@ TEST_CASE("A big buffer of messages described declaratively and tested with"
                   make_skip(2),
                   make_field_value("localhost"),
                   make_skip(2),
-                  make_end_of_message(2),
+                  make_end_of_headers(2),
+                  make_end_of_body(0),
+                  make_end_of_message(0),
 
                   // second request
                   make_method("POST"),
@@ -789,6 +802,7 @@ TEST_CASE("A big buffer of messages described declaratively and tested with"
                   make_skip(2),
                   make_end_of_headers(2),
                   make_body_chunk("ping"),
+                  make_end_of_body(0),
                   make_end_of_message(0),
 
                   // third request

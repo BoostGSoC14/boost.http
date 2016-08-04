@@ -637,8 +637,20 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     parser.next();
 
-    REQUIRE(parser.code() == http::token::code::end_of_message);
+    REQUIRE(parser.code() == http::token::code::end_of_headers);
     REQUIRE(parser.token_size() == 2);
+    REQUIRE(parser.expected_token() == http::token::code::end_of_body);
+
+    parser.next();
+
+    REQUIRE(parser.code() == http::token::code::end_of_body);
+    REQUIRE(parser.token_size() == 0);
+    REQUIRE(parser.expected_token() == http::token::code::end_of_message);
+
+    parser.next();
+
+    REQUIRE(parser.code() == http::token::code::end_of_message);
+    REQUIRE(parser.token_size() == 0);
     REQUIRE(parser.expected_token() == http::token::code::method);
 
     // # SECOND REQUEST
@@ -755,6 +767,12 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
         REQUIRE(body[2] == 'n');
         REQUIRE(body[3] == 'g');
     }
+    REQUIRE(parser.expected_token() == http::token::code::end_of_body);
+
+    parser.next();
+
+    REQUIRE(parser.code() == http::token::code::end_of_body);
+    REQUIRE(parser.token_size() == 0);
     REQUIRE(parser.expected_token() == http::token::code::end_of_message);
 
     parser.next();
@@ -1402,8 +1420,20 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
     parser.next();
 
-    REQUIRE(parser.code() == http::token::code::end_of_message);
+    REQUIRE(parser.code() == http::token::code::end_of_headers);
     REQUIRE(parser.token_size() == 2);
+    REQUIRE(parser.expected_token() == http::token::code::end_of_body);
+
+    parser.next();
+
+    REQUIRE(parser.code() == http::token::code::end_of_body);
+    REQUIRE(parser.token_size() == 0);
+    REQUIRE(parser.expected_token() == http::token::code::end_of_message);
+
+    parser.next();
+
+    REQUIRE(parser.code() == http::token::code::end_of_message);
+    REQUIRE(parser.token_size() == 0);
     REQUIRE(parser.expected_token() == http::token::code::method);
 
     /* Now the `reader` has passed over all possible body types and if there is
@@ -2337,8 +2367,20 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::end_of_message);
+        REQUIRE(parser.code() == http::token::code::end_of_headers);
         REQUIRE(parser.token_size() == 2);
+        REQUIRE(parser.expected_token() == http::token::code::end_of_body);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::end_of_body);
+        REQUIRE(parser.token_size() == 0);
+        REQUIRE(parser.expected_token() == http::token::code::end_of_message);
+
+        parser.next();
+
+        REQUIRE(parser.code() == http::token::code::end_of_message);
+        REQUIRE(parser.token_size() == 0);
         REQUIRE(parser.expected_token() == http::token::code::method);
     }
 
