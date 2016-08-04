@@ -431,6 +431,7 @@ template<std::size_t N>
 void my_tester(const char (&input)[N],
                std::vector<my_token::value> expected_output)
 {
+    INFO("# REQUEST:\n" << input);
     const auto size = N - 1;
     auto buffer = asio::buffer(input, size);
     for (std::size_t init_chunk_size = 1 ; init_chunk_size != size
