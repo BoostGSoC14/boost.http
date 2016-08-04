@@ -432,7 +432,7 @@ inline token::code::value request_reader::expected_token() const
     case EXPECT_BODY:
     case EXPECT_CHUNK_DATA:
         return token::code::body_chunk;
-    case EXPECT_EOM:
+    case EXPECT_END_OF_MESSAGE:
         return token::code::end_of_message;
     }
 }
@@ -449,7 +449,7 @@ inline void request_reader::next()
         return;
 
     // This is a 0-sized token. Therefore, it is handled sooner.
-    if (state == EXPECT_EOM) {
+    if (state == EXPECT_END_OF_MESSAGE) {
         body_type = NO_BODY;
         state = EXPECT_METHOD;
         code_ = token::code::end_of_message;
@@ -855,11 +855,11 @@ inline void request_reader::next()
             body_size -= token_size_;
 
             if (body_size == 0)
-                state = EXPECT_EOM;
+                state = EXPECT_END_OF_MESSAGE;
 
             return;
         }
-    case EXPECT_EOM:
+    case EXPECT_END_OF_MESSAGE:
         BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
     case EXPECT_CHUNK_SIZE:
         {
