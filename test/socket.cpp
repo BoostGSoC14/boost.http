@@ -14,12 +14,19 @@ using namespace boost;
 using namespace std;
 
 template<class F>
-void feed_with_buffer(F &&f)
+void feed_with_buffer(std::size_t min_buf_size, F &&f)
 {
     char buffer[2048];
-    for (int i = 1;i != 2048;++i) {
+    if (min_buf_size == 0) {
+        min_buf_size = max({
+            string_ref("Host").size(),
+            string_ref("Transfer-Encoding").size(),
+            string_ref("Content-Length").size(),
+        });
+    }
+    for (std::size_t i = min_buf_size ; i != 2048 ; ++i) {
         BOOST_TEST_MESSAGE("buffer_size = " << i);
-        f(asio::buffer(buffer, /*i*/3));
+        f(asio::buffer(buffer, i));
     }
 }
 
@@ -134,7 +141,7 @@ BOOST_AUTO_TEST_CASE(socket_ctor) {
 BOOST_AUTO_TEST_CASE(socket_simple) {
     asio::io_service ios;
     auto work = [&ios](asio::yield_context yield) {
-        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+        feed_with_buffer(36, [&ios,&yield](asio::mutable_buffer inbuffer) {
                 http::basic_socket<mock_socket> socket(ios, inbuffer);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
@@ -326,7 +333,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
 BOOST_AUTO_TEST_CASE(socket_expect_continue) {
     asio::io_service ios;
     auto work = [&ios](asio::yield_context yield) {
-        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+        feed_with_buffer(40, [&ios,&yield](asio::mutable_buffer inbuffer) {
                 http::basic_socket<mock_socket> socket(ios, inbuffer);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
@@ -575,7 +582,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
 BOOST_AUTO_TEST_CASE(socket_chunked) {
     asio::io_service ios;
     auto work = [&ios](asio::yield_context yield) {
-        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+        feed_with_buffer(87, [&ios,&yield](asio::mutable_buffer inbuffer) {
                 http::basic_socket<mock_socket> socket(ios, inbuffer);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
@@ -671,8 +678,21 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     BOOST_CHECK(message.headers() == expected_headers);
                 }
 
-                while (socket.read_state() != http::read_state::empty)
-                    socket.async_read_some(message, yield);
+                while (socket.read_state() != http::read_state::empty) {
+                    switch (socket.read_state()) {
+                    case http::read_state::empty:
+                    case http::read_state::finished:
+                        BOOST_FAIL("this state should be unreachable");
+                        break;
+                    case http::read_state::message_ready:
+                        BOOST_REQUIRE(message.trailers().size() == 0);
+                        socket.async_read_some(message, yield);
+                        break;
+                    case http::read_state::body_ready:
+                        socket.async_read_trailers(message, yield);
+                        break;
+                    }
+                }
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
 
                 {
@@ -750,8 +770,21 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     BOOST_CHECK(message.headers() == expected_headers);
                 }
 
-                while (socket.read_state() != http::read_state::empty)
-                    socket.async_read_some(message, yield);
+                while (socket.read_state() != http::read_state::empty) {
+                    switch (socket.read_state()) {
+                    case http::read_state::empty:
+                    case http::read_state::finished:
+                        BOOST_FAIL("this state should be unreachable");
+                        break;
+                    case http::read_state::message_ready:
+                        BOOST_REQUIRE(message.trailers().size() == 0);
+                        socket.async_read_some(message, yield);
+                        break;
+                    case http::read_state::body_ready:
+                        socket.async_read_trailers(message, yield);
+                        break;
+                    }
+                }
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
 
                 {
@@ -827,8 +860,21 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     BOOST_CHECK(message.headers() == expected_headers);
                 }
 
-                while (socket.read_state() != http::read_state::empty)
-                    socket.async_read_some(message, yield);
+                while (socket.read_state() != http::read_state::empty) {
+                    switch (socket.read_state()) {
+                    case http::read_state::empty:
+                    case http::read_state::finished:
+                        BOOST_FAIL("this state should be unreachable");
+                        break;
+                    case http::read_state::message_ready:
+                        BOOST_REQUIRE(message.trailers().size() == 0);
+                        socket.async_read_some(message, yield);
+                        break;
+                    case http::read_state::body_ready:
+                        socket.async_read_trailers(message, yield);
+                        break;
+                    }
+                }
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
 
                 {
@@ -878,7 +924,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
 BOOST_AUTO_TEST_CASE(socket_connection_close) {
     asio::io_service ios;
     auto work = [&ios](asio::yield_context yield) {
-        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+        feed_with_buffer(19, [&ios,&yield](asio::mutable_buffer inbuffer) {
                 http::basic_socket<mock_socket> socket(ios, inbuffer);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
@@ -1042,7 +1088,7 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
 BOOST_AUTO_TEST_CASE(socket_upgrade) {
     asio::io_service ios;
     auto work = [&ios](asio::yield_context yield) {
-        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+        feed_with_buffer(26, [&ios,&yield](asio::mutable_buffer inbuffer) {
                 http::basic_socket<mock_socket> socket(ios, inbuffer);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
@@ -1217,7 +1263,7 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
     spawn(ios, work);
 
     auto work2 = [&ios](asio::yield_context yield) {
-        feed_with_buffer([&ios,&yield](asio::mutable_buffer inbuffer) {
+        feed_with_buffer(25, [&ios,&yield](asio::mutable_buffer inbuffer) {
                 http::basic_socket<mock_socket> socket(ios, inbuffer);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),

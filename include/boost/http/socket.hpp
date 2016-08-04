@@ -1,4 +1,4 @@
-/* Copyright (c) 2014 Vinícius dos Santos Oliveira
+/* Copyright (c) 2014, 2016 Vinícius dos Santos Oliveira
 
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
@@ -22,6 +22,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
+#include <boost/http/reader.hpp>
 #include <boost/http/traits.hpp>
 #include <boost/http/read_state.hpp>
 #include <boost/http/write_state.hpp>
@@ -33,70 +34,6 @@
 
 namespace boost {
 namespace http {
-
-namespace detail {
-
-extern "C" {
-
-/** This **MUST** be a struct with the same properties from the http_parser
-    present in the internal http_parser.h header from the Ryan Dahl's HTTP
-    parser. */
-struct http_parser
-{
-    unsigned int type : 2;
-    unsigned int flags : 8;
-    unsigned int state : 7;
-    unsigned int header_state : 7;
-    unsigned int index : 7;
-    unsigned int lenient_http_headers : 1;
-    std::uint32_t nread;
-    std::uint64_t content_length;
-    unsigned short http_major;
-    unsigned short http_minor;
-    unsigned int status_code : 16;
-    unsigned int method : 8;
-    unsigned int http_errno : 7;
-    unsigned int upgrade : 1;
-    void *data;
-};
-
-typedef int (*http_data_cb)(http_parser*, const char *at, std::size_t length);
-typedef int (*http_cb)(http_parser*);
-
-/** This **MUST** be a struct with the same properties from the
-    http_parser_settings present in the internal http_parser.h header from the
-    Ryan Dahl's HTTP parser. */
-struct http_parser_settings
-{
-    http_cb      on_message_begin;
-    http_data_cb on_url;
-    http_data_cb on_status;
-    http_data_cb on_header_field;
-    http_data_cb on_header_value;
-    http_cb      on_headers_complete;
-    http_data_cb on_body;
-    http_cb      on_message_complete;
-    http_cb      on_chunk_header;
-    http_cb      on_chunk_complete;
-};
-
-} // extern "C"
-
-enum class parser_error
-{
-    cb_headers_complete = 5, // HPE_CB_headers_complete
-    cb_message_complete = 7  // HPE_CB_message_complete
-};
-
-BOOST_HTTP_DECL void init(http_parser &parser);
-BOOST_HTTP_DECL void init(http_parser_settings &settings);
-BOOST_HTTP_DECL std::size_t execute(http_parser &parser,
-                                    const http_parser_settings &settings,
-                                    const std::uint8_t *data, std::size_t len);
-BOOST_HTTP_DECL bool should_keep_alive(const http_parser &parser);
-BOOST_HTTP_DECL bool body_is_final(const http_parser &parser);
-
-} // namespace detail
 
 template<class Socket>
 class basic_socket
@@ -197,18 +134,10 @@ public:
     void open();
 
 private:
-    typedef detail::http_parser http_parser;
-    typedef detail::http_parser_settings http_parser_settings;
-
-    enum Flags
-    {
-        NONE,
-        READY,
-        DATA       = 1 << 1,
-        END        = 1 << 2,
-        HTTP_1_1   = 1 << 3,
-        KEEP_ALIVE = 1 << 4,
-        UPGRADE    = 1 << 5
+    enum Target {
+        READY = 1,
+        DATA  = 1 << 1,
+        END   = 1 << 2,
     };
 
     template<int target, class Message, class Handler,
@@ -222,32 +151,6 @@ private:
     void on_async_read_message(Handler handler, String *method, String *path,
                                Message &message, const system::error_code &ec,
                                std::size_t bytes_transferred);
-
-    template<class Message, class String>
-    static http_parser_settings settings();
-
-    template<class Message>
-    static int on_message_begin(http_parser *parser);
-
-    template<class Message, class String>
-    static int on_url(http_parser *parser, const char *at, std::size_t size);
-
-    template<class Message>
-    static int on_header_field(http_parser *parser, const char *at,
-                               std::size_t size);
-
-    template<class Message>
-    static int on_header_value(http_parser *parser, const char *at,
-                               std::size_t size);
-
-    template<class Message, class String>
-    static int on_headers_complete(http_parser *parser);
-
-    template<class Message>
-    static int on_body(http_parser *parser, const char *data, std::size_t size);
-
-    template<class Message>
-    static int on_message_complete(http_parser *parser);
 
     void clear_buffer();
 
@@ -270,24 +173,20 @@ private:
     asio::mutable_buffer buffer;
     std::size_t used_size = 0;
 
-    /* pimpl is not used to avoid the extra level of indirection and the extra
-       allocation. Also, related objects that are closer together are more cache
-       friendly. It is not ideal, but Ryan Dahl's HTTP parser don't support
-       arbitrary HTTP verbs and it will have to be replaced anyway later, then
-       I'm prioritizing header/interface isolation and a reason for people to
-       use this wrapper (performance). */
-    http_parser parser;
-    int flags;
+    request_reader parser;
 
-    /* Thanks to current HTTP parser, I need to resort to this technique of
-       storing the current message as a "global"-like pointer as opposed to keep
-       it within the handler. */
-    void *current_method;
-    void *current_path;
-    void *current_message;
-
-    std::pair<std::string, std::string> last_header;
+    /* `field_name` value is stored in `[buffer[0], field_name_size)`.
+       `expecting_field` means don't touch the buffer or madness will come.
+       `use_trailers` indicate where we insert the field. */
+    std::size_t field_name_size;
+    bool expecting_field = false;
     bool use_trailers;
+    bool modern_http; // at least HTTP/1.1
+    enum {
+        KEEP_ALIVE_UNKNOWN,
+        KEEP_ALIVE_CLOSE_READ,
+        KEEP_ALIVE_KEEP_ALIVE_READ
+    } keep_alive;
 
     // Output state
     detail::writer_helper writer_helper;

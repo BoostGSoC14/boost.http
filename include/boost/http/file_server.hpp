@@ -20,7 +20,7 @@
 #include <boost/algorithm/string/finder.hpp>
 #include <boost/algorithm/cxx14/equal.hpp>
 
-#include <boost/http/detail/config.hpp>
+#include <boost/http/detail/singleton.hpp>
 #include <boost/http/algorithm/header.hpp>
 #include <boost/http/write_state.hpp>
 #include <boost/http/detail/constchar_helper.hpp>
@@ -54,6 +54,42 @@ enum class file_server_errc {
     filter_set
 };
 
+namespace detail {
+
+class file_server_category_impl: public boost::system::error_category
+{
+public:
+    const char* name() const noexcept override;
+    std::string message(int condition) const noexcept override;
+};
+
+const char* file_server_category_impl::name() const noexcept
+{
+    return "file_server";
+}
+
+std::string file_server_category_impl::message(int condition) const noexcept
+{
+    switch (condition) {
+    case static_cast<int>(file_server_errc::io_error):
+        return "IO failed";
+    case static_cast<int>(file_server_errc::irrecoverable_io_error):
+        return "IO failed after some channel operation already was issued";
+    case static_cast<int>(file_server_errc::write_state_not_supported):
+        return "Cannot operate on channels with this write_state";
+    case static_cast<int>(file_server_errc::file_not_found):
+        return "The requested file wasn't found";
+    case static_cast<int>(file_server_errc::file_type_not_supported):
+        return "Cannot process type for the found file";
+    case static_cast<int>(file_server_errc::filter_set):
+        return "The user custom filter aborted the operation";
+    default:
+        return "undefined";
+    }
+}
+
+} // namespace detail
+
 } // namespace http
 namespace system {
 
@@ -69,7 +105,10 @@ struct is_error_condition_enum<boost::http::file_server_errc>
 } // namespace system
 namespace http {
 
-BOOST_HTTP_DECL const system::error_category& file_server_category();
+inline const system::error_category& file_server_category()
+{
+    return detail::singleton<detail::file_server_category_impl>::instance;
+}
 
 inline system::error_code make_error_code(file_server_errc e)
 {

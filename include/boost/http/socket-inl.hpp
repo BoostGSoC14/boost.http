@@ -45,7 +45,7 @@ write_state basic_socket<Socket>::write_state() const
 template<class Socket>
 bool basic_socket<Socket>::write_response_native_stream() const
 {
-    return flags & HTTP_1_1;
+    return modern_http;
 }
 
 template<class Socket>
@@ -81,6 +81,7 @@ basic_socket<Socket>
 
     method.clear();
     path.clear();
+    clear_message(message);
     writer_helper = http::write_state::finished;
     schedule_on_async_read_message<READY>(handler, message, &method, &path);
 
@@ -179,9 +180,9 @@ basic_socket<Socket>
     auto has_connection_close = detail::has_connection_close(message.headers());
 
     if (has_connection_close)
-        flags &= ~KEEP_ALIVE;
+        keep_alive = KEEP_ALIVE_CLOSE_READ;
 
-    auto use_connection_close_buf = ((flags & KEEP_ALIVE) == 0)
+    auto use_connection_close_buf = (keep_alive == KEEP_ALIVE_CLOSE_READ)
         && !has_connection_close;
 
     // because we don't create multiple responses at once with HTTP/1.1
@@ -212,7 +213,7 @@ basic_socket<Socket>
     std::vector<asio::const_buffer> buffers;
     buffers.reserve(nbuffer_pieces);
 
-    buffers.push_back((flags & HTTP_1_1) ? string_literal_buffer("HTTP/1.1 ")
+    buffers.push_back(modern_http ? string_literal_buffer("HTTP/1.1 ")
                       : string_literal_buffer("HTTP/1.0 "));
     buffers.push_back(asio::buffer(content_length_buffer.data(),
                                    content_length_delim));
@@ -246,7 +247,7 @@ basic_socket<Socket>
     asio::async_write(channel, buffers,
                       [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
-        is_open_ = flags & KEEP_ALIVE;
+        is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
         if (!is_open_)
             channel.close();
         handler(ec);
@@ -316,7 +317,7 @@ basic_socket<Socket>
             return result.get();
         }
 
-        if ((flags & HTTP_1_1) == 0) {
+        if (!modern_http) {
             writer_helper = prev;
             invoke_handler(std::forward<decltype(handler)>(handler),
                            http_errc::native_stream_unsupported);
@@ -329,9 +330,9 @@ basic_socket<Socket>
     auto has_connection_close = detail::has_connection_close(message.headers());
 
     if (has_connection_close)
-        flags &= ~KEEP_ALIVE;
+        keep_alive = KEEP_ALIVE_CLOSE_READ;
 
-    auto use_connection_close_buf = ((flags & KEEP_ALIVE) == 0)
+    auto use_connection_close_buf = (keep_alive == KEEP_ALIVE_CLOSE_READ)
         && !has_connection_close;
 
     // because we don't create multiple responses at once with HTTP/1.1
@@ -353,7 +354,7 @@ basic_socket<Socket>
     std::vector<asio::const_buffer> buffers;
     buffers.reserve(nbuffer_pieces);
 
-    buffers.push_back((flags & HTTP_1_1) ? string_literal_buffer("HTTP/1.1 ")
+    buffers.push_back(modern_http ? string_literal_buffer("HTTP/1.1 ")
                       : string_literal_buffer("HTTP/1.0 "));
     buffers.push_back(asio::buffer(content_length_buffer));
     buffers.push_back(asio::buffer(reason_phrase.data(), reason_phrase.size()));
@@ -493,7 +494,7 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
     asio::async_write(channel, buffers,
                       [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
-        is_open_ = flags & KEEP_ALIVE;
+        is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
         if (!is_open_)
             channel.close();
         handler(ec);
@@ -529,7 +530,7 @@ basic_socket<Socket>
     asio::async_write(channel, last_chunk,
                       [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
-        is_open_ = flags & KEEP_ALIVE;
+        is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
         if (!is_open_)
             channel.close();
         handler(ec);
@@ -549,9 +550,6 @@ basic_socket<Socket>
 {
     if (asio::buffer_size(buffer) == 0)
         throw std::invalid_argument("buffers must not be 0-sized");
-
-    detail::init(parser);
-    parser.data = this;
 }
 
 template<class Socket>
@@ -565,9 +563,6 @@ basic_socket<Socket>
 {
     if (asio::buffer_size(buffer) == 0)
         throw std::invalid_argument("buffers must not be 0-sized");
-
-    detail::init(parser);
-    parser.data = this;
 }
 
 template<class Socket>
@@ -617,8 +612,6 @@ void basic_socket<Socket>
                         Message &message, const system::error_code &ec,
                         std::size_t bytes_transferred)
 {
-    using detail::string_literal_buffer;
-
     if (ec) {
         clear_buffer();
         handler(ec);
@@ -626,67 +619,215 @@ void basic_socket<Socket>
     }
 
     used_size += bytes_transferred;
-    current_method = reinterpret_cast<void*>(method);
-    current_path = reinterpret_cast<void*>(path);
-    current_message = reinterpret_cast<void*>(&message);
-    auto nparsed = detail::execute(parser, settings<Message, String>(),
-                                   asio::buffer_cast<const std::uint8_t*>
-                                   (buffer),
-                                   used_size);
+    if (expecting_field) {
+        parser.set_buffer(asio::buffer(buffer + field_name_size,
+                                       used_size - field_name_size));
+    } else {
+        parser.set_buffer(asio::buffer(buffer, used_size));
+    }
 
-    if (parser.http_errno) {
-        system::error_code ignored_ec;
+    auto nparsed = 0;
+    bool skip_parser_next = false;
+    int flags = 0;
 
-        if (parser.http_errno
-            == int(detail::parser_error::cb_headers_complete)) {
-            clear_buffer();
-            clear_message(message);
+    /* Buffer management is simplified by making `error_insufficient_data` the
+       only way to break out of this loop (on non-error paths). */
+    do {
+        if (!skip_parser_next)
+            parser.next();
+        skip_parser_next = false;
+        switch (parser.code()) {
+        case token::code::error_insufficient_data:
+            // break of for loop completely
+            continue;
+        case token::code::error_invalid_data:
+        case token::code::error_no_host:
+        case token::code::error_invalid_content_length:
+        case token::code::error_content_length_overflow:
+        case token::code::error_invalid_transfer_encoding:
+        case token::code::error_chunk_size_overflow:
+            // TODO: send HTTP reply before proceeding
+            {
+                clear_buffer();
+                handler(system::error_code(http_errc::parsing_error));
+                return;
+            }
+        case token::code::skip:
+            if (expecting_field) {
+                auto buf_view = asio::buffer_cast<char*>(buffer);
+                auto skip_size = parser.token_size();
+                parser.next();
+                skip_parser_next = true;
+                std::copy_n(buf_view + field_name_size + skip_size,
+                            used_size - field_name_size - skip_size,
+                            buf_view + field_name_size);
+                used_size -= skip_size;
+                parser.set_buffer(asio::buffer(buffer + field_name_size,
+                                               used_size - field_name_size));
+            }
 
-            auto error_message
-                = string_literal_buffer("HTTP/1.1 505 HTTP Version Not"
-                                        " Supported\r\n"
-                                        "Content-Length: 48\r\n"
-                                        "Connection: close\r\n"
-                                        "\r\n"
-                                        "This server only supports HTTP/1.0 and"
-                                        " HTTP/1.1\n");
-            asio::async_write(channel, asio::buffer(error_message),
-                              [this,handler](system::error_code /*ignored_ec*/,
-                                             std::size_t /*bytes_transferred*/)
-                              mutable {
-                handler(system::error_code{http_errc::parsing_error});
-            });
-            return;
-        } else if (parser.http_errno
-                   == int(detail::parser_error::cb_message_complete)) {
-            /* After an error is set, http_parser enter in an invalid state
-               and needs to be reset. */
-            detail::init(parser);
-        } else {
-            clear_buffer();
-            handler(system::error_code(http_errc::parsing_error));
-            return;
+            break;
+        case token::code::method:
+            use_trailers = false;
+            {
+                auto value = parser.value<token::method>();
+                connect_request = value == "CONNECT";
+                *method = String(value.data(), value.size());
+            }
+            break;
+        case token::code::request_target:
+            {
+                auto value = parser.value<token::request_target>();
+                *path = String(value.data(), value.size());
+            }
+            break;
+        case token::code::version:
+            {
+                auto value = parser.value<token::version>();
+                modern_http = value > 0;
+                keep_alive = KEEP_ALIVE_UNKNOWN;
+            }
+            break;
+        case token::code::status_code:
+            use_trailers = false;
+            BOOST_HTTP_DETAIL_UNREACHABLE("unimplemented not exposed feature");
+            break;
+        case token::code::reason_phrase:
+            BOOST_HTTP_DETAIL_UNREACHABLE("unimplemented not exposed feature");
+            break;
+        case token::code::field_name:
+            /* Here we complicate field management to avoid allocations. The
+               field name MUST occupy the initial bytes on the buffer. The bytes
+               that immediately follow should be the field value.
+
+               The `expecting_field` and `field_name_size` variables help to
+               orchestrate that. While `expecting_field == true`, `nparsed` has
+               no defined meaning.
+
+               I'm NOT removing the "skip bytes" for performance reasons, as
+               they almost always are only 2. The reason I remove them is to
+               simplify layout management (I don't need an extra index to
+               indicate where field value starts and this complex control flow
+               is largely simplified too). This `rotate` algorithm may very well
+               degrade performance. */
+            {
+                auto buf_view = asio::buffer_cast<char*>(buffer);
+                std::copy_n(buf_view + nparsed, used_size - nparsed, buf_view);
+                used_size -= nparsed;
+                nparsed = 0;
+                parser.set_buffer(asio::buffer(buffer, used_size));
+                field_name_size = parser.token_size();
+                expecting_field = true;
+
+                for (std::size_t i = 0 ; i != field_name_size ; ++i) {
+                    auto &ch = buf_view[i];
+                    ch = std::tolower(ch);
+                }
+            }
+            break;
+        case token::code::field_value:
+            {
+                typedef typename Message::headers_type::key_type NameT;
+                typedef typename Message::headers_type::mapped_type ValueT;
+
+                auto buf_view = asio::buffer_cast<char*>(buffer);
+                auto name = string_ref(buf_view, field_name_size);
+                auto value = parser.value<token::field_value>();
+
+                if (modern_http || (name != "expect" && name != "upgrade")) {
+                    if (name == "connection") {
+                        switch (keep_alive) {
+                        case KEEP_ALIVE_UNKNOWN:
+                        case KEEP_ALIVE_KEEP_ALIVE_READ:
+                            header_value_any_of(value, [&](string_ref v) {
+                                    if (iequals(v, "close")) {
+                                        keep_alive = KEEP_ALIVE_CLOSE_READ;
+                                        return true;
+                                    }
+
+                                    if (iequals(v, "keep-alive"))
+                                        keep_alive = KEEP_ALIVE_KEEP_ALIVE_READ;
+
+                                    return false;
+                                });
+                            break;
+                        case KEEP_ALIVE_CLOSE_READ:
+                            break;
+                        }
+                    }
+
+                    (use_trailers ? message.trailers() : message.headers())
+                        .emplace(NameT(name.data(), name.size()),
+                                 ValueT(value.data(), value.size()));
+                }
+
+                std::copy_n(buf_view + field_name_size,
+                            used_size - field_name_size,
+                            buf_view);
+                used_size -= field_name_size;
+                parser.set_buffer(asio::buffer(buffer, used_size));
+                expecting_field = false;
+                nparsed = 0;
+            }
+            break;
+        case token::code::end_of_headers:
+            istate = http::read_state::message_ready;
+            flags |= READY;
+            writer_helper = http::write_state::empty;
+
+            {
+                auto er = message.headers().equal_range("expect");
+                if (std::distance(er.first, er.second) > 1)
+                    message.headers().erase(er.first, er.second);
+            }
+
+            if (keep_alive == KEEP_ALIVE_UNKNOWN) {
+                keep_alive = modern_http
+                    ? KEEP_ALIVE_KEEP_ALIVE_READ : KEEP_ALIVE_CLOSE_READ;
+            }
+            break;
+        case token::code::body_chunk:
+            {
+                auto value = parser.value<token::body_chunk>();
+                auto begin = asio::buffer_cast<const std::uint8_t*>(value);
+                auto size = asio::buffer_size(value);
+                message.body().insert(message.body().end(), begin, begin + size);
+                flags |= DATA;
+            }
+            break;
+        case token::code::end_of_body:
+            istate = http::read_state::body_ready;
+            use_trailers = true;
+            break;
+        case token::code::end_of_message:
+            istate = http::read_state::empty;
+            flags |= END;
+            parser.set_buffer(asio::buffer(buffer + nparsed,
+                                           parser.token_size()));
+            break;
         }
-    }
 
-    {
-        auto b = asio::buffer_cast<std::uint8_t*>(buffer);
-        std::copy_n(b + nparsed, used_size - nparsed, b);
-    }
+        nparsed += parser.token_size();
+    } while (parser.code() != token::code::error_insufficient_data);
 
-    used_size -= nparsed;
+    if (!expecting_field) {
+        auto buf_view = asio::buffer_cast<char*>(buffer);
+        std::copy_n(buf_view + nparsed, used_size - nparsed, buf_view);
+        used_size -= nparsed;
+        nparsed = 0;
+        parser.set_buffer(asio::buffer(buffer, used_size));
+    }
 
     if (target == READY && flags & READY) {
-        flags &= ~READY;
         handler(system::error_code{});
     } else if (target == DATA && flags & (DATA|END)) {
-        flags &= ~(READY|DATA);
         handler(system::error_code{});
     } else if (target == END && flags & END) {
-        flags &= ~(READY|DATA|END);
         handler(system::error_code{});
     } else {
         if (used_size == asio::buffer_size(buffer)) {
+            /* TODO: use `expected_token()` to reply with appropriate "... too
+               long" status code */
             handler(system::error_code{http_errc::buffer_exhausted});
             return;
         }
@@ -703,273 +844,13 @@ void basic_socket<Socket>
 }
 
 template<class Socket>
-template<class Message, class String>
-detail::http_parser_settings basic_socket<Socket>::settings()
-{
-    http_parser_settings settings;
-
-    init(settings);
-
-    settings.on_message_begin = on_message_begin<Message>;
-    settings.on_url = on_url<Message, String>;
-    settings.on_header_field = on_header_field<Message>;
-    settings.on_header_value = on_header_value<Message>;
-    settings.on_headers_complete = on_headers_complete<Message, String>;
-    settings.on_body = on_body<Message>;
-    settings.on_message_complete = on_message_complete<Message>;
-
-    return settings;
-}
-
-template<class Socket>
-template<class Message>
-int basic_socket<Socket>::on_message_begin(http_parser *parser)
-{
-    auto socket = reinterpret_cast<basic_socket*>(parser->data);
-    auto message = reinterpret_cast<Message*>(socket->current_message);
-    socket->flags = 0;
-    socket->use_trailers = false;
-    clear_message(*message);
-    return 0;
-}
-
-template<class Socket>
-template<class Message, class String>
-int basic_socket<Socket>::on_url(http_parser *parser, const char *at,
-                                           std::size_t size)
-{
-    auto socket = reinterpret_cast<basic_socket*>(parser->data);
-    auto path = reinterpret_cast<String*>(socket->current_path);
-    path->append(at, size);
-    return 0;
-}
-
-template<class Socket>
-template<class Message>
-int basic_socket<Socket>
-::on_header_field(http_parser *parser, const char *at, std::size_t size)
-{
-    using std::transform;
-    auto tolower = [](int ch) -> int { return std::tolower(ch); };
-
-    auto socket = reinterpret_cast<basic_socket*>(parser->data);
-    auto message = reinterpret_cast<Message*>(socket->current_message);
-    auto &field = socket->last_header.first;
-    auto &value = socket->last_header.second;
-
-    if (value.size() /* last header piece was value */) {
-        algorithm::trim_right_if(socket->last_header.second, [](char ch) {
-                return ch == ' ' || ch == '\t';
-            });
-        if ((parser->http_minor != 0 || parser->http_major > 1)
-            || (field != "expect" && field != "upgrade")) {
-            (socket->use_trailers ? message->trailers() : message->headers())
-                .insert(socket->last_header);
-        }
-        value.clear();
-
-        field.replace(0, field.size(), at, size);
-        transform(field.begin(), field.end(), field.begin(), tolower);
-    } else {
-        auto offset = field.size();
-        field.append(at, size);
-        auto begin = field.begin() + offset;
-        transform(begin, field.end(), begin, tolower);
-    }
-
-    return 0;
-}
-
-template<class Socket>
-template<class Message>
-int basic_socket<Socket>
-::on_header_value(http_parser *parser, const char *at, std::size_t size)
-{
-    auto socket = reinterpret_cast<basic_socket*>(parser->data);
-    auto &value = socket->last_header.second;
-    value.append(at, size);
-    return 0;
-}
-
-template<class Socket>
-template<class Message, class String>
-int basic_socket<Socket>::on_headers_complete(http_parser *parser)
-{
-    auto socket = reinterpret_cast<basic_socket*>(parser->data);
-    auto message = reinterpret_cast<Message*>(socket->current_message);
-
-    {
-        auto method = reinterpret_cast<String*>(socket->current_method);
-        using detail::constchar_helper;
-        static const constchar_helper methods[] = {
-            "DELETE",
-            "GET",
-            "HEAD",
-            "POST",
-            "PUT",
-            "CONNECT",
-            "OPTIONS",
-            "TRACE",
-            "COPY",
-            "LOCK",
-            "MKCOL",
-            "MOVE",
-            "PROPFIND",
-            "PROPPATCH",
-            "SEARCH",
-            "UNLOCK",
-            "BIND",
-            "REBIND",
-            "UNBIND",
-            "ACL",
-            "REPORT",
-            "MKACTIVITY",
-            "CHECKOUT",
-            "MERGE",
-            "M-SEARCH",
-            "NOTIFY",
-            "SUBSCRIBE",
-            "UNSUBSCRIBE",
-            "PATCH",
-            "PURGE",
-            "MKCALENDAR",
-            "LINK",
-            "UNLINK"
-        };
-        const auto &m = methods[parser->method];
-        method->append(m.data, m.size);
-        socket->connect_request = parser->method == 5;
-    }
-
-    {
-        auto handle_error = [](){
-            /* WARNING: if you update the code and another error condition
-               become possible, you'll be in trouble, because, as I write
-               this comment, there is **NOT** a non-hacky way to notify
-               different error conditions through the callback return value
-               (Ryan Dahl's parser limitation, probably designed in favor of
-               lower memory consumption) and then you'll need to call the
-               type erased user handler from this very function. One
-               solution with minimal performance impact to this future
-               problem is presented below.
-
-               First, update this function signature to also remember the
-               erased type:
-
-               ```cpp
-               template<class Message, class Handler>
-               static int on_headers_complete(http_parser *parser)
-               ```
-
-               Now add the following member to this class:
-
-               ```cpp
-               void *handler;
-               ```
-
-               Before the execute function is called, update the previously
-               declared member:
-
-               ```cpp
-               this->handler = &handler;
-               ```
-               Now use the following to call the type erased user function
-               from this very function:
-
-               ```cpp
-               auto &handler = *reinterpret_cast<Handler*>(socket->handler);
-               handler(system::error_code{http_errc::parsing_error});
-               ``` */
-            /* We don't use http_parser_pause, because it looks error-prone:
-               <https://github.com/joyent/http-parser/issues/97>. */
-            return -1;
-        };
-        switch (parser->http_major) {
-        case 1:
-            if (parser->http_minor != 0)
-                socket->flags |= HTTP_1_1;
-
-            break;
-        default:
-            return handle_error();
-        }
-    }
-
-    if (socket->last_header.first.size()
-        && ((socket->flags & HTTP_1_1)
-            || (socket->last_header.first != "expect"
-                && socket->last_header.first != "upgrade"))) {
-        algorithm::trim_right_if(socket->last_header.second, [](char ch) {
-                return ch == ' ' || ch == '\t';
-            });
-        message->headers().insert(socket->last_header);
-    }
-    socket->last_header.first.clear();
-    socket->last_header.second.clear();
-    socket->use_trailers = true;
-    socket->istate = http::read_state::message_ready;
-    socket->flags |= READY;
-    socket->writer_helper = http::write_state::empty;
-
-    {
-        auto er = message->headers().equal_range("expect");
-        if (std::distance(er.first, er.second) > 1)
-            message->headers().erase(er.first, er.second);
-    }
-
-    if (detail::should_keep_alive(*parser))
-        socket->flags |= KEEP_ALIVE;
-
-    return 0;
-}
-
-template<class Socket>
-template<class Message>
-int basic_socket<Socket>
-::on_body(http_parser *parser, const char *data, std::size_t size)
-{
-    auto socket = reinterpret_cast<basic_socket*>(parser->data);
-    auto message = reinterpret_cast<Message*>(socket->current_message);
-    auto begin = reinterpret_cast<const std::uint8_t*>(data);
-    message->body().insert(message->body().end(), begin, begin + size);
-    socket->flags |= DATA;
-
-    if (detail::body_is_final(*parser))
-        socket->istate = http::read_state::body_ready;
-
-    return 0;
-}
-
-template<class Socket>
-template<class Message>
-int basic_socket<Socket>::on_message_complete(http_parser *parser)
-{
-    auto socket = reinterpret_cast<basic_socket*>(parser->data);
-    auto message = reinterpret_cast<Message*>(socket->current_message);
-    if (socket->last_header.first.size()) {
-        algorithm::trim_right_if(socket->last_header.second, [](char ch) {
-                return ch == ' ' || ch == '\t';
-            });
-        message->trailers().insert(socket->last_header);
-    }
-    socket->last_header.first.clear();
-    socket->last_header.second.clear();
-    socket->istate = http::read_state::empty;
-    socket->use_trailers = false;
-    socket->flags |= END | (parser->upgrade ? UPGRADE : 0);
-
-    /* To avoid passively parsing pipelined message ahead-of-asked, we
-       signalize error to stop parsing. */
-    return -1;
-}
-
-template<class Socket>
 void basic_socket<Socket>::clear_buffer()
 {
     istate = http::read_state::empty;
     writer_helper.state = http::write_state::empty;
     used_size = 0;
-    detail::init(parser);
+    parser.reset();
+    expecting_field = false;
 }
 
 template<class Socket>

@@ -1,10 +1,33 @@
-enable_testing()
+# Meta
+project(tests)
+
+# Dependencies
+cmake_minimum_required(VERSION 3.1.0)
+
+find_package(Boost 1.55 COMPONENTS
+  date_time
+  filesystem
+  system
+  unit_test_framework
+  context
+  coroutine
+  REQUIRED)
+
+# Config
 
 if(NOT Boost_USE_STATIC_LIBS)
   add_definitions(-DBOOST_TEST_DYN_LINK)
 endif()
 
+# Test's stuff
+
+enable_testing()
+
 set(tests
+  "suite"
+)
+
+set(tests11
   "errc"
   "algorithm"
   "datetime"
@@ -12,16 +35,19 @@ set(tests
   "socket"
   "traits"
   "file_server"
+  "suite11"
 )
 
-macro(add_test_target target)
+macro(add_test_target target version)
   add_executable("${target}" "${target}.cpp")
 
-  set_property(TARGET "${target}" PROPERTY CXX_STANDARD 11)
+  set_property(TARGET "${target}" PROPERTY CXX_STANDARD ${version})
   set_property(TARGET "${target}" PROPERTY CXX_STANDARD_REQUIRED ON)
 
+  target_include_directories("${target}"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include" ${Boost_INCLUDE_DIR})
+
   target_link_libraries("${target}"
-    boost_http
     ${Boost_DATE_TIME_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
@@ -29,10 +55,15 @@ macro(add_test_target target)
     ${Boost_COROUTINE_LIBRARY}
     ${Boost_CONTEXT_LIBRARY})
 
-  add_test(NAME "${target}" COMMAND $<TARGET_FILE:${target}>
-    WORKING_DIRECTORY $<TARGET_FILE_DIR:boost_http>)
+  add_test(NAME "${target}" COMMAND $<TARGET_FILE:${target}>)
 endmacro()
 
 foreach(test ${tests})
-  add_test_target("${test}")
+  add_test_target("${test}" 98)
 endforeach()
+
+foreach(test ${tests11})
+  add_test_target("${test}" 11)
+endforeach()
+
+include(CTest)
