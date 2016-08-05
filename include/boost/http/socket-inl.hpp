@@ -620,22 +620,24 @@ void basic_socket<Socket>
 
     used_size += bytes_transferred;
     if (expecting_field) {
+        /* We complicate field management to avoid allocations. The field name
+           MUST occupy the initial bytes on the buffer. The bytes that
+           immediately follow should be the field value (i.e. remove any `skip`
+           that appears between name and value). */
         parser.set_buffer(asio::buffer(buffer + field_name_size,
                                        used_size - field_name_size));
     } else {
         parser.set_buffer(asio::buffer(buffer, used_size));
     }
 
-    auto nparsed = 0;
-    bool skip_parser_next = false;
+    std::size_t nparsed = expecting_field ? field_name_size : 0;
+    std::size_t field_name_begin = 0;
     int flags = 0;
 
     /* Buffer management is simplified by making `error_insufficient_data` the
        only way to break out of this loop (on non-error paths). */
     do {
-        if (!skip_parser_next)
-            parser.next();
-        skip_parser_next = false;
+        parser.next();
         switch (parser.code()) {
         case token::code::error_insufficient_data:
             // break of for loop completely
@@ -653,19 +655,6 @@ void basic_socket<Socket>
                 return;
             }
         case token::code::skip:
-            if (expecting_field) {
-                auto buf_view = asio::buffer_cast<char*>(buffer);
-                auto skip_size = parser.token_size();
-                parser.next();
-                skip_parser_next = true;
-                std::copy_n(buf_view + field_name_size + skip_size,
-                            used_size - field_name_size - skip_size,
-                            buf_view + field_name_size);
-                used_size -= skip_size;
-                parser.set_buffer(asio::buffer(buffer + field_name_size,
-                                               used_size - field_name_size));
-            }
-
             break;
         case token::code::method:
             use_trailers = false;
@@ -696,33 +685,17 @@ void basic_socket<Socket>
             BOOST_HTTP_DETAIL_UNREACHABLE("unimplemented not exposed feature");
             break;
         case token::code::field_name:
-            /* Here we complicate field management to avoid allocations. The
-               field name MUST occupy the initial bytes on the buffer. The bytes
-               that immediately follow should be the field value.
-
-               The `expecting_field` and `field_name_size` variables help to
-               orchestrate that. While `expecting_field == true`, `nparsed` has
-               no defined meaning.
-
-               I'm NOT removing the "skip bytes" for performance reasons, as
-               they almost always are only 2. The reason I remove them is to
-               simplify layout management (I don't need an extra index to
-               indicate where field value starts and this complex control flow
-               is largely simplified too). This `rotate` algorithm may very well
-               degrade performance. */
             {
                 auto buf_view = asio::buffer_cast<char*>(buffer);
-                std::copy_n(buf_view + nparsed, used_size - nparsed, buf_view);
-                used_size -= nparsed;
-                nparsed = 0;
-                parser.set_buffer(asio::buffer(buffer, used_size));
+                field_name_begin = nparsed;
                 field_name_size = parser.token_size();
-                expecting_field = true;
 
                 for (std::size_t i = 0 ; i != field_name_size ; ++i) {
-                    auto &ch = buf_view[i];
+                    auto &ch = buf_view[field_name_begin + i];
                     ch = std::tolower(ch);
                 }
+
+                expecting_field = true;
             }
             break;
         case token::code::field_value:
@@ -731,7 +704,8 @@ void basic_socket<Socket>
                 typedef typename Message::headers_type::mapped_type ValueT;
 
                 auto buf_view = asio::buffer_cast<char*>(buffer);
-                auto name = string_ref(buf_view, field_name_size);
+                auto name = string_ref(buf_view + field_name_begin,
+                                       field_name_size);
                 auto value = parser.value<token::field_value>();
 
                 if (modern_http || (name != "expect" && name != "upgrade")) {
@@ -761,13 +735,7 @@ void basic_socket<Socket>
                                  ValueT(value.data(), value.size()));
                 }
 
-                std::copy_n(buf_view + field_name_size,
-                            used_size - field_name_size,
-                            buf_view);
-                used_size -= field_name_size;
-                parser.set_buffer(asio::buffer(buffer, used_size));
                 expecting_field = false;
-                nparsed = 0;
             }
             break;
         case token::code::end_of_headers:
@@ -814,9 +782,15 @@ void basic_socket<Socket>
         auto buf_view = asio::buffer_cast<char*>(buffer);
         std::copy_n(buf_view + nparsed, used_size - nparsed, buf_view);
         used_size -= nparsed;
-        nparsed = 0;
-        parser.set_buffer(asio::buffer(buffer, used_size));
+    } else if(nparsed != 0) {
+        auto buf_view = asio::buffer_cast<char*>(buffer);
+        std::copy_n(buf_view + field_name_begin, field_name_size, buf_view);
+        std::copy_n(buf_view + nparsed, used_size - nparsed,
+                    buf_view + field_name_size);
+        used_size -= nparsed;
+        used_size += field_name_size;
     }
+    nparsed = 0;
 
     if (target == READY && flags & READY) {
         handler(system::error_code{});
