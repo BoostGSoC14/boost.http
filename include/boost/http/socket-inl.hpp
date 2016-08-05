@@ -770,6 +770,11 @@ int basic_socket<Socket>
 
         field.replace(0, field.size(), at, size);
         transform(field.begin(), field.end(), field.begin(), tolower);
+
+        if (socket->use_trailers
+            && socket->istate != http::read_state::body_ready) {
+            socket->istate = http::read_state::body_ready;
+        }
     } else {
         auto offset = field.size();
         field.append(at, size);
