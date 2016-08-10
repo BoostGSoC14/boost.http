@@ -16,11 +16,11 @@
 
 #include <boost/http/syntax/chunk_size.hpp>
 #include <boost/http/detail/macros.hpp>
+#include <boost/http/reader/detail/transfer_encoding.hpp>
 
 // public
 
 #include <boost/http/token.hpp>
-#include <boost/http/algorithm/header/header_value_any_of.hpp>
 
 namespace boost {
 namespace http {
