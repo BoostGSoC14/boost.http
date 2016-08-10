@@ -23,13 +23,13 @@ endif()
 enable_testing()
 
 set(tests
-  "suite"
+  "request"
   "chunk_size"
   "content_length"
 )
 
 set(tests11
-  "suite11"
+  "request11"
 )
 
 macro(add_test_target target version)
