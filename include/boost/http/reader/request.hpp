@@ -19,8 +19,6 @@
 
 // public
 
-#include <boost/system/error_code.hpp>
-
 #include <boost/http/token.hpp>
 #include <boost/http/algorithm/header/header_value_any_of.hpp>
 
