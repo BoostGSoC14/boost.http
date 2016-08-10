@@ -14,6 +14,27 @@ namespace http {
 
 namespace detail {
 
+inline bool isalpha(unsigned char c)
+{
+    /* ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z
+
+       from Appendix B of RFC5234. */
+    return (c >= 0x41 && c <= 0x5A) || (c >= 0x61 && c <= 0x7A);
+}
+
+inline bool isdigit(unsigned char c)
+{
+    /* DIGIT          =  %x30-39   ; 0-9
+
+       from Appendix B of RFC5234. */
+    return c >= 0x30 && c <= 0x39;
+}
+
+inline bool isalnum(unsigned char c)
+{
+    return isalpha(c) || isdigit(c);
+}
+
 inline bool is_tchar(unsigned char c)
 {
     switch (c) {
@@ -22,7 +43,7 @@ inline bool is_tchar(unsigned char c)
     case '~':
         return true;
     default:
-        return std::isalnum(c);
+        return isalnum(c);
     }
 }
 
@@ -49,7 +70,7 @@ inline bool is_request_target_char(unsigned char c)
     case '+': case ',': case ';': case '=': case ':': case '@':
         return true;
     default:
-        return std::isalnum(c);
+        return isalnum(c);
     }
 }
 

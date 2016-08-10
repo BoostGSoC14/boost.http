@@ -9,8 +9,6 @@
 
 // private
 
-#include <cctype>
-
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/find.hpp>
 #include <boost/type_traits/common_type.hpp>
