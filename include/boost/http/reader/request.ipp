@@ -138,31 +138,8 @@ template<>
 request::view_type request::value<token::field_value>() const
 {
     assert(code_ == token::field_value::code);
-
-    /* The field value does not include any leading or trailing whitespace: OWS
-       occurring before the first non-whitespace octet of the field value or
-       after the last non-whitespace octet of the field value ought to be
-       excluded by parsers when extracting the field value from a header field
-       (section 3.2.4 of RFC7230).
-
-       OWS can happen in the middle of the field value too. Therefore, we can
-       only detect leading OWS ahead of time (i.e. when only part of the field
-       has been received) and ending OWS must be removed once the whole field
-       has been received (i.e. a job to this layer of abstraction). */
-    std::size_t ending_ows = 0;
-    {
-        const unsigned char *view
-            = asio::buffer_cast<const unsigned char*>(ibuffer);
-        for (size_t i = idx + token_size_ - 1 ; i > idx ; --i) {
-            if (!detail::is_ows(view[i]))
-                break;
-            else
-                ++ending_ows;
-        }
-    }
-
-    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
-                     token_size_ - ending_ows);
+    view_type raw(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
+    return detail::decode_field_value(raw);
 }
 
 template<>
