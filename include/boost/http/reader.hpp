@@ -14,6 +14,8 @@
 #include <boost/type_traits/common_type.hpp>
 #include <boost/cstdint.hpp>
 
+#include <boost/http/syntax/chunk_size.hpp>
+
 // public
 
 #include <boost/system/error_code.hpp>

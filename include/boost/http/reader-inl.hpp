@@ -96,19 +96,6 @@ inline bool is_field_value_char(unsigned char c)
     return is_nonnull_field_value_char(c) || is_ows(c);
 }
 
-inline bool is_hexdigit(unsigned char c)
-{
-    switch (c) {
-    case '0': case '1': case '2': case '3': case '4': case '5': case '6':
-    case '7': case '8': case '9': case 'A': case 'B': case 'C': case 'D':
-    case 'E': case 'F': case 'a': case 'b': case 'c': case 'd': case 'e':
-    case 'f':
-        return true;
-    default:
-        return false;
-    }
-}
-
 inline bool is_chunk_ext_char(unsigned char c)
 {
     switch (c) {
@@ -179,72 +166,6 @@ FromDecimalString from_decimal_string(string_ref in, Target &out)
         }
     }
     return DECSTRING_OK;
-}
-
-enum FromHexStringResult {
-    HEXSTRING_INVALID,
-    HEXSTRING_OK,
-    HEXSTRING_OVERFLOW
-};
-
-template<class Target>
-FromHexStringResult from_hex_string(string_ref in, Target &out)
-{
-    if (in.size() == 0)
-        return HEXSTRING_INVALID;
-
-    out = 0;
-
-    while (in.size() && in[0] == '0')
-        in.remove_prefix(1);
-
-    if (in.size() == 0)
-        return HEXSTRING_OK;
-
-    Target digit = 1;
-
-    for ( std::size_t i = in.size() - 1 ; ; ) {
-        Target value;
-
-        switch (in[i]) {
-        case '0': case '1': case '2': case '3': case '4': case '5': case '6':
-        case '7': case '8': case '9':
-            value = in[i] - '0';
-            break;
-        case 'a': case 'A': case 'b': case 'B': case 'c': case 'C': case 'd':
-        case 'D': case 'e': case 'E': case 'f': case 'F':
-            {
-                /* "lower case bit" = 0x20 */
-                char c = in[i] | 0x20;
-                value = 10 + c - 'a';
-            }
-            break;
-        default:
-            return HEXSTRING_INVALID;
-        }
-
-        if (std::numeric_limits<Target>::max() / digit < value)
-            return HEXSTRING_OVERFLOW;
-
-        value *= digit;
-
-        if (std::numeric_limits<Target>::max() - value < out)
-            return HEXSTRING_OVERFLOW;
-
-        out += value;
-
-        if (i == 0) {
-            break;
-        } else {
-            if (std::numeric_limits<Target>::max() / 16 < digit)
-                return HEXSTRING_OVERFLOW;
-            else
-                digit *= 16;
-
-            --i;
-        }
-    }
-    return HEXSTRING_OK;
 }
 
 enum DecodeTransferEncodingResult {
@@ -895,40 +816,40 @@ inline void request_reader::next()
         BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
     case EXPECT_CHUNK_SIZE:
         {
-            size_type i = idx + token_size_;
-            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
-                unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-                if (detail::is_hexdigit(c))
-                    continue;
+            typedef syntax::chunk_size<unsigned char> chunk_size;
+            typedef chunk_size::view_type view_type;
 
-                token_size_ = i - idx;
-                if (token_size_ == 0) {
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
-                    return;
-                }
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const unsigned char*>(buf),
+                         asio::buffer_size(buf));
+            std::size_t nmatched = chunk_size::match(in);
 
-                const char *str = asio::buffer_cast<const char*>(ibuffer) + idx;
-                switch (detail::from_hex_string(string_ref(str, token_size_),
-                                                body_size)) {
-                case detail::HEXSTRING_INVALID:
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
-                    return;
-                case detail::HEXSTRING_OVERFLOW:
-                    state = ERRORED;
-                    code_ = token::code::error_chunk_size_overflow;
-                    return;
-                case detail::HEXSTRING_OK:
-                    state = EXPECT_CHUNK_EXT;
-                    code_ = token::code::skip;
-                    return;
-                }
-                BOOST_HTTP_DETAIL_UNREACHABLE("internal error. UB?");
+            if (nmatched == 0) {
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
+                return;
             }
-            token_size_ = i - idx;
-            return;
+
+            if (nmatched == in.size())
+                return;
+
+            switch (native_value(chunk_size::decode(in.substr(0, nmatched),
+                                                    body_size))) {
+            case chunk_size::result::invalid:
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
+                return;
+            case chunk_size::result::overflow:
+                state = ERRORED;
+                code_ = token::code::error_chunk_size_overflow;
+                return;
+            case chunk_size::result::ok:
+                state = EXPECT_CHUNK_EXT;
+                code_ = token::code::skip;
+                token_size_ = nmatched;
+                return;
+            };
+            BOOST_HTTP_DETAIL_UNREACHABLE("internal error. UB?");
         }
     case EXPECT_CHUNK_EXT:
         {
