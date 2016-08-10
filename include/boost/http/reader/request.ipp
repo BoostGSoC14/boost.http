@@ -16,61 +16,6 @@ inline bool is_request_target_char(unsigned char c)
     }
 }
 
-enum FromDecimalString {
-    DECSTRING_INVALID,
-    DECSTRING_OK,
-    DECSTRING_OVERFLOW
-};
-
-template<class Target>
-FromDecimalString from_decimal_string(string_ref in, Target &out)
-{
-    out = 0;
-
-    while (in.size() && in[0] == '0')
-        in.remove_prefix(1);
-
-    if (in.size() == 0)
-        return DECSTRING_OK;
-
-    Target digit = 1;
-
-    for ( std::size_t i = in.size() - 1 ; ; ) {
-        Target value;
-
-        switch (in[i]) {
-        case '0': case '1': case '2': case '3': case '4': case '5': case '6':
-        case '7': case '8': case '9':
-            value = in[i] - '0';
-            break;
-        default:
-            return DECSTRING_INVALID;
-        }
-
-        if (std::numeric_limits<Target>::max() / digit < value)
-            return DECSTRING_OVERFLOW;
-
-        value *= digit;
-
-        if (std::numeric_limits<Target>::max() - value < out)
-            return DECSTRING_OVERFLOW;
-
-        out += value;
-
-        if (i == 0) {
-            break;
-        } else {
-            if (std::numeric_limits<Target>::max() / 10 < digit)
-                return DECSTRING_OVERFLOW;
-            else
-                digit *= 10;
-
-            --i;
-        }
-    }
-    return DECSTRING_OK;
-}
-
 } // namespace detail
 
 inline
@@ -469,6 +414,8 @@ inline void request::next()
                 = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
             if (!detail::is_field_value_char(c)) {
                 if (i != idx) {
+                    typedef syntax::content_length<char> cont_len;
+
                     state = EXPECT_CRLF_AFTER_FIELD_VALUE;
                     code_ = token::code::field_value;
                     token_size_ = i - idx;
@@ -512,16 +459,17 @@ inline void request::next()
                            impact the performance of the interaction with a
                            proper and conforming HTTP participant. And we should
                            minimmize the DoS attack surface too. */
-                        switch (detail::from_decimal_string(field, body_size)) {
-                        case detail::DECSTRING_INVALID:
+                        switch (native_value(cont_len::decode(field,
+                                                              body_size))) {
+                        case cont_len::result::invalid:
                             state = ERRORED;
                             code_ = token::code::error_invalid_content_length;
                             break;
-                        case detail::DECSTRING_OVERFLOW:
+                        case cont_len::result::overflow:
                             state = ERRORED;
                             code_ = token::code::error_content_length_overflow;
                             break;
-                        case detail::DECSTRING_OK:
+                        case cont_len::result::ok:
                             break;
                         }
                         break;

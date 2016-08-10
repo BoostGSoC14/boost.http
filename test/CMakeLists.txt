@@ -25,6 +25,7 @@ enable_testing()
 set(tests
   "suite"
   "chunk_size"
+  "content_length"
 )
 
 set(tests11
