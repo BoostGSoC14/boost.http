@@ -18,8 +18,7 @@ namespace syntax {
 
 template<class CharT>
 struct chunk_size {
-    typedef CharT value_type;
-    typedef basic_string_ref<value_type> view_type;
+    typedef basic_string_ref<CharT> view_type;
 
     BOOST_SCOPED_ENUM_DECLARE_BEGIN(result)
     {
