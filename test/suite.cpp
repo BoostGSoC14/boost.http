@@ -4,10 +4,11 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include <boost/http/reader.hpp>
+#include <boost/http/reader/request.hpp>
 
 namespace asio = boost::asio;
 namespace http = boost::http;
+namespace reader = http::reader;
 
 template<std::size_t N>
 asio::const_buffer my_buffer(const char (&in)[N])
@@ -60,10 +61,10 @@ TEST_CASE("decode_transfer_encoding", "[detail]")
 {
     // REMAINDER: there can never be beginning or trailing OWS in header fields
 
-    using http::detail::CHUNKED_NOT_FOUND;
-    using http::detail::CHUNKED_AT_END;
-    using http::detail::CHUNKED_INVALID;
-    using http::detail::decode_transfer_encoding;
+    using http::reader::detail::CHUNKED_NOT_FOUND;
+    using http::reader::detail::CHUNKED_AT_END;
+    using http::reader::detail::CHUNKED_INVALID;
+    using http::reader::detail::decode_transfer_encoding;
 
     // CHUNKED_NOT_FOUND
 
@@ -310,10 +311,10 @@ TEST_CASE("decode_transfer_encoding", "[detail]")
 
 TEST_CASE("from_decimal_string", "[detail]")
 {
-    using http::detail::DECSTRING_INVALID;
-    using http::detail::DECSTRING_OK;
-    using http::detail::DECSTRING_OVERFLOW;
-    using http::detail::from_decimal_string;
+    using http::reader::detail::DECSTRING_INVALID;
+    using http::reader::detail::DECSTRING_OK;
+    using http::reader::detail::DECSTRING_OVERFLOW;
+    using http::reader::detail::from_decimal_string;
 
     uint8_t out;
 
@@ -389,7 +390,7 @@ TEST_CASE("from_decimal_string", "[detail]")
 TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
           "[parser,good]")
 {
-    http::request_reader parser;
+    http::reader::request parser;
 
     REQUIRE(parser.code() == http::token::code::error_insufficient_data);
     REQUIRE(parser.token_size() == 0);
@@ -1219,7 +1220,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         my_copy(buf, 0, req);
     }
 
-    http::request_reader parser;
+    http::reader::request parser;
 
     REQUIRE(parser.code() == http::token::code::error_insufficient_data);
     REQUIRE(parser.token_size() == 0);

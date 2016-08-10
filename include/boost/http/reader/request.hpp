@@ -4,8 +4,8 @@
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
 
-#ifndef BOOST_HTTP_READER_HPP
-#define BOOST_HTTP_READER_HPP
+#ifndef BOOST_HTTP_READER_REQUEST_HPP
+#define BOOST_HTTP_READER_REQUEST_HPP
 
 // private
 
@@ -26,8 +26,9 @@
 
 namespace boost {
 namespace http {
+namespace reader {
 
-class request_reader
+class request
 {
 public:
     // types
@@ -36,7 +37,7 @@ public:
     typedef value_type *pointer;
     typedef boost::string_ref view_type;
 
-    request_reader();
+    request();
 
     void reset();
 
@@ -141,9 +142,10 @@ private:
     boost::asio::const_buffer ibuffer;
 };
 
+} // namespace reader
 } // namespace http
 } // namespace boost
 
-#include "reader-inl.hpp"
+#include "request.ipp"
 
-#endif // BOOST_HTTP_READER_HPP
+#endif // BOOST_HTTP_READER_REQUEST_HPP

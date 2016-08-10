@@ -1,5 +1,6 @@
 namespace boost {
 namespace http {
+namespace reader {
 
 namespace detail {
 
@@ -229,7 +230,7 @@ inline DecodeTransferEncodingResult decode_transfer_encoding(string_ref field)
 } // namespace detail
 
 inline
-request_reader::request_reader()
+request::request()
     : body_type(NO_BODY)
     , state(EXPECT_METHOD)
     , code_(token::code::error_insufficient_data)
@@ -237,7 +238,7 @@ request_reader::request_reader()
     , token_size_(0)
 {}
 
-inline void request_reader::reset()
+inline void request::reset()
 {
     body_type = NO_BODY;
     state = EXPECT_METHOD;
@@ -247,19 +248,19 @@ inline void request_reader::reset()
     ibuffer = asio::const_buffer();
 }
 
-inline token::code::value request_reader::code() const
+inline token::code::value request::code() const
 {
     return code_;
 }
 
 inline
-request_reader::size_type request_reader::token_size() const
+request::size_type request::token_size() const
 {
     return token_size_;
 }
 
 template<>
-request_reader::view_type request_reader::value<token::method>() const
+request::view_type request::value<token::method>() const
 {
     assert(code_ == token::method::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -267,7 +268,7 @@ request_reader::view_type request_reader::value<token::method>() const
 }
 
 template<>
-request_reader::view_type request_reader::value<token::request_target>() const
+request::view_type request::value<token::request_target>() const
 {
     assert(code_ == token::request_target::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -275,14 +276,14 @@ request_reader::view_type request_reader::value<token::request_target>() const
 }
 
 template<>
-int request_reader::value<token::version>() const
+int request::value<token::version>() const
 {
     assert(code_ == token::version::code);
     return *(asio::buffer_cast<const char*>(ibuffer) + idx) - '0';
 }
 
 template<>
-request_reader::view_type request_reader::value<token::field_name>() const
+request::view_type request::value<token::field_name>() const
 {
     assert(code_ == token::field_name::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -290,7 +291,7 @@ request_reader::view_type request_reader::value<token::field_name>() const
 }
 
 template<>
-request_reader::view_type request_reader::value<token::field_value>() const
+request::view_type request::value<token::field_value>() const
 {
     assert(code_ == token::field_value::code);
 
@@ -321,13 +322,13 @@ request_reader::view_type request_reader::value<token::field_value>() const
 }
 
 template<>
-asio::const_buffer request_reader::value<token::body_chunk>() const
+asio::const_buffer request::value<token::body_chunk>() const
 {
     assert(code_ == token::body_chunk::code);
     return asio::buffer(ibuffer + idx, token_size_);
 }
 
-inline token::code::value request_reader::expected_token() const
+inline token::code::value request::expected_token() const
 {
     switch (state) {
     case ERRORED:
@@ -370,13 +371,13 @@ inline token::code::value request_reader::expected_token() const
     }
 }
 
-inline void request_reader::set_buffer(asio::const_buffer ibuffer)
+inline void request::set_buffer(asio::const_buffer ibuffer)
 {
     this->ibuffer = ibuffer;
     idx = 0;
 }
 
-inline void request_reader::next()
+inline void request::next()
 {
     if (state == ERRORED)
         return;
@@ -1043,5 +1044,6 @@ inline void request_reader::next()
                                   " once the token was determined");
 }
 
+} // namespace reader
 } // namespace boost
 } // namespace http
