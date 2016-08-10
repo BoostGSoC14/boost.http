@@ -15,6 +15,7 @@
 #include <boost/cstdint.hpp>
 
 #include <boost/http/syntax/chunk_size.hpp>
+#include <boost/http/detail/macros.hpp>
 
 // public
 
