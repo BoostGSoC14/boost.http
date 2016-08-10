@@ -24,7 +24,9 @@ endif()
 enable_testing()
 
 set(tests
-  "suite"
+  "request"
+  "chunk_size"
+  "content_length"
 )
 
 set(tests11
@@ -35,7 +37,7 @@ set(tests11
   "socket"
   "traits"
   "file_server"
-  "suite11"
+  "request11"
 )
 
 macro(add_test_target target version)

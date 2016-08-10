@@ -22,7 +22,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
-#include <boost/http/reader.hpp>
+#include <boost/http/reader/request.hpp>
 #include <boost/http/traits.hpp>
 #include <boost/http/read_state.hpp>
 #include <boost/http/write_state.hpp>
@@ -173,7 +173,7 @@ private:
     asio::mutable_buffer buffer;
     std::size_t used_size = 0;
 
-    request_reader parser;
+    reader::request parser;
 
     /* `field_name` value is stored in `[buffer[0], field_name_size)`.
        `expecting_field` means don't touch the buffer or madness will come.

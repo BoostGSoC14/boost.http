@@ -7,7 +7,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include <boost/http/reader.hpp>
+#include <boost/http/reader/request.hpp>
 #include <boost/variant.hpp>
 
 using boost::variant;
@@ -440,7 +440,7 @@ void my_tester(const char (&input)[N],
         bool stop = false;
         std::size_t nparsed = 0;
         std::size_t chunk_size = init_chunk_size;
-        http::request_reader parser;
+        http::reader::request parser;
         std::vector<my_token::value> output;
 
         REQUIRE(parser.code()

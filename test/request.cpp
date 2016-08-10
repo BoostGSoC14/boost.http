@@ -4,10 +4,11 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include <boost/http/reader.hpp>
+#include <boost/http/reader/request.hpp>
 
 namespace asio = boost::asio;
 namespace http = boost::http;
+namespace reader = http::reader;
 
 template<std::size_t N>
 asio::const_buffer my_buffer(const char (&in)[N])
@@ -60,10 +61,10 @@ TEST_CASE("decode_transfer_encoding", "[detail]")
 {
     // REMAINDER: there can never be beginning or trailing OWS in header fields
 
-    using http::detail::CHUNKED_NOT_FOUND;
-    using http::detail::CHUNKED_AT_END;
-    using http::detail::CHUNKED_INVALID;
-    using http::detail::decode_transfer_encoding;
+    using http::reader::detail::CHUNKED_NOT_FOUND;
+    using http::reader::detail::CHUNKED_AT_END;
+    using http::reader::detail::CHUNKED_INVALID;
+    using http::reader::detail::decode_transfer_encoding;
 
     // CHUNKED_NOT_FOUND
 
@@ -307,215 +308,10 @@ TEST_CASE("decode_transfer_encoding", "[detail]")
     CHECK(decode_transfer_encoding("a chunked,   chunked") == CHUNKED_AT_END);
 }
 
-
-TEST_CASE("from_decimal_string", "[detail]")
-{
-    using http::detail::DECSTRING_INVALID;
-    using http::detail::DECSTRING_OK;
-    using http::detail::DECSTRING_OVERFLOW;
-    using http::detail::from_decimal_string;
-
-    uint8_t out;
-
-    // DECSTRING_INVALID
-
-    CHECK(from_decimal_string("-0", out) == DECSTRING_INVALID);
-    CHECK(from_decimal_string("-1", out) == DECSTRING_INVALID);
-    CHECK(from_decimal_string("a", out) == DECSTRING_INVALID);
-    CHECK(from_decimal_string("B", out) == DECSTRING_INVALID);
-    CHECK(from_decimal_string("$", out) == DECSTRING_INVALID);
-    CHECK(from_decimal_string("#", out) == DECSTRING_INVALID);
-    CHECK(from_decimal_string("0d", out) == DECSTRING_INVALID);
-    CHECK(from_decimal_string("0E", out) == DECSTRING_INVALID);
-    CHECK(from_decimal_string("2z", out) == DECSTRING_INVALID);
-
-    // DECSTRING_OVERFLOW
-
-    CHECK(from_decimal_string("256", out) == DECSTRING_OVERFLOW);
-    CHECK(from_decimal_string("0256", out) == DECSTRING_OVERFLOW);
-    CHECK(from_decimal_string("00000256", out) == DECSTRING_OVERFLOW);
-    CHECK(from_decimal_string("1000", out) == DECSTRING_OVERFLOW);
-    CHECK(from_decimal_string("0001000", out) == DECSTRING_OVERFLOW);
-
-    // DECSTRING_OK
-
-    out = 67;
-    REQUIRE(from_decimal_string("0", out) == DECSTRING_OK);
-    REQUIRE(out == 0);
-    out = 67;
-    REQUIRE(from_decimal_string("00000000", out) == DECSTRING_OK);
-    REQUIRE(out == 0);
-    out = 67;
-    REQUIRE(from_decimal_string("1", out) == DECSTRING_OK);
-    REQUIRE(out == 1);
-    out = 67;
-    REQUIRE(from_decimal_string("01", out) == DECSTRING_OK);
-    REQUIRE(out == 1);
-    out = 67;
-    REQUIRE(from_decimal_string("000001", out) == DECSTRING_OK);
-    REQUIRE(out == 1);
-    out = 67;
-    REQUIRE(from_decimal_string("10", out) == DECSTRING_OK);
-    REQUIRE(out == 10);
-    out = 67;
-    REQUIRE(from_decimal_string("010", out) == DECSTRING_OK);
-    REQUIRE(out == 10);
-    out = 67;
-    REQUIRE(from_decimal_string("0000000010", out) == DECSTRING_OK);
-    REQUIRE(out == 10);
-    out = 67;
-    REQUIRE(from_decimal_string("32", out) == DECSTRING_OK);
-    REQUIRE(out == 32);
-    out = 67;
-    REQUIRE(from_decimal_string("255", out) == DECSTRING_OK);
-    REQUIRE(out == 255);
-    out = 67;
-    REQUIRE(from_decimal_string("000000000255", out) == DECSTRING_OK);
-    REQUIRE(out == 255);
-
-    /* from_decimal_string is only used to parse the Content-Length header
-       field. Header fiels are never allowed to be empty. Therefore,
-       implementation can be simplified and assume empty strings are never
-       passed as argument.
-
-       Currently, the simplification initializes `out` with 0 and then proceed
-       to remove leading 0s. If there are no remaining leading 0s, function
-       returns. */
-    out = 1;
-    REQUIRE(from_decimal_string("", out) == DECSTRING_OK);
-    REQUIRE(out == 0);
-}
-
-TEST_CASE("from_hex_string", "[detail]")
-{
-    using http::detail::HEXSTRING_INVALID;
-    using http::detail::HEXSTRING_OK;
-    using http::detail::HEXSTRING_OVERFLOW;
-    using http::detail::from_hex_string;
-
-    uint16_t out;
-
-    // HEXSTRING_INVALID
-
-    CHECK(from_hex_string("", out) == HEXSTRING_INVALID);
-    CHECK(from_hex_string("-0", out) == HEXSTRING_INVALID);
-    CHECK(from_hex_string("-1", out) == HEXSTRING_INVALID);
-    CHECK(from_hex_string("g", out) == HEXSTRING_INVALID);
-    CHECK(from_hex_string("z", out) == HEXSTRING_INVALID);
-    CHECK(from_hex_string("$", out) == HEXSTRING_INVALID);
-    CHECK(from_hex_string("#", out) == HEXSTRING_INVALID);
-    CHECK(from_hex_string("0g", out) == HEXSTRING_INVALID);
-    CHECK(from_hex_string("0$", out) == HEXSTRING_INVALID);
-    CHECK(from_hex_string("2z", out) == HEXSTRING_INVALID);
-
-    // HEXSTRING_OVERFLOW
-
-    CHECK(from_hex_string("10000", out) == HEXSTRING_OVERFLOW);
-    CHECK(from_hex_string("010000", out) == HEXSTRING_OVERFLOW);
-    CHECK(from_hex_string("0000010000", out) == HEXSTRING_OVERFLOW);
-    CHECK(from_hex_string("Ff003", out) == HEXSTRING_OVERFLOW);
-
-    // HEXSTRING_OK
-
-    out = 2;
-    REQUIRE(from_hex_string("fFfF", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xFFFF);
-    out = 2;
-    REQUIRE(from_hex_string("FfFf", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xFFFF);
-    out = 2;
-    REQUIRE(from_hex_string("0ffff", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xFFFF);
-    out = 2;
-    REQUIRE(from_hex_string("000000000000000ffff", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xFFFF);
-    out = 2;
-    REQUIRE(from_hex_string("1234", out) == HEXSTRING_OK);
-    REQUIRE(out == 0x1234);
-    out = 2;
-    REQUIRE(from_hex_string("aBcD", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xABCD);
-    out = 2;
-    REQUIRE(from_hex_string("0000dCba", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xDCBA);
-    out = 2;
-    REQUIRE(from_hex_string("89aB", out) == HEXSTRING_OK);
-    REQUIRE(out == 0x89AB);
-    out = 2;
-    REQUIRE(from_hex_string("00000bA98", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xBA98);
-    out = 2;
-    REQUIRE(from_hex_string("0", out) == HEXSTRING_OK);
-    REQUIRE(out == 0);
-    out = 2;
-    REQUIRE(from_hex_string("000000000000000000", out) == HEXSTRING_OK);
-    REQUIRE(out == 0);
-    out = 2;
-    REQUIRE(from_hex_string("12", out) == HEXSTRING_OK);
-    REQUIRE(out == 0x12);
-    out = 2;
-    REQUIRE(from_hex_string("012", out) == HEXSTRING_OK);
-    REQUIRE(out == 0x12);
-    out = 2;
-    REQUIRE(from_hex_string("0012", out) == HEXSTRING_OK);
-    REQUIRE(out == 0x12);
-    out = 2;
-    REQUIRE(from_hex_string("00012", out) == HEXSTRING_OK);
-    REQUIRE(out == 0x12);
-    out = 2;
-    REQUIRE(from_hex_string("000000012", out) == HEXSTRING_OK);
-    REQUIRE(out == 0x12);
-    out = 2;
-    REQUIRE(from_hex_string("a", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xA);
-    out = 2;
-    REQUIRE(from_hex_string("A", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xA);
-    out = 2;
-    REQUIRE(from_hex_string("b", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xB);
-    out = 2;
-    REQUIRE(from_hex_string("B", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xB);
-    out = 2;
-    REQUIRE(from_hex_string("c", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xC);
-    out = 2;
-    REQUIRE(from_hex_string("C", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xC);
-    out = 2;
-    REQUIRE(from_hex_string("d", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xD);
-    out = 2;
-    REQUIRE(from_hex_string("D", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xD);
-    out = 2;
-    REQUIRE(from_hex_string("e", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xE);
-    out = 2;
-    REQUIRE(from_hex_string("E", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xE);
-    out = 2;
-    REQUIRE(from_hex_string("f", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xF);
-    out = 2;
-    REQUIRE(from_hex_string("F", out) == HEXSTRING_OK);
-    REQUIRE(out == 0xF);
-    out = 2;
-    REQUIRE(from_hex_string("4", out) == HEXSTRING_OK);
-    REQUIRE(out == 4);
-    out = 2;
-    REQUIRE(from_hex_string("04", out) == HEXSTRING_OK);
-    REQUIRE(out == 4);
-    out = 2;
-    REQUIRE(from_hex_string("00000000005", out) == HEXSTRING_OK);
-    REQUIRE(out == 5);
-}
-
 TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
           "[parser,good]")
 {
-    http::request_reader parser;
+    http::reader::request parser;
 
     REQUIRE(parser.code() == http::token::code::error_insufficient_data);
     REQUIRE(parser.token_size() == 0);
@@ -1345,7 +1141,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         my_copy(buf, 0, req);
     }
 
-    http::request_reader parser;
+    http::reader::request parser;
 
     REQUIRE(parser.code() == http::token::code::error_insufficient_data);
     REQUIRE(parser.token_size() == 0);

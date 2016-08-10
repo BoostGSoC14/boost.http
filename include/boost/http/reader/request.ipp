@@ -1,45 +1,8 @@
-#ifndef BOOST_HTTP_DETAIL_UNREACHABLE
-#ifdef NDEBUG
-#define BOOST_HTTP_DETAIL_UNREACHABLE(m) ((void)0)
-#else
-#define BOOST_HTTP_DETAIL_STRINGIFY_AUX(x) #x
-#define BOOST_HTTP_DETAIL_STRINGIFY(x) BOOST_HTTP_DETAIL_STRINGIFY_AUX(x)
-#define BOOST_HTTP_DETAIL_LINE_STR BOOST_HTTP_DETAIL_STRINGIFY(__LINE__)
-#define BOOST_HTTP_DETAIL_UNREACHABLE(m) (throw __FILE__ ":" BOOST_HTTP_DETAIL_LINE_STR ": UNREACHABLE: " m)
-#endif // NDEBUG
-#endif // BOOST_HTTP_DETAIL_UNREACHABLE
-
 namespace boost {
 namespace http {
+namespace reader {
 
 namespace detail {
-
-inline bool is_tchar(unsigned char c)
-{
-    switch (c) {
-    case '!': case '#': case '$': case '%': case '&': case '\'': case '*':
-    case '+': case '-': case '.': case '^': case '_': case '`': case '|':
-    case '~':
-        return true;
-    default:
-        return std::isalnum(c);
-    }
-}
-
-inline bool is_sp(unsigned char c)
-{
-    return c == '\x20';
-}
-
-inline bool is_vchar(unsigned char c)
-{
-    return c >= '\x21' && c <= '\x7E';
-}
-
-inline bool is_obs_text(unsigned char c)
-{
-    return c >= 0x80 && c <= 0xFF;
-}
 
 inline bool is_request_target_char(unsigned char c)
 {
@@ -49,256 +12,14 @@ inline bool is_request_target_char(unsigned char c)
     case '+': case ',': case ';': case '=': case ':': case '@':
         return true;
     default:
-        return std::isalnum(c);
+        return isalnum(c);
     }
-}
-
-inline bool is_ows(unsigned char c)
-{
-    switch (c) {
-    case '\x20':
-    case '\x09':
-        return true;
-    default:
-        return false;
-    }
-}
-
-/* all valid field value characters except OWS */
-inline bool is_nonnull_field_value_char(unsigned char c)
-{
-    return is_vchar(c) || is_obs_text(c);
-}
-
-inline bool is_field_value_char(unsigned char c)
-{
-    return is_nonnull_field_value_char(c) || is_ows(c);
-}
-
-inline bool is_hexdigit(unsigned char c)
-{
-    switch (c) {
-    case '0': case '1': case '2': case '3': case '4': case '5': case '6':
-    case '7': case '8': case '9': case 'A': case 'B': case 'C': case 'D':
-    case 'E': case 'F': case 'a': case 'b': case 'c': case 'd': case 'e':
-    case 'f':
-        return true;
-    default:
-        return false;
-    }
-}
-
-inline bool is_chunk_ext_char(unsigned char c)
-{
-    switch (c) {
-    case ';':
-    case '=':
-    case '"':
-    case '\t':
-    case ' ':
-    case '!':
-    case '\\':
-        return true;
-    default:
-        return is_tchar(c) || (c >= 0x23 && c <= 0x5B)
-            || (c >= 0x5D && c <= 0x7E) || is_obs_text(c) || is_vchar(c);
-    }
-}
-
-enum FromDecimalString {
-    DECSTRING_INVALID,
-    DECSTRING_OK,
-    DECSTRING_OVERFLOW
-};
-
-template<class Target>
-FromDecimalString from_decimal_string(string_ref in, Target &out)
-{
-    out = 0;
-
-    while (in.size() && in[0] == '0')
-        in.remove_prefix(1);
-
-    if (in.size() == 0)
-        return DECSTRING_OK;
-
-    Target digit = 1;
-
-    for ( std::size_t i = in.size() - 1 ; ; ) {
-        Target value;
-
-        switch (in[i]) {
-        case '0': case '1': case '2': case '3': case '4': case '5': case '6':
-        case '7': case '8': case '9':
-            value = in[i] - '0';
-            break;
-        default:
-            return DECSTRING_INVALID;
-        }
-
-        if (std::numeric_limits<Target>::max() / digit < value)
-            return DECSTRING_OVERFLOW;
-
-        value *= digit;
-
-        if (std::numeric_limits<Target>::max() - value < out)
-            return DECSTRING_OVERFLOW;
-
-        out += value;
-
-        if (i == 0) {
-            break;
-        } else {
-            if (std::numeric_limits<Target>::max() / 10 < digit)
-                return DECSTRING_OVERFLOW;
-            else
-                digit *= 10;
-
-            --i;
-        }
-    }
-    return DECSTRING_OK;
-}
-
-enum FromHexStringResult {
-    HEXSTRING_INVALID,
-    HEXSTRING_OK,
-    HEXSTRING_OVERFLOW
-};
-
-template<class Target>
-FromHexStringResult from_hex_string(string_ref in, Target &out)
-{
-    if (in.size() == 0)
-        return HEXSTRING_INVALID;
-
-    out = 0;
-
-    while (in.size() && in[0] == '0')
-        in.remove_prefix(1);
-
-    if (in.size() == 0)
-        return HEXSTRING_OK;
-
-    Target digit = 1;
-
-    for ( std::size_t i = in.size() - 1 ; ; ) {
-        Target value;
-
-        switch (in[i]) {
-        case '0': case '1': case '2': case '3': case '4': case '5': case '6':
-        case '7': case '8': case '9':
-            value = in[i] - '0';
-            break;
-        case 'a': case 'A': case 'b': case 'B': case 'c': case 'C': case 'd':
-        case 'D': case 'e': case 'E': case 'f': case 'F':
-            {
-                /* "lower case bit" = 0x20 */
-                char c = in[i] | 0x20;
-                value = 10 + c - 'a';
-            }
-            break;
-        default:
-            return HEXSTRING_INVALID;
-        }
-
-        if (std::numeric_limits<Target>::max() / digit < value)
-            return HEXSTRING_OVERFLOW;
-
-        value *= digit;
-
-        if (std::numeric_limits<Target>::max() - value < out)
-            return HEXSTRING_OVERFLOW;
-
-        out += value;
-
-        if (i == 0) {
-            break;
-        } else {
-            if (std::numeric_limits<Target>::max() / 16 < digit)
-                return HEXSTRING_OVERFLOW;
-            else
-                digit *= 16;
-
-            --i;
-        }
-    }
-    return HEXSTRING_OK;
-}
-
-enum DecodeTransferEncodingResult {
-    CHUNKED_NOT_FOUND,
-    CHUNKED_AT_END,
-    CHUNKED_INVALID
-};
-
-struct decode_transfer_encoding_p
-{
-    struct state
-    {
-        state()
-            : count(0)
-            , res(CHUNKED_NOT_FOUND)
-        {}
-
-        unsigned count;
-        DecodeTransferEncodingResult res;
-    };
-
-    static const bool STOP_ITER = true;
-    static const bool PROC_ITER = false;
-
-    decode_transfer_encoding_p(state &s)
-        : count(s.count)
-        , res(s.res)
-    {}
-
-    bool operator()(string_ref v) const
-    {
-        using boost::algorithm::iequals;
-
-        // All transfer-coding names are case-insensitive (section 4 of RFC7230)
-        if (!iequals(v, "chunked")) {
-            if (count == 1) {
-                /* If any transfer coding other than chunked is applied to a
-                   request payload body, the sender MUST apply chunked as the
-                   final transfer coding (section 3.3.1 of RFC7230) */
-                res = CHUNKED_INVALID;
-                return STOP_ITER;
-            }
-
-            return PROC_ITER;
-        }
-
-        ++count;
-
-        if (count == 2) {
-            /* A sender MUST NOT apply chunked more than once to a message body
-               (section 3.3.1 of RFC7230) */
-            res = CHUNKED_INVALID;
-            return STOP_ITER;
-        }
-
-        res = CHUNKED_AT_END;
-        return PROC_ITER;
-    }
-
-    unsigned &count;
-    DecodeTransferEncodingResult &res;
-};
-
-inline DecodeTransferEncodingResult decode_transfer_encoding(string_ref field)
-{
-    decode_transfer_encoding_p::state p_state;
-    decode_transfer_encoding_p p(p_state);
-    header_value_any_of(field, p);
-    return p.res;
 }
 
 } // namespace detail
 
 inline
-request_reader::request_reader()
+request::request()
     : body_type(NO_BODY)
     , state(EXPECT_METHOD)
     , code_(token::code::error_insufficient_data)
@@ -306,7 +27,7 @@ request_reader::request_reader()
     , token_size_(0)
 {}
 
-inline void request_reader::reset()
+inline void request::reset()
 {
     body_type = NO_BODY;
     state = EXPECT_METHOD;
@@ -316,19 +37,19 @@ inline void request_reader::reset()
     ibuffer = asio::const_buffer();
 }
 
-inline token::code::value request_reader::code() const
+inline token::code::value request::code() const
 {
     return code_;
 }
 
 inline
-request_reader::size_type request_reader::token_size() const
+request::size_type request::token_size() const
 {
     return token_size_;
 }
 
 template<>
-request_reader::view_type request_reader::value<token::method>() const
+request::view_type request::value<token::method>() const
 {
     assert(code_ == token::method::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -336,7 +57,7 @@ request_reader::view_type request_reader::value<token::method>() const
 }
 
 template<>
-request_reader::view_type request_reader::value<token::request_target>() const
+request::view_type request::value<token::request_target>() const
 {
     assert(code_ == token::request_target::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -344,14 +65,14 @@ request_reader::view_type request_reader::value<token::request_target>() const
 }
 
 template<>
-int request_reader::value<token::version>() const
+int request::value<token::version>() const
 {
     assert(code_ == token::version::code);
     return *(asio::buffer_cast<const char*>(ibuffer) + idx) - '0';
 }
 
 template<>
-request_reader::view_type request_reader::value<token::field_name>() const
+request::view_type request::value<token::field_name>() const
 {
     assert(code_ == token::field_name::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -359,44 +80,21 @@ request_reader::view_type request_reader::value<token::field_name>() const
 }
 
 template<>
-request_reader::view_type request_reader::value<token::field_value>() const
+request::view_type request::value<token::field_value>() const
 {
     assert(code_ == token::field_value::code);
-
-    /* The field value does not include any leading or trailing whitespace: OWS
-       occurring before the first non-whitespace octet of the field value or
-       after the last non-whitespace octet of the field value ought to be
-       excluded by parsers when extracting the field value from a header field
-       (section 3.2.4 of RFC7230).
-
-       OWS can happen in the middle of the field value too. Therefore, we can
-       only detect leading OWS ahead of time (i.e. when only part of the field
-       has been received) and ending OWS must be removed once the whole field
-       has been received (i.e. a job to this layer of abstraction). */
-    std::size_t ending_ows = 0;
-    {
-        const unsigned char *view
-            = asio::buffer_cast<const unsigned char*>(ibuffer);
-        for (size_t i = idx + token_size_ - 1 ; i > idx ; --i) {
-            if (!detail::is_ows(view[i]))
-                break;
-            else
-                ++ending_ows;
-        }
-    }
-
-    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
-                     token_size_ - ending_ows);
+    view_type raw(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
+    return detail::decode_field_value(raw);
 }
 
 template<>
-asio::const_buffer request_reader::value<token::body_chunk>() const
+asio::const_buffer request::value<token::body_chunk>() const
 {
     assert(code_ == token::body_chunk::code);
     return asio::buffer(ibuffer + idx, token_size_);
 }
 
-inline token::code::value request_reader::expected_token() const
+inline token::code::value request::expected_token() const
 {
     switch (state) {
     case ERRORED:
@@ -439,13 +137,13 @@ inline token::code::value request_reader::expected_token() const
     }
 }
 
-inline void request_reader::set_buffer(asio::const_buffer ibuffer)
+inline void request::set_buffer(asio::const_buffer ibuffer)
 {
     this->ibuffer = ibuffer;
     idx = 0;
 }
 
-inline void request_reader::next()
+inline void request::next()
 {
     if (state == ERRORED)
         return;
@@ -716,6 +414,8 @@ inline void request_reader::next()
                 = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
             if (!detail::is_field_value_char(c)) {
                 if (i != idx) {
+                    typedef syntax::content_length<char> cont_len;
+
                     state = EXPECT_CRLF_AFTER_FIELD_VALUE;
                     code_ = token::code::field_value;
                     token_size_ = i - idx;
@@ -759,16 +459,17 @@ inline void request_reader::next()
                            impact the performance of the interaction with a
                            proper and conforming HTTP participant. And we should
                            minimmize the DoS attack surface too. */
-                        switch (detail::from_decimal_string(field, body_size)) {
-                        case detail::DECSTRING_INVALID:
+                        switch (native_value(cont_len::decode(field,
+                                                              body_size))) {
+                        case cont_len::result::invalid:
                             state = ERRORED;
                             code_ = token::code::error_invalid_content_length;
                             break;
-                        case detail::DECSTRING_OVERFLOW:
+                        case cont_len::result::overflow:
                             state = ERRORED;
                             code_ = token::code::error_content_length_overflow;
                             break;
-                        case detail::DECSTRING_OK:
+                        case cont_len::result::ok:
                             break;
                         }
                         break;
@@ -874,40 +575,40 @@ inline void request_reader::next()
         BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
     case EXPECT_CHUNK_SIZE:
         {
-            size_type i = idx + token_size_;
-            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
-                unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-                if (detail::is_hexdigit(c))
-                    continue;
+            typedef syntax::chunk_size<unsigned char> chunk_size;
+            typedef chunk_size::view_type view_type;
 
-                token_size_ = i - idx;
-                if (token_size_ == 0) {
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
-                    return;
-                }
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const unsigned char*>(buf),
+                         asio::buffer_size(buf));
+            std::size_t nmatched = chunk_size::match(in);
 
-                const char *str = asio::buffer_cast<const char*>(ibuffer) + idx;
-                switch (detail::from_hex_string(string_ref(str, token_size_),
-                                                body_size)) {
-                case detail::HEXSTRING_INVALID:
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
-                    return;
-                case detail::HEXSTRING_OVERFLOW:
-                    state = ERRORED;
-                    code_ = token::code::error_chunk_size_overflow;
-                    return;
-                case detail::HEXSTRING_OK:
-                    state = EXPECT_CHUNK_EXT;
-                    code_ = token::code::skip;
-                    return;
-                }
-                BOOST_HTTP_DETAIL_UNREACHABLE("internal error. UB?");
+            if (nmatched == 0) {
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
+                return;
             }
-            token_size_ = i - idx;
-            return;
+
+            if (nmatched == in.size())
+                return;
+
+            switch (native_value(chunk_size::decode(in.substr(0, nmatched),
+                                                    body_size))) {
+            case chunk_size::result::invalid:
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
+                return;
+            case chunk_size::result::overflow:
+                state = ERRORED;
+                code_ = token::code::error_chunk_size_overflow;
+                return;
+            case chunk_size::result::ok:
+                state = EXPECT_CHUNK_EXT;
+                code_ = token::code::skip;
+                token_size_ = nmatched;
+                return;
+            };
+            BOOST_HTTP_DETAIL_UNREACHABLE("internal error. UB?");
         }
     case EXPECT_CHUNK_EXT:
         {
@@ -1112,5 +813,6 @@ inline void request_reader::next()
                                   " once the token was determined");
 }
 
+} // namespace reader
 } // namespace boost
 } // namespace http

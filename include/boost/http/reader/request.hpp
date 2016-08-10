@@ -4,29 +4,32 @@
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
 
-#ifndef BOOST_HTTP_READER_HPP
-#define BOOST_HTTP_READER_HPP
+#ifndef BOOST_HTTP_READER_REQUEST_HPP
+#define BOOST_HTTP_READER_REQUEST_HPP
 
 // private
-
-#include <cctype>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/find.hpp>
 #include <boost/type_traits/common_type.hpp>
 #include <boost/cstdint.hpp>
 
+#include <boost/http/syntax/chunk_size.hpp>
+#include <boost/http/syntax/content_length.hpp>
+#include <boost/http/detail/macros.hpp>
+#include <boost/http/reader/detail/transfer_encoding.hpp>
+#include <boost/http/reader/detail/abnf.hpp>
+#include <boost/http/reader/detail/common.hpp>
+
 // public
 
-#include <boost/system/error_code.hpp>
-
 #include <boost/http/token.hpp>
-#include <boost/http/algorithm/header/header_value_any_of.hpp>
 
 namespace boost {
 namespace http {
+namespace reader {
 
-class request_reader
+class request
 {
 public:
     // types
@@ -35,7 +38,7 @@ public:
     typedef value_type *pointer;
     typedef boost::string_ref view_type;
 
-    request_reader();
+    request();
 
     void reset();
 
@@ -140,9 +143,10 @@ private:
     boost::asio::const_buffer ibuffer;
 };
 
+} // namespace reader
 } // namespace http
 } // namespace boost
 
-#include "reader-inl.hpp"
+#include "request.ipp"
 
-#endif // BOOST_HTTP_READER_HPP
+#endif // BOOST_HTTP_READER_REQUEST_HPP
