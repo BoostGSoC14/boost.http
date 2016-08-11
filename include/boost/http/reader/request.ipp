@@ -273,25 +273,31 @@ inline void request::next()
         }
     case EXPECT_CRLF_AFTER_VERSION:
         {
-            unsigned char skip[] = {'\r', '\n'};
-            size_type i = idx + token_size_;
-            size_type count = std::min(asio::buffer_size(ibuffer),
-                                       idx + sizeof(skip));
-            for ( ; i != count ; ++i) {
-                unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-                if (c != skip[i - idx]) {
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
-                    return;
-                }
-            }
-            token_size_ = i - idx;
-            if (token_size_ == sizeof(skip)) {
+            typedef syntax::liberal_crlf<char> crlf;
+            typedef crlf::view_type view_type;
+
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const char*>(buf),
+                         asio::buffer_size(buf));
+
+            switch (native_value(crlf::match(in))) {
+            case crlf::result::crlf:
                 state = EXPECT_FIELD_NAME;
                 code_ = token::code::skip;
+                token_size_ = 2;
+                return;
+            case crlf::result::lf:
+                state = EXPECT_FIELD_NAME;
+                code_ = token::code::skip;
+                token_size_ = 1;
+                return;
+            case crlf::result::insufficient_data:
+                return;
+            case crlf::result::invalid_data:
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
+                return;
             }
-            return;
         }
     case EXPECT_FIELD_NAME:
         for (size_type i = idx + token_size_ ; i != asio::buffer_size(ibuffer)
@@ -352,12 +358,9 @@ inline void request::next()
                             BOOST_HTTP_DETAIL_UNREACHABLE("");
                         }
                     }
-                } else if (c == '\r') {
+                } else {
                     state = EXPECT_CRLF_AFTER_HEADERS;
                     next();
-                } else {
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
                 }
                 return;
             }
@@ -500,59 +503,83 @@ inline void request::next()
         token_size_ = asio::buffer_size(ibuffer) - idx;
         return;
     case EXPECT_CRLF_AFTER_FIELD_VALUE:
-        if (idx + 1 >= asio::buffer_size(ibuffer))
-            return;
-
         {
-            const char *view = asio::buffer_cast<const char*>(ibuffer);
-            if (view[idx] != '\r' || view[idx + 1] != '\n') {
-                state = ERRORED;
-                code_ = token::code::error_invalid_data;
-            } else {
+            typedef syntax::liberal_crlf<char> crlf;
+            typedef crlf::view_type view_type;
+
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const char*>(buf),
+                         asio::buffer_size(buf));
+
+            switch (native_value(crlf::match(in))) {
+            case crlf::result::crlf:
                 state = EXPECT_FIELD_NAME;
                 code_ = token::code::skip;
                 token_size_ = 2;
-            }
-            return;
-        }
-    case EXPECT_CRLF_AFTER_HEADERS:
-        if (idx + 1 >= asio::buffer_size(ibuffer))
-            return;
-
-        {
-            const char *view = asio::buffer_cast<const char*>(ibuffer);
-            if (view[idx] != '\r' || view[idx + 1] != '\n') {
+                return;
+            case crlf::result::lf:
+                state = EXPECT_FIELD_NAME;
+                code_ = token::code::skip;
+                token_size_ = 1;
+                return;
+            case crlf::result::insufficient_data:
+                return;
+            case crlf::result::invalid_data:
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
-            } else {
-                if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ) {
-                    state = ERRORED;
-                    code_ = token::code::error_no_host;
-                    return;
-                }
-
-                switch (body_type) {
-                case RANDOM_ENCODING_READ:
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_transfer_encoding;
-                    return;
-                case NO_BODY:
-                    state = EXPECT_END_OF_BODY;
-                    break;
-                case CHUNKED_ENCODING_READ:
-                    state = EXPECT_CHUNK_SIZE;
-                    break;
-                case CONTENT_LENGTH_READ:
-                    state = EXPECT_BODY;
-                    break;
-                default:
-                    BOOST_HTTP_DETAIL_UNREACHABLE("READING_* variants should be"
-                                                  " cleared when the field"
-                                                  " value is read");
-                }
-                code_ = token::code::end_of_headers;
-                token_size_ = 2;
+                return;
             }
+        }
+    case EXPECT_CRLF_AFTER_HEADERS:
+        {
+            typedef syntax::liberal_crlf<char> crlf;
+            typedef crlf::view_type view_type;
+
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const char*>(buf),
+                         asio::buffer_size(buf));
+
+            switch (native_value(crlf::match(in))) {
+            case crlf::result::crlf:
+                token_size_ = 2;
+                break;
+            case crlf::result::lf:
+                token_size_ = 1;
+                break;
+            case crlf::result::insufficient_data:
+                return;
+            case crlf::result::invalid_data:
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
+                return;
+            }
+
+            if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ) {
+                state = ERRORED;
+                code_ = token::code::error_no_host;
+                return;
+            }
+
+            switch (body_type) {
+            case RANDOM_ENCODING_READ:
+                state = ERRORED;
+                code_ = token::code::error_invalid_transfer_encoding;
+                return;
+            case NO_BODY:
+                state = EXPECT_END_OF_BODY;
+                break;
+            case CHUNKED_ENCODING_READ:
+                state = EXPECT_CHUNK_SIZE;
+                break;
+            case CONTENT_LENGTH_READ:
+                state = EXPECT_BODY;
+                break;
+            default:
+                BOOST_HTTP_DETAIL_UNREACHABLE("READING_* variants should be"
+                                              " cleared when the field"
+                                              " value is read");
+            }
+            code_ = token::code::end_of_headers;
             return;
         }
     case EXPECT_BODY:
@@ -638,12 +665,20 @@ inline void request::next()
             return;
         }
     case EXPEXT_CRLF_AFTER_CHUNK_EXT:
-        if (idx + 1 >= asio::buffer_size(ibuffer))
-            return;
-
         {
-            const char *view = asio::buffer_cast<const char*>(ibuffer);
-            if (view[idx] != '\r' || view[idx + 1] != '\n') {
+            typedef syntax::strict_crlf<char> crlf;
+            typedef crlf::view_type view_type;
+
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const char*>(buf),
+                         asio::buffer_size(buf));
+
+            if (in.size() < 2)
+                return;
+
+            std::size_t nmatched = crlf::match(in);
+
+            if (nmatched == 0) {
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
             } else {
@@ -655,7 +690,7 @@ inline void request::next()
                     code_ = token::code::end_of_body;
                 }
 
-                token_size_ = 2;
+                token_size_ = nmatched;
             }
             return;
         }
@@ -674,18 +709,26 @@ inline void request::next()
             return;
         }
     case EXPECT_CRLF_AFTER_CHUNK_DATA:
-        if (idx + 1 >= asio::buffer_size(ibuffer))
-            return;
-
         {
-            const char *view = asio::buffer_cast<const char*>(ibuffer);
-            if (view[idx] != '\r' || view[idx + 1] != '\n') {
+            typedef syntax::strict_crlf<char> crlf;
+            typedef crlf::view_type view_type;
+
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const char*>(buf),
+                         asio::buffer_size(buf));
+
+            if (in.size() < 2)
+                return;
+
+            std::size_t nmatched = crlf::match(in);
+
+            if (nmatched == 0) {
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
             } else {
                 state = EXPECT_CHUNK_SIZE;
                 code_ = token::code::skip;
-                token_size_ = 2;
+                token_size_ = nmatched;
             }
             return;
         }
@@ -699,12 +742,9 @@ inline void request::next()
                     state = EXPECT_TRAILER_COLON;
                     code_ = token::code::field_name;
                     token_size_ = i - idx;
-                } else if (c == '\r') {
+                } else {
                     state = EXPECT_CRLF_AFTER_TRAILERS;
                     next();
-                } else {
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
                 }
                 return;
             }
@@ -774,35 +814,51 @@ inline void request::next()
         token_size_ = asio::buffer_size(ibuffer) - idx;
         return;
     case EXPECT_CRLF_AFTER_TRAILER_VALUE:
-        if (idx + 1 >= asio::buffer_size(ibuffer))
-            return;
-
         {
-            const char *view = asio::buffer_cast<const char*>(ibuffer);
-            if (view[idx] != '\r' || view[idx + 1] != '\n') {
+            typedef syntax::strict_crlf<char> crlf;
+            typedef crlf::view_type view_type;
+
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const char*>(buf),
+                         asio::buffer_size(buf));
+
+            if (in.size() < 2)
+                return;
+
+            std::size_t nmatched = crlf::match(in);
+
+            if (nmatched == 0) {
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
             } else {
                 state = EXPECT_TRAILER_NAME;
                 code_ = token::code::skip;
-                token_size_ = 2;
+                token_size_ = nmatched;
             }
             return;
         }
     case EXPECT_CRLF_AFTER_TRAILERS:
-        if (idx + 1 >= asio::buffer_size(ibuffer))
-            return;
-
         {
-            const char *view = asio::buffer_cast<const char*>(ibuffer);
-            if (view[idx] != '\r' || view[idx + 1] != '\n') {
+            typedef syntax::strict_crlf<char> crlf;
+            typedef crlf::view_type view_type;
+
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const char*>(buf),
+                         asio::buffer_size(buf));
+
+            if (in.size() < 2)
+                return;
+
+            std::size_t nmatched = crlf::match(in);
+
+            if (nmatched == 0) {
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
             } else {
                 body_type = NO_BODY;
                 state = EXPECT_METHOD;
                 code_ = token::code::end_of_message;
-                token_size_ = 2;
+                token_size_ = nmatched;
             }
             return;
         }

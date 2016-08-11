@@ -16,6 +16,7 @@
 
 #include <boost/http/syntax/chunk_size.hpp>
 #include <boost/http/syntax/content_length.hpp>
+#include <boost/http/syntax/crlf.hpp>
 #include <boost/http/detail/macros.hpp>
 #include <boost/http/reader/detail/transfer_encoding.hpp>
 #include <boost/http/reader/detail/abnf.hpp>
