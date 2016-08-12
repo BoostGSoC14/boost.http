@@ -300,73 +300,71 @@ inline void request::next()
             }
         }
     case EXPECT_FIELD_NAME:
-        for (size_type i = idx + token_size_ ; i != asio::buffer_size(ibuffer)
-                 ; ++i) {
-            unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-            if (!detail::is_tchar(c)) {
-                if (i != idx) {
-                    using boost::algorithm::iequals;
+        {
+            using boost::algorithm::iequals;
+            typedef syntax::field_name<unsigned char> field_name;
 
-                    state = EXPECT_COLON;
-                    code_ = token::code::field_name;
-                    token_size_ = i - idx;
+            std::size_t nmatched = field_name::match(rest_view);
 
-                    /* The only possible values for `body_type` at this time
-                       are:
-
-                       - NO_BODY
-                       - CONTENT_LENGTH_READ
-                       - CHUNKED_ENCODING_READ
-                       - RANDOM_ENCODING_READ */
-                    string_ref field = value<token::field_name>();
-                    if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ
-                        && iequals(field, "Host")) {
-                        version = NOT_HTTP_1_0_AND_HOST_READ;
-                    } else if (iequals(field, "Transfer-Encoding")) {
-                        switch (body_type) {
-                        case CONTENT_LENGTH_READ:
-                            /* Transfer-Encoding overrides Content-Length
-                               (section 3.3.3 of RFC7230) */
-                        case NO_BODY:
-                        case RANDOM_ENCODING_READ:
-                            body_type = READING_ENCODING;
-                            break;
-                        case CHUNKED_ENCODING_READ:
-                            state = ERRORED;
-                            code_
-                                = token::code::error_invalid_transfer_encoding;
-                            return;
-                        default:
-                            BOOST_HTTP_DETAIL_UNREACHABLE("");
-                        }
-                    } else if (iequals(field, "Content-Length")) {
-                        switch (body_type) {
-                        case NO_BODY:
-                            body_type = READING_CONTENT_LENGTH;
-                            break;
-                        case CONTENT_LENGTH_READ:
-                            state = ERRORED;
-                            code_ = token::code::error_invalid_content_length;
-                            return;
-                        case CHUNKED_ENCODING_READ:
-                        case RANDOM_ENCODING_READ:
-                            /* Transfer-Encoding overrides Content-Length
-                               (section 3.3.3 of RFC7230) */
-                            break;
-                        default:
-                            BOOST_HTTP_DETAIL_UNREACHABLE("");
-                        }
-                    }
-                } else {
-                    state = EXPECT_CRLF_AFTER_HEADERS;
-                    next();
-                }
-                return;
+            if (nmatched == 0) {
+                state = EXPECT_CRLF_AFTER_HEADERS;
+                return next();
             }
+
+            if (nmatched == rest_view.size())
+                return;
+
+            state = EXPECT_COLON;
+            code_ = token::code::field_name;
+            token_size_ = nmatched;
+
+            /* The only possible values for `body_type` at this time are:
+
+               - NO_BODY
+               - CONTENT_LENGTH_READ
+               - CHUNKED_ENCODING_READ
+               - RANDOM_ENCODING_READ */
+            string_ref field = value<token::field_name>();
+            if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ
+                && iequals(field, "Host")) {
+                version = NOT_HTTP_1_0_AND_HOST_READ;
+            } else if (iequals(field, "Transfer-Encoding")) {
+                switch (body_type) {
+                case CONTENT_LENGTH_READ:
+                    /* Transfer-Encoding overrides Content-Length (section 3.3.3
+                       of RFC7230) */
+                case NO_BODY:
+                case RANDOM_ENCODING_READ:
+                    body_type = READING_ENCODING;
+                    break;
+                case CHUNKED_ENCODING_READ:
+                    state = ERRORED;
+                    code_ = token::code::error_invalid_transfer_encoding;
+                    return;
+                default:
+                    BOOST_HTTP_DETAIL_UNREACHABLE("");
+                }
+            } else if (iequals(field, "Content-Length")) {
+                switch (body_type) {
+                case NO_BODY:
+                    body_type = READING_CONTENT_LENGTH;
+                    break;
+                case CONTENT_LENGTH_READ:
+                    state = ERRORED;
+                    code_ = token::code::error_invalid_content_length;
+                    return;
+                case CHUNKED_ENCODING_READ:
+                case RANDOM_ENCODING_READ:
+                    /* Transfer-Encoding overrides Content-Length (section 3.3.3
+                       of RFC7230) */
+                    break;
+                default:
+                    BOOST_HTTP_DETAIL_UNREACHABLE("");
+                }
+            }
+
+            return;
         }
-        token_size_ = asio::buffer_size(ibuffer) - idx;
-        return;
     case EXPECT_COLON:
         {
             unsigned char c
@@ -705,24 +703,24 @@ inline void request::next()
             return;
         }
     case EXPECT_TRAILER_NAME:
-        for (size_type i = idx + token_size_ ; i != asio::buffer_size(ibuffer)
-                 ; ++i) {
-            unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-            if (!detail::is_tchar(c)) {
-                if (i != idx) {
-                    state = EXPECT_TRAILER_COLON;
-                    code_ = token::code::field_name;
-                    token_size_ = i - idx;
-                } else {
-                    state = EXPECT_CRLF_AFTER_TRAILERS;
-                    next();
-                }
-                return;
+        {
+            typedef syntax::field_name<unsigned char> field_name;
+
+            std::size_t nmatched = field_name::match(rest_view);
+
+            if (nmatched == 0) {
+                state = EXPECT_CRLF_AFTER_TRAILERS;
+                return next();
             }
+
+            if (nmatched == rest_view.size())
+                return;
+
+            state = EXPECT_TRAILER_COLON;
+            code_ = token::code::field_name;
+            token_size_ = nmatched;
+            return;
         }
-        token_size_ = asio::buffer_size(ibuffer) - idx;
-        return;
     case EXPECT_TRAILER_COLON:
         {
             unsigned char c
