@@ -393,21 +393,21 @@ inline void request::next()
         }
     case EXPECT_OWS_AFTER_COLON:
         {
-            size_type i = idx + token_size_;
-            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
-                unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-                if (!detail::is_ows(c)) {
-                    state = EXPECT_FIELD_VALUE;
-                    break;
-                }
-            }
-            code_ = token::code::skip;
-            token_size_ = i - idx;
+            typedef syntax::ows<char> ows;
+            typedef ows::view_type view_type;
 
-            if (token_size_ == 0)
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const char*>(buf),
+                         asio::buffer_size(buf));
+            std::size_t nmatched = ows::match(in);
+
+            if (nmatched == 0) {
+                state = EXPECT_FIELD_VALUE;
                 return next();
+            }
 
+            code_ = token::code::skip;
+            token_size_ = nmatched;
             return;
         }
     case EXPECT_FIELD_VALUE:
@@ -777,21 +777,21 @@ inline void request::next()
         }
     case EXPECT_OWS_AFTER_TRAILER_COLON:
         {
-            size_type i = idx + token_size_;
-            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
-                unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-                if (!detail::is_ows(c)) {
-                    state = EXPECT_TRAILER_VALUE;
-                    break;
-                }
-            }
-            code_ = token::code::skip;
-            token_size_ = i - idx;
+            typedef syntax::ows<char> ows;
+            typedef ows::view_type view_type;
 
-            if (token_size_ == 0)
+            asio::const_buffer buf = ibuffer + idx;
+            view_type in(asio::buffer_cast<const char*>(buf),
+                         asio::buffer_size(buf));
+            std::size_t nmatched = ows::match(in);
+
+            if (nmatched == 0) {
+                state = EXPECT_TRAILER_VALUE;
                 return next();
+            }
 
+            code_ = token::code::skip;
+            token_size_ = nmatched;
             return;
         }
     case EXPECT_TRAILER_VALUE:
