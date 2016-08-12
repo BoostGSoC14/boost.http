@@ -19,6 +19,8 @@ if(NOT Boost_USE_STATIC_LIBS)
   add_definitions(-DBOOST_TEST_DYN_LINK)
 endif()
 
+link_directories("${target}" ${Boost_LIBRARIES_DIRS})
+
 # Test's stuff
 
 enable_testing()

@@ -12,6 +12,10 @@ find_package(Boost 1.55 COMPONENTS
   coroutine
   REQUIRED)
 
+# Config
+
+link_directories("${target}" ${Boost_LIBRARIES_DIRS})
+
 # Examples' stuff
 
 set(examples
