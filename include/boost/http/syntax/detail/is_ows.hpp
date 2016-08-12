@@ -4,27 +4,29 @@
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
 
-#ifndef BOOST_HTTP_SYNTAX_OWS_HPP
-#define BOOST_HTTP_SYNTAX_OWS_HPP
-
-#include <boost/utility/string_ref.hpp>
-#include <boost/http/syntax/detail/is_ows.hpp>
+#ifndef BOOST_HTTP_SYNTAX_DETAIL_IS_OWS_HPP
+#define BOOST_HTTP_SYNTAX_DETAIL_IS_OWS_HPP
 
 namespace boost {
 namespace http {
 namespace syntax {
+namespace detail {
 
 template<class CharT>
-struct ows {
-    typedef basic_string_ref<CharT> view_type;
+bool is_ows(CharT c)
+{
+    switch (c) {
+    case '\x20':
+    case '\x09':
+        return true;
+    default:
+        return false;
+    }
+}
 
-    static std::size_t match(view_type view);
-};
-
+} // namespace detail
 } // namespace syntax
 } // namespace http
 } // namespace boost
 
-#include "ows.ipp"
-
-#endif // BOOST_HTTP_SYNTAX_OWS_HPP
+#endif // BOOST_HTTP_SYNTAX_DETAIL_IS_OWS_HPP

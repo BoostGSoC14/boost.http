@@ -4,8 +4,8 @@
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
 
-#ifndef BOOST_HTTP_SYNTAX_OWS_HPP
-#define BOOST_HTTP_SYNTAX_OWS_HPP
+#ifndef BOOST_HTTP_SYNTAX_FIELD_VALUE_HPP
+#define BOOST_HTTP_SYNTAX_FIELD_VALUE_HPP
 
 #include <boost/utility/string_ref.hpp>
 #include <boost/http/syntax/detail/is_ows.hpp>
@@ -15,7 +15,7 @@ namespace http {
 namespace syntax {
 
 template<class CharT>
-struct ows {
+struct left_trimmed_field_value {
     typedef basic_string_ref<CharT> view_type;
 
     static std::size_t match(view_type view);
@@ -25,6 +25,6 @@ struct ows {
 } // namespace http
 } // namespace boost
 
-#include "ows.ipp"
+#include "field_value.ipp"
 
-#endif // BOOST_HTTP_SYNTAX_OWS_HPP
+#endif // BOOST_HTTP_SYNTAX_FIELD_VALUE_HPP

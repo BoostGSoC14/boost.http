@@ -405,97 +405,93 @@ inline void request::next()
             return;
         }
     case EXPECT_FIELD_VALUE:
-        for (size_type i = idx + token_size_ ; i != asio::buffer_size(ibuffer)
-                 ; ++i) {
-            unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-            if (!detail::is_field_value_char(c)) {
-                if (i != idx) {
-                    typedef syntax::content_length<char> cont_len;
+        {
+            typedef syntax::left_trimmed_field_value<unsigned char> field_value;
+            typedef syntax::content_length<char> content_length;
 
-                    state = EXPECT_CRLF_AFTER_FIELD_VALUE;
-                    code_ = token::code::field_value;
-                    token_size_ = i - idx;
+            std::size_t nmatched = field_value::match(rest_view);
 
-                    string_ref field = value<token::field_value>();
-                    switch (body_type) {
-                    case READING_CONTENT_LENGTH:
-                        body_type = CONTENT_LENGTH_READ;
-                        /* If a message is received that has multiple
-                           Content-Length header fields with field-values
-                           consisting of the same decimal value, or a single
-                           Content-Length header field with a field value
-                           containing a list of identical decimal values (e.g.,
-                           "Content-Length: 42, 42"), indicating that duplicate
-                           Content-Length header fields have been generated or
-                           combined by an upstream message processor, then the
-                           recipient MUST either reject the message [...]
-                           (section 3.3.2 of RFC7230).
-
-                           If a message is received without Transfer-Encoding
-                           and with either multiple Content-Length header fields
-                           having differing field-values or a single
-                           Content-Length header field having an invalid value,
-                           then the message framing is invalid and the recipient
-                           MUST treat it as an unrecoverable error. If this is a
-                           request message, the server MUST respond with a 400
-                           (Bad Request) status code and then close the
-                           connection (section 3.3.3 of RFC7230).
-
-                           A sender MUST NOT send a Content-Length header field
-                           in any message that contains a Transfer-Encoding
-                           header field (section 3.3.2 of RFC7230).
-
-                           Under the above rules, it's valid to reject messages
-                           with improper Content-Length header field even if
-                           it'd be possible to decode the message after some
-                           future Transfer-Encoding header field is received. We
-                           follow this shortcut to allow a much cheaper
-                           implementation where less state is kept around. The
-                           logic to handle such erroneous message shouldn't
-                           impact the performance of the interaction with a
-                           proper and conforming HTTP participant. And we should
-                           minimmize the DoS attack surface too. */
-                        switch (native_value(cont_len::decode(field,
-                                                              body_size))) {
-                        case cont_len::result::invalid:
-                            state = ERRORED;
-                            code_ = token::code::error_invalid_content_length;
-                            break;
-                        case cont_len::result::overflow:
-                            state = ERRORED;
-                            code_ = token::code::error_content_length_overflow;
-                            break;
-                        case cont_len::result::ok:
-                            break;
-                        }
-                        break;
-                    case READING_ENCODING:
-                        switch (detail::decode_transfer_encoding(field)) {
-                        case detail::CHUNKED_INVALID:
-                            state = ERRORED;
-                            code_
-                                = token::code::error_invalid_transfer_encoding;
-                            break;
-                        case detail::CHUNKED_NOT_FOUND:
-                            body_type = RANDOM_ENCODING_READ;
-                            break;
-                        case detail::CHUNKED_AT_END:
-                            body_type = CHUNKED_ENCODING_READ;
-                        }
-                        break;
-                    default:
-                        break;
-                    }
-                } else {
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
-                }
+            if (nmatched == 0) {
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
                 return;
             }
+
+            if (nmatched == rest_view.size())
+                return;
+
+            state = EXPECT_CRLF_AFTER_FIELD_VALUE;
+            code_ = token::code::field_value;
+            token_size_ = nmatched;
+
+            string_ref field = value<token::field_value>();
+            switch (body_type) {
+            case READING_CONTENT_LENGTH:
+                body_type = CONTENT_LENGTH_READ;
+                /* If a message is received that has multiple Content-Length
+                   header fields with field-values consisting of the same
+                   decimal value, or a single Content-Length header field with a
+                   field value containing a list of identical decimal values
+                   (e.g., "Content-Length: 42, 42"), indicating that duplicate
+                   Content-Length header fields have been generated or combined
+                   by an upstream message processor, then the recipient MUST
+                   either reject the message [...] (section 3.3.2 of RFC7230).
+
+                   If a message is received without Transfer-Encoding and with
+                   either multiple Content-Length header fields having differing
+                   field-values or a single Content-Length header field having
+                   an invalid value, then the message framing is invalid and the
+                   recipient MUST treat it as an unrecoverable error. If this is
+                   a request message, the server MUST respond with a 400 (Bad
+                   Request) status code and then close the connection (section
+                   3.3.3 of RFC7230).
+
+                   A sender MUST NOT send a Content-Length header field in any
+                   message that contains a Transfer-Encoding header field
+                   (section 3.3.2 of RFC7230).
+
+                   Under the above rules, it's valid to reject messages with
+                   improper Content-Length header field even if it'd be possible
+                   to decode the message after some future Transfer-Encoding
+                   header field is received. We follow this shortcut to allow a
+                   much cheaper implementation where less state is kept
+                   around. The logic to handle such erroneous message shouldn't
+                   impact the performance of the interaction with a proper and
+                   conforming HTTP participant. And we should minimmize the DoS
+                   attack surface too. */
+                switch (native_value(content_length::decode(field,
+                                                            body_size))) {
+                case content_length::result::invalid:
+                    state = ERRORED;
+                    code_ = token::code::error_invalid_content_length;
+                    break;
+                case content_length::result::overflow:
+                    state = ERRORED;
+                    code_ = token::code::error_content_length_overflow;
+                    break;
+                case content_length::result::ok:
+                    break;
+                }
+                break;
+            case READING_ENCODING:
+                switch (detail::decode_transfer_encoding(field)) {
+                case detail::CHUNKED_INVALID:
+                    state = ERRORED;
+                    code_ = token::code::error_invalid_transfer_encoding;
+                    break;
+                case detail::CHUNKED_NOT_FOUND:
+                    body_type = RANDOM_ENCODING_READ;
+                    break;
+                case detail::CHUNKED_AT_END:
+                    body_type = CHUNKED_ENCODING_READ;
+                }
+                break;
+            default:
+                break;
+            }
+
+            return;
         }
-        token_size_ = asio::buffer_size(ibuffer) - idx;
-        return;
     case EXPECT_CRLF_AFTER_FIELD_VALUE:
         {
             typedef syntax::liberal_crlf<unsigned char> crlf;
@@ -761,24 +757,25 @@ inline void request::next()
             return;
         }
     case EXPECT_TRAILER_VALUE:
-        for (size_type i = idx + token_size_ ; i != asio::buffer_size(ibuffer)
-                 ; ++i) {
-            unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-            if (!detail::is_field_value_char(c)) {
-                if (i != idx) {
-                    state = EXPECT_CRLF_AFTER_TRAILER_VALUE;
-                    code_ = token::code::field_value;
-                    token_size_ = i - idx;
-                } else {
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
-                }
+        {
+            typedef syntax::left_trimmed_field_value<unsigned char> field_value;
+
+            std::size_t nmatched = field_value::match(rest_view);
+
+            if (nmatched == 0) {
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
                 return;
             }
+
+            if (nmatched == rest_view.size())
+                return;
+
+            state = EXPECT_CRLF_AFTER_TRAILER_VALUE;
+            code_ = token::code::field_value;
+            token_size_ = nmatched;
+            return;
         }
-        token_size_ = asio::buffer_size(ibuffer) - idx;
-        return;
     case EXPECT_CRLF_AFTER_TRAILER_VALUE:
         {
             typedef syntax::strict_crlf<unsigned char> crlf;

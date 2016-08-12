@@ -19,6 +19,7 @@
 #include <boost/http/syntax/crlf.hpp>
 #include <boost/http/syntax/ows.hpp>
 #include <boost/http/syntax/field_name.hpp>
+#include <boost/http/syntax/field_value.hpp>
 #include <boost/http/detail/macros.hpp>
 #include <boost/http/reader/detail/transfer_encoding.hpp>
 #include <boost/http/reader/detail/abnf.hpp>
