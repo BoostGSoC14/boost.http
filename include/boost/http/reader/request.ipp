@@ -176,6 +176,11 @@ inline void request::next()
     if (idx == asio::buffer_size(ibuffer))
         return;
 
+    asio::const_buffer rest_buf = ibuffer + idx;
+    basic_string_ref<unsigned char>
+        rest_view(asio::buffer_cast<const unsigned char*>(rest_buf),
+                  asio::buffer_size(rest_buf));
+
     switch (state) {
     case EXPECT_METHOD:
         {
@@ -273,14 +278,9 @@ inline void request::next()
         }
     case EXPECT_CRLF_AFTER_VERSION:
         {
-            typedef syntax::liberal_crlf<char> crlf;
-            typedef crlf::view_type view_type;
+            typedef syntax::liberal_crlf<unsigned char> crlf;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const char*>(buf),
-                         asio::buffer_size(buf));
-
-            switch (native_value(crlf::match(in))) {
+            switch (native_value(crlf::match(rest_view))) {
             case crlf::result::crlf:
                 state = EXPECT_FIELD_NAME;
                 code_ = token::code::skip;
@@ -393,13 +393,9 @@ inline void request::next()
         }
     case EXPECT_OWS_AFTER_COLON:
         {
-            typedef syntax::ows<char> ows;
-            typedef ows::view_type view_type;
+            typedef syntax::ows<unsigned char> ows;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const char*>(buf),
-                         asio::buffer_size(buf));
-            std::size_t nmatched = ows::match(in);
+            std::size_t nmatched = ows::match(rest_view);
 
             if (nmatched == 0) {
                 state = EXPECT_FIELD_VALUE;
@@ -504,14 +500,9 @@ inline void request::next()
         return;
     case EXPECT_CRLF_AFTER_FIELD_VALUE:
         {
-            typedef syntax::liberal_crlf<char> crlf;
-            typedef crlf::view_type view_type;
+            typedef syntax::liberal_crlf<unsigned char> crlf;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const char*>(buf),
-                         asio::buffer_size(buf));
-
-            switch (native_value(crlf::match(in))) {
+            switch (native_value(crlf::match(rest_view))) {
             case crlf::result::crlf:
                 state = EXPECT_FIELD_NAME;
                 code_ = token::code::skip;
@@ -532,14 +523,9 @@ inline void request::next()
         }
     case EXPECT_CRLF_AFTER_HEADERS:
         {
-            typedef syntax::liberal_crlf<char> crlf;
-            typedef crlf::view_type view_type;
+            typedef syntax::liberal_crlf<unsigned char> crlf;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const char*>(buf),
-                         asio::buffer_size(buf));
-
-            switch (native_value(crlf::match(in))) {
+            switch (native_value(crlf::match(rest_view))) {
             case crlf::result::crlf:
                 token_size_ = 2;
                 break;
@@ -602,13 +588,9 @@ inline void request::next()
         BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
     case EXPECT_CHUNK_SIZE:
         {
-            typedef syntax::chunk_size<unsigned char> chunk_size;
-            typedef chunk_size::view_type view_type;
+            typedef syntax::chunk_size<unsigned char> cs;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const unsigned char*>(buf),
-                         asio::buffer_size(buf));
-            std::size_t nmatched = chunk_size::match(in);
+            std::size_t nmatched = cs::match(rest_view);
 
             if (nmatched == 0) {
                 state = ERRORED;
@@ -616,20 +598,20 @@ inline void request::next()
                 return;
             }
 
-            if (nmatched == in.size())
+            if (nmatched == rest_view.size())
                 return;
 
-            switch (native_value(chunk_size::decode(in.substr(0, nmatched),
-                                                    body_size))) {
-            case chunk_size::result::invalid:
+            switch (native_value(cs::decode(rest_view.substr(0, nmatched),
+                                            body_size))) {
+            case cs::result::invalid:
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
                 return;
-            case chunk_size::result::overflow:
+            case cs::result::overflow:
                 state = ERRORED;
                 code_ = token::code::error_chunk_size_overflow;
                 return;
-            case chunk_size::result::ok:
+            case cs::result::ok:
                 state = EXPECT_CHUNK_EXT;
                 code_ = token::code::skip;
                 token_size_ = nmatched;
@@ -666,17 +648,12 @@ inline void request::next()
         }
     case EXPEXT_CRLF_AFTER_CHUNK_EXT:
         {
-            typedef syntax::strict_crlf<char> crlf;
-            typedef crlf::view_type view_type;
+            typedef syntax::strict_crlf<unsigned char> crlf;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const char*>(buf),
-                         asio::buffer_size(buf));
-
-            if (in.size() < 2)
+            if (rest_view.size() < 2)
                 return;
 
-            std::size_t nmatched = crlf::match(in);
+            std::size_t nmatched = crlf::match(rest_view);
 
             if (nmatched == 0) {
                 state = ERRORED;
@@ -710,17 +687,12 @@ inline void request::next()
         }
     case EXPECT_CRLF_AFTER_CHUNK_DATA:
         {
-            typedef syntax::strict_crlf<char> crlf;
-            typedef crlf::view_type view_type;
+            typedef syntax::strict_crlf<unsigned char> crlf;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const char*>(buf),
-                         asio::buffer_size(buf));
-
-            if (in.size() < 2)
+            if (rest_view.size() < 2)
                 return;
 
-            std::size_t nmatched = crlf::match(in);
+            std::size_t nmatched = crlf::match(rest_view);
 
             if (nmatched == 0) {
                 state = ERRORED;
@@ -777,13 +749,9 @@ inline void request::next()
         }
     case EXPECT_OWS_AFTER_TRAILER_COLON:
         {
-            typedef syntax::ows<char> ows;
-            typedef ows::view_type view_type;
+            typedef syntax::ows<unsigned char> ows;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const char*>(buf),
-                         asio::buffer_size(buf));
-            std::size_t nmatched = ows::match(in);
+            std::size_t nmatched = ows::match(rest_view);
 
             if (nmatched == 0) {
                 state = EXPECT_TRAILER_VALUE;
@@ -815,17 +783,12 @@ inline void request::next()
         return;
     case EXPECT_CRLF_AFTER_TRAILER_VALUE:
         {
-            typedef syntax::strict_crlf<char> crlf;
-            typedef crlf::view_type view_type;
+            typedef syntax::strict_crlf<unsigned char> crlf;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const char*>(buf),
-                         asio::buffer_size(buf));
-
-            if (in.size() < 2)
+            if (rest_view.size() < 2)
                 return;
 
-            std::size_t nmatched = crlf::match(in);
+            std::size_t nmatched = crlf::match(rest_view);
 
             if (nmatched == 0) {
                 state = ERRORED;
@@ -839,17 +802,12 @@ inline void request::next()
         }
     case EXPECT_CRLF_AFTER_TRAILERS:
         {
-            typedef syntax::strict_crlf<char> crlf;
-            typedef crlf::view_type view_type;
+            typedef syntax::strict_crlf<unsigned char> crlf;
 
-            asio::const_buffer buf = ibuffer + idx;
-            view_type in(asio::buffer_cast<const char*>(buf),
-                         asio::buffer_size(buf));
-
-            if (in.size() < 2)
+            if (rest_view.size() < 2)
                 return;
 
-            std::size_t nmatched = crlf::match(in);
+            std::size_t nmatched = crlf::match(rest_view);
 
             if (nmatched == 0) {
                 state = ERRORED;
