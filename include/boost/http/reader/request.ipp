@@ -148,7 +148,8 @@ inline void request::next()
     if (state == ERRORED)
         return;
 
-    // This is a 0-sized token. Therefore, it is handled sooner.
+    /* This is a 0-sized token. Therefore, it is handled sooner (exceptions:
+       empty field values). */
     switch (state) {
     case EXPECT_END_OF_BODY:
         state = EXPECT_END_OF_MESSAGE;
@@ -410,12 +411,6 @@ inline void request::next()
             typedef syntax::content_length<char> content_length;
 
             std::size_t nmatched = field_value::match(rest_view);
-
-            if (nmatched == 0) {
-                state = ERRORED;
-                code_ = token::code::error_invalid_data;
-                return;
-            }
 
             if (nmatched == rest_view.size())
                 return;
@@ -761,12 +756,6 @@ inline void request::next()
             typedef syntax::left_trimmed_field_value<unsigned char> field_value;
 
             std::size_t nmatched = field_value::match(rest_view);
-
-            if (nmatched == 0) {
-                state = ERRORED;
-                code_ = token::code::error_invalid_data;
-                return;
-            }
 
             if (nmatched == rest_view.size())
                 return;

@@ -79,16 +79,7 @@ TEST_CASE("from_decimal_string", "[detail]")
     out = 67;
     REQUIRE(from_decimal_string("000000000255", out) == DECSTRING_OK);
     REQUIRE(out == 255);
-
-    /* from_decimal_string is only used to parse the Content-Length header
-       field. Header fiels are never allowed to be empty. Therefore,
-       implementation can be simplified and assume empty strings are never
-       passed as argument.
-
-       Currently, the simplification initializes `out` with 0 and then proceed
-       to remove leading 0s. If there are no remaining leading 0s, function
-       returns. */
     out = 1;
-    REQUIRE(from_decimal_string("", out) == DECSTRING_OK);
-    REQUIRE(out == 0);
+    REQUIRE(from_decimal_string("", out) == DECSTRING_INVALID);
+    REQUIRE(out == 1);
 }

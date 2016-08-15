@@ -909,6 +909,7 @@ TEST_CASE("Lots of messages described declaratively and tested with varying"
                   make_skip(2),
                   make_field_name("host"),
                   make_skip(2),
+                  make_field_value(""),
                   make_error(http::token::code::error_invalid_data)
               });
     my_tester("GET / HTTP/1.1\r\n"
