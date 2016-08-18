@@ -9,18 +9,6 @@ namespace syntax {
 
 namespace detail {
 
-template<class CharT>
-bool is_vchar(CharT c)
-{
-    return c >= '\x21' && c <= '\x7E';
-}
-
-template<class CharT>
-bool is_obs_text(CharT c)
-{
-    return c >= 0x80 && c <= 0xFF;
-}
-
 /* all valid field value characters except OWS */
 template<class CharT>
 bool is_nonnull_field_value_char(CharT c)

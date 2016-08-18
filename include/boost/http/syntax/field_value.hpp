@@ -9,6 +9,8 @@
 
 #include <boost/utility/string_ref.hpp>
 #include <boost/http/syntax/detail/is_ows.hpp>
+#include <boost/http/syntax/detail/is_vchar.hpp>
+#include <boost/http/syntax/detail/is_obs_text.hpp>
 
 namespace boost {
 namespace http {
