@@ -9,6 +9,7 @@
 
 #include <boost/utility/string_ref.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/cstdint.hpp>
 
 namespace boost {
 namespace http {
@@ -19,6 +20,8 @@ struct code
     enum value
     {
         error_insufficient_data,
+        error_set_method,
+        error_use_another_connection,
         error_invalid_data,
         /* It's only an error on versions more recent than HTTP/1.0 */
         error_no_host,
@@ -105,11 +108,13 @@ struct version
 
 struct status_code
 {
+    typedef uint_least16_t type;
     static const token::code::value code = token::code::status_code;
 };
 
 struct reason_phrase
 {
+    typedef boost::string_ref type;
     static const token::code::value code = token::code::reason_phrase;
 };
 

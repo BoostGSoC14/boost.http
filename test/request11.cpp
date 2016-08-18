@@ -501,11 +501,11 @@ void my_tester(const char (&input)[N],
                     output.push_back(make_version(value));
                 }
                 break;
+            case http::token::code::error_set_method:
+            case http::token::code::error_use_another_connection:
             case http::token::code::status_code:
-                // TODO
-                break;
             case http::token::code::reason_phrase:
-                // TODO
+                BOOST_HTTP_DETAIL_UNREACHABLE("SHOULDN'T HAPPEN");
                 break;
             }
 

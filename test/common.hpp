@@ -6,6 +6,10 @@ namespace Catch {
         switch (value) {
         case boost::http::token::code::end_of_message:
             return "end_of_message";
+        case boost::http::token::code::error_set_method:
+            return "error_set_method";
+        case boost::http::token::code::error_use_another_connection:
+            return "error_use_another_connection";
         case boost::http::token::code::skip:
             return "skip";
         case boost::http::token::code::error_insufficient_data:
