@@ -547,6 +547,11 @@ inline void request::next()
                 state = EXPECT_CHUNK_SIZE;
                 break;
             case CONTENT_LENGTH_READ:
+                if (body_size == 0) {
+                    state = EXPECT_END_OF_BODY;
+                    break;
+                }
+
                 state = EXPECT_BODY;
                 break;
             default:
