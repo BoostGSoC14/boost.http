@@ -642,6 +642,12 @@ void basic_socket<Socket>
         case token::code::error_insufficient_data:
             // break of for loop completely
             continue;
+        case token::code::error_set_method:
+            BOOST_HTTP_DETAIL_UNREACHABLE("client API not implemented yet");
+            break;
+        case token::code::error_use_another_connection:
+            BOOST_HTTP_DETAIL_UNREACHABLE("client API not implemented yet");
+            break;
         case token::code::error_invalid_data:
         case token::code::error_no_host:
         case token::code::error_invalid_content_length:
