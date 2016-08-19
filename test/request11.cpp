@@ -7,6 +7,7 @@
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
+#include "common.hpp"
 #include <boost/http/reader/request.hpp>
 #include <boost/variant.hpp>
 
@@ -58,51 +59,6 @@ lambda_visitor<ReturnT, Lambdas...> make_lambda_visitor(Lambdas... lambdas)
 }
 
 // }}}
-
-namespace Catch {
-    std::string toString(http::token::code::value value) {
-        switch (value) {
-        case http::token::code::end_of_message:
-            return "end_of_message";
-        case http::token::code::skip:
-            return "skip";
-        case http::token::code::error_insufficient_data:
-            return "error_insufficient_data";
-        case http::token::code::error_invalid_data:
-            return "error_invalid_data";
-        case http::token::code::error_no_host:
-            return "error_no_host";
-        case http::token::code::error_invalid_content_length:
-            return "error_invalid_content_length";
-        case http::token::code::error_content_length_overflow:
-            return "error_content_length_overflow";
-        case http::token::code::error_invalid_transfer_encoding:
-            return "error_invalid_transfer_encoding";
-        case http::token::code::error_chunk_size_overflow:
-            return "error_chunk_size_overflow";
-        case http::token::code::field_name:
-            return "field_name";
-        case http::token::code::field_value:
-            return "field_value";
-        case http::token::code::body_chunk:
-            return "body_chunk";
-        case http::token::code::end_of_headers:
-            return "end_of_headers";
-        case http::token::code::end_of_body:
-            return "end_of_body";
-        case http::token::code::method:
-            return "method";
-        case http::token::code::request_target:
-            return "request_target";
-        case http::token::code::version:
-            return "version";
-        case http::token::code::status_code:
-            return "status_code";
-        case http::token::code::reason_phrase:
-            return "reason_phrase";
-        }
-    }
-}
 
 namespace my_token {
 
@@ -545,11 +501,11 @@ void my_tester(const char (&input)[N],
                     output.push_back(make_version(value));
                 }
                 break;
+            case http::token::code::error_set_method:
+            case http::token::code::error_use_another_connection:
             case http::token::code::status_code:
-                // TODO
-                break;
             case http::token::code::reason_phrase:
-                // TODO
+                BOOST_HTTP_DETAIL_UNREACHABLE("SHOULDN'T HAPPEN");
                 break;
             }
 
@@ -909,6 +865,7 @@ TEST_CASE("Lots of messages described declaratively and tested with varying"
                   make_skip(2),
                   make_field_name("host"),
                   make_skip(2),
+                  make_field_value(""),
                   make_error(http::token::code::error_invalid_data)
               });
     my_tester("GET / HTTP/1.1\r\n"

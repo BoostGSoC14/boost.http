@@ -19,60 +19,90 @@ inline bool is_request_target_char(unsigned char c)
 } // namespace detail
 
 inline
-request::request()
-    : body_type(NO_BODY)
-    , state(EXPECT_METHOD)
+response::response()
+    : eof(false)
+    , body_type(UNKNOWN_BODY)
+    , state(EXPECT_VERSION_STATIC_STR)
     , code_(token::code::error_insufficient_data)
     , idx(0)
     , token_size_(0)
 {}
 
-inline void request::reset()
+template<>
+uint_least16_t response::value<token::status_code>() const
 {
-    body_type = NO_BODY;
-    state = EXPECT_METHOD;
+    assert(code_ == token::status_code::code);
+    view_type view(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
+    return syntax::status_code<char>::decode(view);
+}
+
+inline
+void response::set_method(view_type method)
+{
+    assert(code_ == token::code::status_code);
+    uint_least16_t status_code = value<token::status_code>();
+    uint_least16_t code_class = status_code / 100;
+
+    if (code_class == 1 || status_code == 204 || status_code == 304
+        || method == "HEAD") {
+        body_type = FORCE_NO_BODY;
+        body_size = 0;
+        return;
+    }
+
+    if (code_class == 2 && method == "CONNECT") {
+        body_type = FORCE_NO_BODY_AND_STOP;
+        body_size = 0;
+        return;
+    }
+
+    body_type = CONNECTION_DELIMITED;
+}
+
+inline void response::reset()
+{
+    eof = false;
+    body_type = UNKNOWN_BODY;
+    state = EXPECT_VERSION_STATIC_STR;
     code_ = token::code::error_insufficient_data;
     idx = 0;
     token_size_ = 0;
     ibuffer = asio::const_buffer();
 }
 
-inline token::code::value request::code() const
+inline void response::puteof()
+{
+    eof = true;
+}
+
+inline token::code::value response::code() const
 {
     return code_;
 }
 
 inline
-request::size_type request::token_size() const
+response::size_type response::token_size() const
 {
     return token_size_;
 }
 
 template<>
-request::view_type request::value<token::method>() const
-{
-    assert(code_ == token::method::code);
-    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
-                     token_size_);
-}
-
-template<>
-request::view_type request::value<token::request_target>() const
-{
-    assert(code_ == token::request_target::code);
-    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
-                     token_size_);
-}
-
-template<>
-int request::value<token::version>() const
+int response::value<token::version>() const
 {
     assert(code_ == token::version::code);
     return *(asio::buffer_cast<const char*>(ibuffer) + idx) - '0';
 }
 
 template<>
-request::view_type request::value<token::field_name>() const
+string_ref response::value<token::reason_phrase>() const
+{
+    assert(code_ == token::reason_phrase::code);
+    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
+                     token_size_);
+}
+
+template<>
+response::view_type response::value<token::field_name>() const
 {
     assert(code_ == token::field_name::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -80,7 +110,7 @@ request::view_type request::value<token::field_name>() const
 }
 
 template<>
-request::view_type request::value<token::field_value>() const
+response::view_type response::value<token::field_value>() const
 {
     assert(code_ == token::field_value::code);
     view_type raw(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
@@ -88,22 +118,21 @@ request::view_type request::value<token::field_value>() const
 }
 
 template<>
-asio::const_buffer request::value<token::body_chunk>() const
+asio::const_buffer response::value<token::body_chunk>() const
 {
     assert(code_ == token::body_chunk::code);
     return asio::buffer(ibuffer + idx, token_size_);
 }
 
-inline token::code::value request::expected_token() const
+inline token::code::value response::expected_token() const
 {
     switch (state) {
     case ERRORED:
         return code_;
-    case EXPECT_METHOD:
-        return token::code::method;
-    case EXPECT_SP_AFTER_METHOD:
-    case EXPECT_STATIC_STR_AFTER_TARGET:
-    case EXPECT_CRLF_AFTER_VERSION:
+    case EXPECT_VERSION_STATIC_STR:
+    case EXPECT_SP_AFTER_VERSION:
+    case EXPECT_SP_AFTER_STATUS_CODE:
+    case EXPECT_CRLF_AFTER_REASON_PHRASE:
     case EXPECT_COLON:
     case EXPECT_CRLF_AFTER_HEADERS:
     case EXPECT_OWS_AFTER_COLON:
@@ -117,10 +146,12 @@ inline token::code::value request::expected_token() const
     case EXPECT_CRLF_AFTER_TRAILER_VALUE:
     case EXPECT_CRLF_AFTER_TRAILERS:
         return token::code::skip;
-    case EXPECT_REQUEST_TARGET:
-        return token::code::request_target;
     case EXPECT_VERSION:
         return token::code::version;
+    case EXPECT_STATUS_CODE:
+        return token::code::status_code;
+    case EXPECT_REASON_PHRASE:
+        return token::code::reason_phrase;
     case EXPECT_FIELD_NAME:
     case EXPECT_TRAILER_NAME:
         return token::code::field_name;
@@ -128,22 +159,25 @@ inline token::code::value request::expected_token() const
     case EXPECT_TRAILER_VALUE:
         return token::code::field_value;
     case EXPECT_BODY:
+    case EXPECT_UNSAFE_BODY:
     case EXPECT_CHUNK_DATA:
         return token::code::body_chunk;
     case EXPECT_END_OF_BODY:
         return token::code::end_of_body;
     case EXPECT_END_OF_MESSAGE:
         return token::code::end_of_message;
+    case EXPECT_END_OF_CONNECTION_ERROR:
+        return token::code::error_use_another_connection;
     }
 }
 
-inline void request::set_buffer(asio::const_buffer ibuffer)
+inline void response::set_buffer(asio::const_buffer ibuffer)
 {
     this->ibuffer = ibuffer;
     idx = 0;
 }
 
-inline void request::next()
+inline void response::next()
 {
     if (state == ERRORED)
         return;
@@ -158,11 +192,16 @@ inline void request::next()
         token_size_ = 0;
         return;
     case EXPECT_END_OF_MESSAGE:
-        body_type = NO_BODY;
-        state = EXPECT_METHOD;
+        state = (body_type == FORCE_NO_BODY_AND_STOP)
+            ? EXPECT_END_OF_CONNECTION_ERROR : EXPECT_VERSION_STATIC_STR;
+        body_type = UNKNOWN_BODY;
         code_ = token::code::end_of_message;
         idx += token_size_;
         token_size_ = 0;
+        return;
+    case EXPECT_END_OF_CONNECTION_ERROR:
+        state = ERRORED;
+        code_ = token::code::error_use_another_connection;
         return;
     default:
         break;
@@ -174,8 +213,21 @@ inline void request::next()
         code_ = token::code::error_insufficient_data;
     }
 
-    if (idx == asio::buffer_size(ibuffer))
+    if (idx == asio::buffer_size(ibuffer)) {
+        if (!eof)
+            return;
+
+        if (state != EXPECT_UNSAFE_BODY) {
+            state = ERRORED;
+            code_ = token::code::error_use_another_connection;
+            return;
+        }
+
+        state = EXPECT_END_OF_MESSAGE;
+        code_ = token::code::end_of_body;
+        token_size_ = 0;
         return;
+    }
 
     asio::const_buffer rest_buf = ibuffer + idx;
     basic_string_ref<unsigned char>
@@ -183,63 +235,9 @@ inline void request::next()
                   asio::buffer_size(rest_buf));
 
     switch (state) {
-    case EXPECT_METHOD:
+    case EXPECT_VERSION_STATIC_STR:
         {
-            size_type i = idx + token_size_;
-            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
-                unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-                if (!detail::is_tchar(c)) {
-                    if (i != idx) {
-                        state = EXPECT_SP_AFTER_METHOD;
-                        code_ = token::code::method;
-                        token_size_ = i - idx;
-                    } else {
-                        state = ERRORED;
-                        code_ = token::code::error_invalid_data;
-                    }
-                    return;
-                }
-            }
-            token_size_ = i - idx;
-            return;
-        }
-    case EXPECT_SP_AFTER_METHOD:
-        {
-            unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
-            if (detail::is_sp(c)) {
-                state = EXPECT_REQUEST_TARGET;
-                code_ = token::code::skip;
-                token_size_ = 1;
-            } else {
-                state = ERRORED;
-                code_ = token::code::error_invalid_data;
-            }
-            return;
-        }
-    case EXPECT_REQUEST_TARGET:
-        for (size_type i = idx + token_size_ ; i != asio::buffer_size(ibuffer)
-                 ; ++i) {
-            unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
-            if (!detail::is_request_target_char(c)) {
-                if (i != idx) {
-                    state = EXPECT_STATIC_STR_AFTER_TARGET;
-                    code_ = token::code::request_target;
-                    token_size_ = i - idx;
-                } else {
-                    state = ERRORED;
-                    code_ = token::code::error_invalid_data;
-                }
-                return;
-            }
-        }
-        token_size_ = asio::buffer_size(ibuffer) - idx;
-        return;
-    case EXPECT_STATIC_STR_AFTER_TARGET:
-        {
-            unsigned char skip[] = {' ', 'H', 'T', 'T', 'P', '/', '1', '.'};
+            unsigned char skip[] = {'H', 'T', 'T', 'P', '/', '1', '.'};
             size_type i = idx + token_size_;
             size_type count = std::min(asio::buffer_size(ibuffer),
                                        idx + sizeof(skip));
@@ -267,17 +265,80 @@ inline void request::next()
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
             } else {
-                state = EXPECT_CRLF_AFTER_VERSION;
+                state = EXPECT_SP_AFTER_VERSION;
                 code_ = token::code::version;
                 token_size_ = 1;
-
-                version
-                    = (value<token::version>() == 0)
-                    ? HTTP_1_0 : NOT_HTTP_1_0_AND_HOST_NOT_READ;
             }
             return;
         }
-    case EXPECT_CRLF_AFTER_VERSION:
+    case EXPECT_SP_AFTER_VERSION:
+        {
+            unsigned char c
+                = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
+            if (detail::is_sp(c)) {
+                state = EXPECT_STATUS_CODE;
+                code_ = token::code::skip;
+                token_size_ = 1;
+            } else {
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
+            }
+            return;
+        }
+    case EXPECT_STATUS_CODE:
+        {
+            typedef syntax::status_code<unsigned char> status_code;
+
+            std::size_t nmatched = status_code::match(rest_view);
+
+            if (rest_view.size() < 3)
+                return;
+
+            if (nmatched == 0) {
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
+            } else {
+                state = EXPECT_SP_AFTER_STATUS_CODE;
+                code_ = token::code::status_code;
+                token_size_ = nmatched;
+            }
+            return;
+        }
+    case EXPECT_SP_AFTER_STATUS_CODE:
+        {
+            if (body_type == UNKNOWN_BODY) {
+                state = ERRORED;
+                code_ = token::code::error_set_method;
+                return;
+            }
+
+            unsigned char c
+                = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
+            if (detail::is_sp(c)) {
+                state = EXPECT_REASON_PHRASE;
+                code_ = token::code::skip;
+                token_size_ = 1;
+            } else {
+                state = ERRORED;
+                code_ = token::code::error_invalid_data;
+            }
+            return;
+        }
+    case EXPECT_REASON_PHRASE:
+        {
+            typedef syntax::reason_phrase<unsigned char> reason_phrase;
+
+            std::size_t nmatched = reason_phrase::match(rest_view);
+
+            if (nmatched == rest_view.size())
+                return;
+
+            state = EXPECT_CRLF_AFTER_REASON_PHRASE;
+            code_ = token::code::reason_phrase;
+            token_size_ = nmatched;
+            return;
+        }
+    case EXPECT_CRLF_AFTER_REASON_PHRASE:
         {
             typedef syntax::liberal_crlf<unsigned char> crlf;
 
@@ -321,34 +382,22 @@ inline void request::next()
 
             /* The only possible values for `body_type` at this time are:
 
-               - NO_BODY
+               - CONNECTION_DELIMITED
+               - FORCE_NO_BODY
+               - FORCE_NO_BODY_AND_STOP
                - CONTENT_LENGTH_READ
                - CHUNKED_ENCODING_READ
                - RANDOM_ENCODING_READ */
             string_ref field = value<token::field_name>();
-            if (iequals(field, "Host")) {
-                /* A server MUST respond with a 400 (Bad Request) status code to
-                   any HTTP/1.1 request message that lacks a Host header field
-                   and to any request mesage that contains more than one Host
-                   header field or a Host header field with an invalid
-                   field-value (section 5.4 of RFC7230). */
-                switch (version) {
-                case HTTP_1_0:
-                    break;
-                case NOT_HTTP_1_0_AND_HOST_NOT_READ:
-                    version = NOT_HTTP_1_0_AND_HOST_READ;
-                    break;
-                case NOT_HTTP_1_0_AND_HOST_READ:
-                    state = ERRORED;
-                    code_ = token::code::error_no_host;
-                    return;
-                }
+            if (body_type == FORCE_NO_BODY
+                || body_type == FORCE_NO_BODY_AND_STOP) {
+                // Ignore field
             } else if (iequals(field, "Transfer-Encoding")) {
                 switch (body_type) {
                 case CONTENT_LENGTH_READ:
                     /* Transfer-Encoding overrides Content-Length (section 3.3.3
                        of RFC7230) */
-                case NO_BODY:
+                case CONNECTION_DELIMITED:
                 case RANDOM_ENCODING_READ:
                     body_type = READING_ENCODING;
                     break;
@@ -361,7 +410,7 @@ inline void request::next()
                 }
             } else if (iequals(field, "Content-Length")) {
                 switch (body_type) {
-                case NO_BODY:
+                case CONNECTION_DELIMITED:
                     body_type = READING_CONTENT_LENGTH;
                     break;
                 case CONTENT_LENGTH_READ:
@@ -543,23 +592,14 @@ inline void request::next()
                 return;
             }
 
-            if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ) {
-                /* A server MUST respond with a 400 (Bad Request) status code to
-                   any HTTP/1.1 request message that lacks a Host header field
-                   and to any request mesage that contains more than one Host
-                   header field or a Host header field with an invalid
-                   field-value (section 5.4 of RFC7230). */
-                state = ERRORED;
-                code_ = token::code::error_no_host;
-                return;
-            }
-
             switch (body_type) {
             case RANDOM_ENCODING_READ:
-                state = ERRORED;
-                code_ = token::code::error_invalid_transfer_encoding;
-                return;
-            case NO_BODY:
+            case CONNECTION_DELIMITED:
+                body_type = FORCE_NO_BODY_AND_STOP;
+                state = EXPECT_UNSAFE_BODY;
+                break;
+            case FORCE_NO_BODY:
+            case FORCE_NO_BODY_AND_STOP:
                 state = EXPECT_END_OF_BODY;
                 break;
             case CHUNKED_ENCODING_READ:
@@ -595,9 +635,15 @@ inline void request::next()
 
             return;
         }
+    case EXPECT_UNSAFE_BODY:
+        code_ = token::code::body_chunk;
+        token_size_ = asio::buffer_size(rest_buf);
+        return;
     case EXPECT_END_OF_BODY:
         BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
     case EXPECT_END_OF_MESSAGE:
+        BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
+    case EXPECT_END_OF_CONNECTION_ERROR:
         BOOST_HTTP_DETAIL_UNREACHABLE("This state is handled sooner");
     case EXPECT_CHUNK_SIZE:
         {
@@ -821,8 +867,8 @@ inline void request::next()
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
             } else {
-                body_type = NO_BODY;
-                state = EXPECT_METHOD;
+                body_type = UNKNOWN_BODY;
+                state = EXPECT_VERSION_STATIC_STR;
                 code_ = token::code::end_of_message;
                 token_size_ = nmatched;
             }

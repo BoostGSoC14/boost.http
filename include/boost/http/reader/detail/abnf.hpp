@@ -71,17 +71,6 @@ inline bool is_ows(unsigned char c)
     }
 }
 
-/* all valid field value characters except OWS */
-inline bool is_nonnull_field_value_char(unsigned char c)
-{
-    return is_vchar(c) || is_obs_text(c);
-}
-
-inline bool is_field_value_char(unsigned char c)
-{
-    return is_nonnull_field_value_char(c) || is_ows(c);
-}
-
 inline bool is_chunk_ext_char(unsigned char c)
 {
     switch (c) {

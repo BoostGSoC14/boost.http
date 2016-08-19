@@ -27,6 +27,7 @@ enable_testing()
 
 set(tests
   "request"
+  "response"
   "chunk_size"
   "content_length"
 )

@@ -12,6 +12,9 @@ template<class Target>
 typename content_length<CharT>::result
 content_length<CharT>::decode(view_type in, Target &out)
 {
+    if (in.size() == 0)
+        return result::invalid;
+
     out = 0;
 
     while (in.size() && in[0] == '0')

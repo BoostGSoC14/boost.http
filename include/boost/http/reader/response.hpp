@@ -4,8 +4,8 @@
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
 
 
-#ifndef BOOST_HTTP_READER_REQUEST_HPP
-#define BOOST_HTTP_READER_REQUEST_HPP
+#ifndef BOOST_HTTP_READER_RESPONSE_HPP
+#define BOOST_HTTP_READER_RESPONSE_HPP
 
 // private
 
@@ -20,6 +20,8 @@
 #include <boost/http/syntax/ows.hpp>
 #include <boost/http/syntax/field_name.hpp>
 #include <boost/http/syntax/field_value.hpp>
+#include <boost/http/syntax/status_code.hpp>
+#include <boost/http/syntax/reason_phrase.hpp>
 #include <boost/http/detail/macros.hpp>
 #include <boost/http/reader/detail/transfer_encoding.hpp>
 #include <boost/http/reader/detail/abnf.hpp>
@@ -33,7 +35,7 @@ namespace boost {
 namespace http {
 namespace reader {
 
-class request
+class response
 {
 public:
     // types
@@ -42,9 +44,15 @@ public:
     typedef value_type *pointer;
     typedef boost::string_ref view_type;
 
-    request();
+    response();
+
+    // Must be called once token `status_code` is reached.
+    void set_method(view_type method);
 
     void reset();
+
+    // Needed for HTTP/1.0 (close of stream is end of body)
+    void puteof();
 
     // Inspect current token
     token::code::value code() const;
@@ -54,10 +62,9 @@ public:
 
     /* You can use this function if you're getting `error_insufficient_data` but
        cannot allocate more data into the buffer. You'll know which token would
-       come next and report an appropriate answer back to the client (e.g. 431
-       Request Header Fields Too Large). The `error_insufficient_data` error
-       should never happens to deliver body chunks as they're notified in
-       chunks. */
+       come next and report an appropriate answer back to the user (header too
+       large). The `error_insufficient_data` error should never happens to
+       deliver body chunks as they're notified in chunks. */
     token::code::value expected_token() const;
 
     // Consumes current element and goes to the next one
@@ -73,12 +80,13 @@ public:
 private:
     enum State {
         ERRORED,
-        EXPECT_METHOD,
-        EXPECT_SP_AFTER_METHOD,
-        EXPECT_REQUEST_TARGET,
-        EXPECT_STATIC_STR_AFTER_TARGET,
+        EXPECT_VERSION_STATIC_STR,
         EXPECT_VERSION,
-        EXPECT_CRLF_AFTER_VERSION,
+        EXPECT_SP_AFTER_VERSION,
+        EXPECT_STATUS_CODE,
+        EXPECT_SP_AFTER_STATUS_CODE,
+        EXPECT_REASON_PHRASE,
+        EXPECT_CRLF_AFTER_REASON_PHRASE,
         EXPECT_FIELD_NAME,
         EXPECT_COLON,
         EXPECT_OWS_AFTER_COLON,
@@ -86,8 +94,10 @@ private:
         EXPECT_CRLF_AFTER_FIELD_VALUE,
         EXPECT_CRLF_AFTER_HEADERS,
         EXPECT_BODY,
+        EXPECT_UNSAFE_BODY,
         EXPECT_END_OF_BODY,
         EXPECT_END_OF_MESSAGE,
+        EXPECT_END_OF_CONNECTION_ERROR,
         EXPECT_CHUNK_SIZE,
         EXPECT_CHUNK_EXT,
         EXPEXT_CRLF_AFTER_CHUNK_EXT,
@@ -101,17 +111,16 @@ private:
         EXPECT_CRLF_AFTER_TRAILERS
     };
 
-    enum {
-        HTTP_1_0,
-        NOT_HTTP_1_0_AND_HOST_NOT_READ,
-        NOT_HTTP_1_0_AND_HOST_READ
-    } version;
+    bool eof;
 
     // State that needs to be reset at every new request {{{
 
     enum {
         // Initial state
-        NO_BODY,
+        UNKNOWN_BODY, // Always cleared after `set_method`
+        CONNECTION_DELIMITED,
+        FORCE_NO_BODY,
+        FORCE_NO_BODY_AND_STOP,
         // Set after decoding the field value {{{
         CONTENT_LENGTH_READ,
         CHUNKED_ENCODING_READ,
@@ -151,6 +160,6 @@ private:
 } // namespace http
 } // namespace boost
 
-#include "request.ipp"
+#include "response.ipp"
 
-#endif // BOOST_HTTP_READER_REQUEST_HPP
+#endif // BOOST_HTTP_READER_RESPONSE_HPP
