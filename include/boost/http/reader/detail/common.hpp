@@ -15,7 +15,7 @@ namespace http {
 namespace reader {
 namespace detail {
 
-string_ref decode_field_value(string_ref in)
+inline string_ref decode_field_value(string_ref in)
 {
     /* The field value does not include any leading or trailing whitespace: OWS
        occurring before the first non-whitespace octet of the field value or
