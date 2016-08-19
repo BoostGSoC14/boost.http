@@ -326,9 +326,23 @@ inline void request::next()
                - CHUNKED_ENCODING_READ
                - RANDOM_ENCODING_READ */
             string_ref field = value<token::field_name>();
-            if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ
-                && iequals(field, "Host")) {
-                version = NOT_HTTP_1_0_AND_HOST_READ;
+            if (iequals(field, "Host")) {
+                /* A server MUST respond with a 400 (Bad Request) status code to
+                   any HTTP/1.1 request message that lacks a Host header field
+                   and to any request mesage that contains more than one Host
+                   header field or a Host header field with an invalid
+                   field-value (section 5.4 of RFC7230). */
+                switch (version) {
+                case HTTP_1_0:
+                    break;
+                case NOT_HTTP_1_0_AND_HOST_NOT_READ:
+                    version = NOT_HTTP_1_0_AND_HOST_READ;
+                    break;
+                case NOT_HTTP_1_0_AND_HOST_READ:
+                    state = ERRORED;
+                    code_ = token::code::error_no_host;
+                    return;
+                }
             } else if (iequals(field, "Transfer-Encoding")) {
                 switch (body_type) {
                 case CONTENT_LENGTH_READ:
@@ -530,6 +544,11 @@ inline void request::next()
             }
 
             if (version == NOT_HTTP_1_0_AND_HOST_NOT_READ) {
+                /* A server MUST respond with a 400 (Bad Request) status code to
+                   any HTTP/1.1 request message that lacks a Host header field
+                   and to any request mesage that contains more than one Host
+                   header field or a Host header field with an invalid
+                   field-value (section 5.4 of RFC7230). */
                 state = ERRORED;
                 code_ = token::code::error_no_host;
                 return;
