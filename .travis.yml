@@ -7,6 +7,9 @@ notifications:
 
 matrix:
   include:
+    - os: osx
+      env: CMAKE_COMPILER=clang++
+
     - os: linux
       env: CC=gcc-4.9 CXX=g++-4.9 BUILD_TYPE=Debug
       addons: &gcc49
@@ -52,33 +55,30 @@ matrix:
             - ubuntu-toolchain-r-test
 
     - os: linux
-      env: CC=clang-3.5 CXX=clang++-3.5 BUILD_TYPE=Debug
-      addons: &clang35
+      env: CC=clang-3.8 CXX=clang++-3.8 BUILD_TYPE=Debug
+      addons: &clang38
         apt:
           packages:
-            - clang-3.5
+            - clang-3.8
           sources:
-            - llvm-toolchain-precise-3.5
+            - llvm-toolchain-trusty-3.8
             - ubuntu-toolchain-r-test
       install:
         - sudo apt-get update -qq
         - sudo apt-get install -qq g++-4.9
 
     - os: linux
-      env: CC=clang-3.5 CXX=clang++-3.5 BUILD_TYPE=Release
-      addons: &clang35
+      env: CC=clang-3.8 CXX=clang++-3.8 BUILD_TYPE=Release
+      addons: &clang38
         apt:
           packages:
-            - clang-3.5
+            - clang-3.8
           sources:
-            - llvm-toolchain-precise-3.5
+            - llvm-toolchain-trusty-3.8
             - ubuntu-toolchain-r-test
       install:
         - sudo apt-get update -qq
         - sudo apt-get install -qq g++-4.9
-
-    - os: osx
-      env: CMAKE_COMPILER=clang++
 
 before_install:
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -qq realpath; fi
@@ -87,14 +87,18 @@ before_install:
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export BOOST_ROOT="$(realpath boost-release-master)"; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pushd "${BOOST_ROOT}"; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then chmod +x bootstrap.sh; fi
- - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./bootstrap.sh --with-libraries=container,context,coroutine,date_time,filesystem,system,test; fi
+ - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./bootstrap.sh --with-libraries=container,context,coroutine,date_time,filesystem,system; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./b2; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then popd; fi
  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
- - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew upgrade boost cmake; fi
+ - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew upgrade cmake; fi
+ - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew unlink boost; fi
+ - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install boost --with-python; fi
 
 script:
-  - mkdir build && cd build
-  - cmake -DBUILD_SHARED_LIBS=YES -DBoost_NO_SYSTEM_PATHS=ON -DBOOST_ROOT="${BOOST_ROOT}" -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=ON ..
+  - mkdir test/build && cd test/build
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then cmake -DBoost_NO_SYSTEM_PATHS=ON -DBOOST_ROOT="${BOOST_ROOT}" -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..; fi
   - export CTEST_OUTPUT_ON_FAILURE=TRUE
-  - make && ctest
+  - travis_wait 45 make
+  - ctest
