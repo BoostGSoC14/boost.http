@@ -1,5 +1,4 @@
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
+#include "unit_test.hpp"
 
 #include <iostream>
 
@@ -229,10 +228,12 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(method, path, message, yield);
 
-                BOOST_REQUIRE((socket.read_state()
-                               == http::read_state::message_ready)
-                              || (socket.read_state()
-                                  == http::read_state::empty));
+                {
+                    bool cond = (socket.read_state()
+                                 == http::read_state::message_ready)
+                        || (socket.read_state() == http::read_state::empty);
+                    BOOST_REQUIRE(cond);
+                }
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(message));
                 BOOST_CHECK(method == "POST");
@@ -471,10 +472,12 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(method, path, message, yield);
 
-                BOOST_REQUIRE((socket.read_state()
-                               == http::read_state::message_ready)
-                              || (socket.read_state()
-                                  == http::read_state::empty));
+                {
+                    bool cond = (socket.read_state()
+                                 == http::read_state::message_ready)
+                        || (socket.read_state() == http::read_state::empty);
+                    BOOST_REQUIRE(cond);
+                }
                 BOOST_CHECK(socket.write_response_native_stream());
 
                 BOOST_CHECK(http::request_continue_required(message));
@@ -658,12 +661,13 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(method, path, message, yield);
 
-                BOOST_REQUIRE((socket.read_state()
-                               == http::read_state::message_ready)
-                              || (socket.read_state()
-                                  == http::read_state::body_ready)
-                              || (socket.read_state()
-                                  == http::read_state::empty));
+                {
+                    bool cond = (socket.read_state()
+                                 == http::read_state::message_ready)
+                        || (socket.read_state() == http::read_state::body_ready)
+                        || (socket.read_state() == http::read_state::empty);
+                    BOOST_REQUIRE(cond);
+                }
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(message));
                 BOOST_CHECK(method == "POST");
@@ -746,12 +750,13 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(method, path, message, yield);
 
-                BOOST_REQUIRE((socket.read_state()
-                               == http::read_state::message_ready)
-                              || (socket.read_state()
-                                  == http::read_state::body_ready)
-                              || (socket.read_state()
-                                  == http::read_state::empty));
+                {
+                    bool cond = (socket.read_state()
+                                 == http::read_state::message_ready)
+                        || (socket.read_state() == http::read_state::body_ready)
+                        || (socket.read_state() == http::read_state::empty);
+                    BOOST_REQUIRE(cond);
+                }
                 BOOST_CHECK(socket.write_response_native_stream());
 
                 BOOST_CHECK(http::request_continue_required(message));
@@ -839,12 +844,13 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(method, path, message, yield);
 
-                BOOST_REQUIRE((socket.read_state()
-                               == http::read_state::message_ready)
-                              || (socket.read_state()
-                                  == http::read_state::body_ready)
-                              || (socket.read_state()
-                                  == http::read_state::empty));
+                {
+                    bool cond = (socket.read_state()
+                                 == http::read_state::message_ready)
+                        || (socket.read_state() == http::read_state::body_ready)
+                        || (socket.read_state() == http::read_state::empty);
+                    BOOST_REQUIRE(cond);
+                }
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(message));
                 BOOST_CHECK(method == "POST");
@@ -1285,10 +1291,12 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(method, path, message, yield);
 
-                BOOST_REQUIRE((socket.read_state()
-                               == http::read_state::message_ready)
-                              || (socket.read_state()
-                                  == http::read_state::empty));
+                {
+                    bool cond = (socket.read_state()
+                                 == http::read_state::message_ready)
+                        || (socket.read_state() == http::read_state::empty);
+                    BOOST_REQUIRE(cond);
+                }
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(message));
                 BOOST_CHECK(http::request_upgrade_desired(message));

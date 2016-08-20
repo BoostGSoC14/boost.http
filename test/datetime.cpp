@@ -1,5 +1,4 @@
-#define BOOST_TEST_MAIN
-#include <boost/test/unit_test.hpp>
+#include "unit_test.hpp"
 
 #include <boost/utility/string_ref.hpp>
 #include <boost/http/algorithm/header.hpp>
