@@ -6,28 +6,30 @@ configuration:
   - Debug
   - Release
 
-os:
-  - Visual Studio 2015 RC
+image: Visual Studio 2015
 
 branches:
   except:
     - gh-pages
 
+environment:
+  CXXFLAGS: -DWIN32_LEAN_AND_MEAN
+
 install:
   - C:\"Program Files (x86)"\"Microsoft Visual Studio 14.0"\VC\vcvarsall.bat
-  - cinst -y cmake
+  - cinst -y cmake.portable
   - ps: (new-object net.webclient).DownloadFile('https://github.com/ned14/boost-release/archive/master.zip', 'C:\master.zip')
   - ps: Add-Type -A System.IO.Compression.FileSystem
   - ps: "[IO.Compression.ZipFile]::ExtractToDirectory('C:\\master.zip', 'C:\\')"
   - cd "C:\boost-release-master"
   - bootstrap.bat --with-toolset=msvc-14.0
-  - b2 --with-container --with-context --with-coroutine --with-date_time --with-filesystem --with-system --with-test
+  - b2 --with-container --with-context --with-coroutine --with-date_time --with-filesystem --with-system
   - cd "%APPVEYOR_BUILD_FOLDER%"
 
 build_script:
-  - md build
-  - cd build
+  - md "test\build"
+  - cd "test\build"
   - set LDFLAGS="/SAFESEH:NO"
-  - cmake -DBUILD_SHARED_LIBS=YES -G"Visual Studio 14 2015" -DBOOST_ROOT="C:/boost-release-master" -DBoost_USE_STATIC_LIBS=ON -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=ON ..
+  - cmake -G"Visual Studio 14 2015" -DBOOST_ROOT="C:/boost-release-master" -DBoost_USE_STATIC_LIBS=ON ..
   - cmake --build .
   - ctest --output-on-failure -C Debug
