@@ -26,7 +26,8 @@ enable_testing()
 
 set(tests
   "request_good"
-  "request_bad"
+  "request_bad_a"
+  "request_bad_b"
   "response"
   "chunk_size"
   "content_length"
