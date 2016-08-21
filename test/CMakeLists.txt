@@ -25,10 +25,14 @@ link_directories("${target}" ${Boost_LIBRARIES_DIRS})
 enable_testing()
 
 set(tests
-  "request"
+  "request_good"
+  "request_bad"
   "response"
   "chunk_size"
   "content_length"
+  "common"
+  "utils"
+  "request_response_common"
 )
 
 set(tests11

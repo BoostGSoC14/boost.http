@@ -1,5 +1,7 @@
 #include "catch.hpp"
 #include <boost/http/token.hpp>
+#include <vector>
+#include <boost/asio/buffer.hpp>
 
 namespace Catch {
     std::string toString(boost::http::token::code::value value) {
@@ -48,4 +50,17 @@ namespace Catch {
             return "reason_phrase";
         }
     }
+}
+
+template<std::size_t N>
+boost::asio::const_buffer my_buffer(const char (&in)[N])
+{
+    return boost::asio::buffer(in, N - 1);
+}
+
+template<std::size_t N, class CharT>
+void my_copy(std::vector<CharT> &out, std::size_t out_idx, const char (&in)[N])
+{
+    for (std::size_t i = 0 ; i != N - 1 ; ++i)
+        out[i + out_idx] = in[i];
 }
