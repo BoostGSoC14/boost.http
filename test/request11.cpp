@@ -85,10 +85,10 @@ struct error
 {
     bool operator==(const error &o) const
     {
-        return error == o.error;
+        return code == o.code;
     }
 
-    http::token::code::value error;
+    http::token::code::value code;
 };
 
 struct field_name
@@ -218,7 +218,7 @@ std::ostream& operator<<(std::ostream &os, const value &v)
                 os << "skip(size = " << v.size << ")";
             },
             [&os](const error &v) {
-                os << "error(" << Catch::toString(v.error) << ")";
+                os << "error(" << Catch::toString(v.code) << ")";
             },
             [&os](const field_name &v) {
                 os << "field_name(\"" << v.value << "\")";
@@ -274,7 +274,7 @@ my_token::value make_skip(std::size_t size)
 my_token::value make_error(http::token::code::value error)
 {
     my_token::error t;
-    t.error = error;
+    t.code = error;
     return t;
 }
 
