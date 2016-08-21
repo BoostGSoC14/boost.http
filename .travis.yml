@@ -80,6 +80,47 @@ matrix:
         - sudo apt-get update -qq
         - sudo apt-get install -qq g++-4.9
 
+#    - os: linux
+#      env: CC=clang-3.8 CXX=clang++-3.8 CXXFLAGS="-g -O1 -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2"
+#      addons: &clang38
+#        apt:
+#          packages:
+#            - clang-3.8
+#            - g++-5
+#            - libstdc++-5-dev
+#          sources:
+#            - llvm-toolchain-trusty-3.8
+#            - ubuntu-toolchain-r-test
+#      install:
+#        - sudo apt-get update -qq
+#        - sudo apt-get install -qq g++-4.9
+
+    - os: linux
+      env: CC=clang-3.8 CXX=clang++-3.8 CXXFLAGS="-g -O1 -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls" ASAN_OPTIONS=check_initialization_order=1
+      addons: &clang38
+        apt:
+          packages:
+            - clang-3.8
+          sources:
+            - llvm-toolchain-trusty-3.8
+            - ubuntu-toolchain-r-test
+      install:
+        - sudo apt-get update -qq
+        - sudo apt-get install -qq g++-4.9
+
+    - os: linux
+      env: CC=clang-3.8 CXX=clang++-3.8 CXXFLAGS="-g -O1 -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+      addons: &clang38
+        apt:
+          packages:
+            - clang-3.8
+          sources:
+            - llvm-toolchain-trusty-3.8
+            - ubuntu-toolchain-r-test
+      install:
+        - sudo apt-get update -qq
+        - sudo apt-get install -qq g++-4.9
+
 before_install:
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -qq realpath; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget https://github.com/ned14/boost-release/archive/master.zip; fi
