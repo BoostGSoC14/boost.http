@@ -3,60 +3,12 @@
 #endif
 
 #define CATCH_CONFIG_MAIN
-#include "catch.hpp"
 #include "common.hpp"
 #include <boost/http/reader/response.hpp>
 
 namespace asio = boost::asio;
 namespace http = boost::http;
 namespace reader = http::reader;
-
-template<std::size_t N>
-asio::const_buffer my_buffer(const char (&in)[N])
-{
-    return asio::buffer(in, N - 1);
-}
-
-template<std::size_t N, class CharT>
-void my_copy(std::vector<CharT> &out, std::size_t out_idx, const char (&in)[N])
-{
-    for (std::size_t i = 0 ; i != N - 1 ; ++i)
-        out[i + out_idx] = in[i];
-}
-
-TEST_CASE("Utility test functions", "[misc]")
-{
-    CHECK(asio::buffer_size(my_buffer("")) == 0);
-    CHECK(asio::buffer_size(my_buffer("Nu")) == 2);
-
-    {
-        std::vector<char> buf(10, 'c');
-        my_copy(buf, 0, "a");
-        REQUIRE(buf[0] == 'a');
-        REQUIRE(buf[1] == 'c');
-        my_copy(buf, 2, "bb");
-        REQUIRE(buf[0] == 'a');
-        REQUIRE(buf[1] == 'c');
-        REQUIRE(buf[2] == 'b');
-        REQUIRE(buf[3] == 'b');
-        REQUIRE(buf[4] == 'c');
-        my_copy(buf, 0, "");
-        REQUIRE(buf[0] == 'a');
-    }
-}
-
-TEST_CASE("Unreachable macro", "[detail]")
-{
-#define BOOST_HTTP_SPONSOR "[random string]: anarchy is coming"
-    try {
-        BOOST_HTTP_DETAIL_UNREACHABLE(BOOST_HTTP_SPONSOR);
-    } catch(const char *ex) {
-        REQUIRE(!boost::find_first(ex, BOOST_HTTP_SPONSOR).empty());
-        return;
-    }
-    throw "shouldn't happen";
-#undef BOOST_HTTP_SPONSOR
-}
 
 TEST_CASE("Parse a few pipelined non-fragmented/whole responses",
           "[parser,good]")

@@ -6,7 +6,6 @@
 #endif
 
 #define CATCH_CONFIG_MAIN
-#include "catch.hpp"
 #include "common.hpp"
 #include <boost/http/reader/request.hpp>
 #include <boost/variant.hpp>
