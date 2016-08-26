@@ -48,7 +48,7 @@ request::size_type request::token_size() const
     return token_size_;
 }
 
-template<>
+template<> inline
 request::view_type request::value<token::method>() const
 {
     assert(code_ == token::method::code);
@@ -56,7 +56,7 @@ request::view_type request::value<token::method>() const
                      token_size_);
 }
 
-template<>
+template<> inline
 request::view_type request::value<token::request_target>() const
 {
     assert(code_ == token::request_target::code);
@@ -64,14 +64,14 @@ request::view_type request::value<token::request_target>() const
                      token_size_);
 }
 
-template<>
+template<> inline
 int request::value<token::version>() const
 {
     assert(code_ == token::version::code);
     return *(asio::buffer_cast<const char*>(ibuffer) + idx) - '0';
 }
 
-template<>
+template<> inline
 request::view_type request::value<token::field_name>() const
 {
     assert(code_ == token::field_name::code);
@@ -79,7 +79,7 @@ request::view_type request::value<token::field_name>() const
                      token_size_);
 }
 
-template<>
+template<> inline
 request::view_type request::value<token::field_value>() const
 {
     assert(code_ == token::field_value::code);
@@ -87,7 +87,7 @@ request::view_type request::value<token::field_value>() const
     return detail::decode_field_value(raw);
 }
 
-template<>
+template<> inline
 asio::const_buffer request::value<token::body_chunk>() const
 {
     assert(code_ == token::body_chunk::code);
