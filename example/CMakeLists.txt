@@ -37,6 +37,11 @@ macro(add_example_target target)
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_COROUTINE_LIBRARY}
     ${Boost_CONTEXT_LIBRARY})
+
+  #additional libraries for Windows builds
+  if(MSVC OR MINGW)
+      target_link_libraries("${target}" ws2_32 mswsock)
+  endif()
 endmacro()
 
 foreach(example ${examples})
