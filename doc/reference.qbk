@@ -5,6 +5,8 @@
 All declarations from this library resides within the =boost::http=
 namespace. For brevity, this prefix is *not* repeated on the documentation.
 
+[section Summary]
+
 [heading Classes]
 
 * [^[link reference.headers headers]]
@@ -106,6 +108,8 @@ the non-overriden version) is unspecified (e.g. can change among versions and
 platforms).]]
 
 ]
+
+[endsect]
 
 [include ref/headers.qbk]
 [include ref/message.qbk]
