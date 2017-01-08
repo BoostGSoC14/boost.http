@@ -5,9 +5,7 @@
 All declarations from this library resides within the =boost::http=
 namespace. For brevity, this prefix is *not* repeated on the documentation.
 
-[section Summary]
-
-[section Classes]
+[heading Classes]
 
 * [^[link reference.headers headers]]
 * [^[link reference.message message]]
@@ -16,9 +14,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * [^[link reference.polymorphic_socket_base polymorphic_socket_base]]
 * [^[link reference.polymorphic_server_socket polymorphic_server_socket]]
 
-[endsect]
-
-[section Class Templates]
+[heading Class Templates]
 
 * [^[link reference.basic_message basic_message]]
 * [^[link reference.basic_socket basic_socket]]
@@ -32,9 +28,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * [^[link reference.is_socket is_socket]]
 * [^[link reference.is_server_socket is_server_socket]]
 
-[endsect]
-
-[section Free Functions]
+[heading Free Functions]
 
 * Header processing
   * [^[link reference.header_to_ptime header_to_ptime]]
@@ -58,32 +52,24 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
   * [^[link reference.async_response_transmit_dir
        async_response_transmit_dir]]
 
-[endsect]
-
-[section Enumerations]
+[heading Enumerations]
 
 * [^[link reference.read_state read_state]]
 * [^[link reference.write_state write_state]]
 * [^[link reference.status_code status_code]]
 
-[endsect]
-
-[section Error Codes]
+[heading Error Codes]
 
 * [^[link reference.http_errc http_errc]]
 * [^[link reference.file_server_errc file_server_errc]]
 
-[endsect]
-
-[section Type Requirements]
+[heading Type Requirements]
 
 * [^[link reference.message_concept Message]]
 * [^[link reference.socket_concept Socket]]
 * [^[link reference.server_socket_concept ServerSocket]]
 
-[endsect]
-
-[section Headers]
+[heading Headers]
 
 * [^[link reference.algorithm_header <boost/http/algorithm.hpp>]]
 * [^[link reference.header_header <boost/http/algorithm/header.hpp>]]
@@ -107,9 +93,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * [^[link reference.write_state_header <boost/http/write_state.hpp>]]
 * [^[link reference.traits_header <boost/http/traits.hpp>]]
 
-[endsect]
-
-[section Macros]
+[heading Macros]
 
 [variablelist
 
@@ -122,10 +106,6 @@ the non-overriden version) is unspecified (e.g. can change among versions and
 platforms).]]
 
 ]
-
-[endsect]
-
-[endsect]
 
 [include ref/headers.qbk]
 [include ref/message.qbk]
