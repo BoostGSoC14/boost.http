@@ -1,9 +1,0 @@
-[section:traits_header <boost/http/traits.hpp>]
-
-Import the following symbols:
-
-* [^[link reference.is_message is_message]]
-* [^[link reference.is_socket is_socket]]
-* [^[link reference.is_server_socket is_server_socket]]
-
-[endsect]

@@ -1,0 +1,7 @@
+[[polymorphic_socket_base_header]]
+==== `<boost/http/polymorphic_socket_base.hpp>`
+
+Import the following symbols:
+
+* <<basic_polymorphic_socket_base,`basic_polymorphic_socket_base`>>
+* <<polymorphic_socket_base,`polymorphic_socket_base`>>

@@ -1,0 +1,297 @@
+== Tutorial
+
+In this tutorial, you'll have a small and fast introduction to HTTP (if you're
+already familiar with HTTP, you can skip the associated section and it's more
+likely you'll deeply understand Boost.Http faster). You'll also learn
+incrementally how to build a proper handling of HTTP requests using Boost.Http.
+
+A second step would be how to organize your application and make an useful
+application, but this second step is left for the user to tackle alone.
+
+WARNING: This tutorial assumes you're already familiar with ASIO!
+
+NOTE: This tutorial will make use of coroutines, to increase readability like
+nothing else could do. You might be interested in the use of alternative
+asynchronous models to achieve lower memory usage or something else. When C++
+adds proper support for coroutines, this will not only be the most readable way,
+but also the most performant.
+
+=== HTTP
+
+HTTP is a protocol that shines in extensibility. Its `1.1` version has been used
+unchanged since 1997 and has been able to power very creative applications to
+this date. An `HTTP/2.0` standard has been released, but most of the
+differencies are related to efficient connection management and the only feature
+that can affect higher-level layers of an application making use of HTTP is the
+HTTP push, which is used to speculatively send data to a client that the server
+anticipates the client will need.
+
+HTTP also provides means to upgrade a protocol for a running connection and the
+WebSocket protocol is gaining importance where HTTP is used the most, in the
+web.
+
+HTTP is a protocol that is oriented to exchange of request and reply
+messages. Each request is independent, hence the stateless nature of the
+protocol. Each request has an associated verb and path, used to tell *what* do
+to *who*. Every HTTP message has a body (a payload of binary data) and
+associated metadata (i.e. a `multimap<string, string>`). The HTTP response also
+has a status code associated which is used to indicate success of the requested
+action.
+
+The metadata carried in every HTTP message is named as HTTP headers. The HTTP
+headers carry information on how to handle the data payload, with info such as
+the mime type, language and more. HTTP request messages can contain a token
+which is used to associate multiple different requests with the same client, so
+the user doesn't need to type username and password for every page request.
+
+GET is the most common HTTP verb and it has the simple semantic to retrieve the
+resource.
+
+If you just want to expose a bunch of files from the local filesystem, you may
+be interested in <<async_response_transmit_dir,`async_response_transmit_dir`>>,
+which will take several responsibilities from you (e.g. partial download and a
+few basic mechanisms to avoid corrupt files).
+
+The usual setup for an HTTP application is to parse the request URL and choose
+an appropriate handler based on the path component. Optional middleware handlers
+can do some ACL based on authentication, resource usage and so on. An auxiliar
+database is almost always used.
+
+=== Accepting new connections
+
+____
+Remember, the journey of a thousand miles begins with the first step.
+____
+
+First, we're going to write the boilerplate code Asio require us to write if we
+want use stackful coroutines to handle a non predetermined number of concurrent
+connections.
+
+[source,cpp]
+----
+include::tutorial1.cpp[]
+----
+
+Summarizing, we make use of `shared_ptr` to alloc object and ensure it'll stay
+alive as long as there is some reference to it and we spawn an acceptor
+algorithm who will create a `shared_ptr` for every connection.
+
+[source,cpp]
+----
+asio::ip::tcp::socket &connection::tcp_layer()
+{
+    return socket.next_layer();
+}
+----
+
+The `basic_buffered_socket<T>::next_layer()` member-function will return the
+internal T object. The `buffered_socket` typedef uses `asio::ip::tcp::socket` as
+`T`.
+
+[source,cpp]
+----
+spawn(acceptor.get_io_service(), handle_connection);
+----
+
+We spawn a new handler for every connection, so we'll be able to handle them all
+concurrently.
+
+[source,cpp]
+----
+auto self = shared_from_this();
+----
+
+We must create a reference to the `shared_ptr` before calling any asynchronous
+function to ensure the object will be live as long as the coroutine.
+
+=== Receiving requests
+
+You can find the whole code at the end of the secion. For now, we build upon the
+code from the previous code (just replace the "our code goes" here comment with
+the code we'll build in this section.
+
+[source,cpp]
+----
+while (self->socket.is_open()) {
+----
+
+So, the first thing you should do is loop while the socket is open, so the whole
+pipelining of requests will be handled. If the connection closes ungracefully,
+an error code will be generated (converted to exceptions by the coroutine
+completion token) during one of the operations. If the connection closes
+gracefully, the loop will eventually stop by `is_open()` returning `false`.
+
+[source,cpp]
+----
+self->socket.async_read_request(self->method, self->path,
+                                self->message, yield);
+----
+
+So, the first part to actually handle is to ask for the request message. You'll
+get the full method and path by the time the completion handler is called (in
+the case of coroutines, this means the next line of code). You must not touch
+any of these variables while the operation is in progress (hard to get it wrong
+if you're using coroutines). `self->message->headers()` will also be filled and
+whatever part of the body that has already been received.
+
+[source,cpp]
+----
+while (self->socket.read_state() != http::read_state::empty) {
+    // ...
+    switch (self->socket.read_state()) {
+    case http::read_state::message_ready:
+        // ...
+        self->socket.async_read_some(self->message, yield);
+        break;
+    case http::read_state::body_ready:
+        // ...
+        self->socket.async_read_trailers(self->message, yield);
+        break;
+----
+
+You can use `self->socket.read_state()` to know which part of the request is
+still missing and ask for the rest.
+
+But there is a little gotcha. You should send a `100-continue` to ask for the
+rest of the body if required. This feature appeared first in `HTTP/1.1` as a
+mean to better use network traffic, by allowing you to reject requests sooner.
+
+[source,cpp]
+----
+if (http::request_continue_required(self->message)) {
+    // ...
+    self->socket.async_write_response_continue(yield);
+}
+----
+
+This is how we check if we should send `100-continue`. It must be done after
+`async_read_request` and before `async_read_some`.
+
+By this time, we have already fully received the request and we can do something
+with it. Pretty easy, see?
+
+[source,cpp]
+----
+http::message reply;
+----
+
+The response message we're about to send.
+
+[source,cpp]
+----
+std::string body{"Hello World from \""};
+body += self->path;
+body += "\"\n";
+std::copy(body.begin(), body.end(),
+          std::back_inserter(reply.body()));
+----
+
+We feed some bytes to the body.
+
+[source,cpp]
+----
+self->socket.async_write_response(200, string_ref("OK"), reply,
+                                  yield);
+----
+
+And then we send the response. Our application is complete.
+
+TIP: Alternatively, we don't need to specify the status code and its associated
+reason phrases. The header `<boost/http/algorithm/write.hpp>` provide algorithms
+that can take care of the standard status codes.
+
+There is a gotcha here. If you use pure `asio::ip::tcp::socket`, you're subject
+to Asio composed operations restrictions and you should not schedule any
+operation while the previous one is in progress. You can wrap
+`asio::ip::tcp::socket` into some queuing socket footnote:[Like
+https://sourceforge.net/p/axiomq/code/ci/master/tree/include/axiomq/basic_queue_socket.hpp[axiomq's
+`basic_queue_socket`]] to work around this bug and Boost.Http will give you the
+required customization points to allow you to use it. We don't worry about this
+problem here, because with coroutines we're done.
+
+[source,cpp]
+----
+if (we_are_halting())
+    reply.headers().emplace("connection", "close");
+----
+
+If we're going to halt the server and want to gracefully close current
+connections, this code can be used to close the HTTP pipeline after the current
+response end. You should pay attention to safe and idempotent methods if you
+want to learn more about HTTP pipelining and HTTP in general.
+
+[source,cpp]
+----
+self->message.body().clear(); // free unused resources
+----
+
+Given we're consuming the body, it's a good idea to free unused resources. We
+don't use C++11's `shrink_to_fit` because it could trigger another reallocation
+in the next piece of body received. The idea is to reuse a small allocated
+buffer instead. You could also create your own message type to discard feeded
+bytes.
+
+[source,cpp]
+----
+acceptor.async_accept(connection->tcp_layer(), yield);
+----
+
+HTTP doesn't require to handle protocol negotiation separately from the
+remaining protocol or any super special handshaking flow. Therefore, we use a
+"naked" acceptor to fuel an usable HTTP socket. Other HTTP backends may have
+different usage.
+
+And, like I promised, here is the complete code (with a lot of print statements
+and a few lines to demonstrate more usage):
+
+[source,cpp]
+----
+include::tutorial2.cpp[]
+----
+
+=== Using chunked messages
+
+In the previous example, we used atomic messages to respond the request. But
+this is limiting when we're trying to achieve certain kind of tasks, like
+serving a live video stream. A second option for us is to use chunked messages
+to respond to request.
+
+WARNING: Chunked messages are not always available and you must check if you can
+use chunked messages for every request with the `write_response_native_stream()`
+socket member-function.
+
+If chunked messages are available, you can use the following sequence of actions
+to respond the request:
+
+. `async_write_response_metadata` once.
+. `async_write` zero or more times.
+. `async_write_trailers` or `async_write_end_of_message`, once.
+
+=== Runtime-based polymorphic abstractions
+
+If you want to create a function that will handle requests originated from
+different HTTP backends, you have three choice:
+
+* Rewrite the handler for every HTTP backend.
+* Write generic handlers.
+* Type-erase the HTTP backends.
+
+Boost.Http provide some abstractions to type erase the HTTP backends (playing a
+similar role to `std::function`). The starting point to learn about it is the
+<<server_socket_adaptor,`server_socket_adaptor` page>>.
+
+[source,cpp]
+----
+void handler(http::polymorphic_server_socket &socket)
+{
+    // ...
+}
+
+http::server_socket_adaptor<http::buffered_socket>
+    socket(acceptor.get_io_service());
+handler(socket);
+----
+
+=== Next steps
+
+Jump into <<design_choices,design choices>>.

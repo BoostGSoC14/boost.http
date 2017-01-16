@@ -1,0 +1,6 @@
+[[status_code_header]]
+==== `<boost/http/status_code.hpp>`
+
+Import the following symbol:
+
+* <<status_code,`status_code`>>

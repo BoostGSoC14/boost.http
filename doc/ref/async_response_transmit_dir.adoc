@@ -1,0 +1,181 @@
+[[async_response_transmit_dir]]
+==== `async_response_transmit_dir`
+
+[source,cpp]
+----
+#include <boost/http/file_server.hpp>
+----
+
+This function has two overloads.
+
+[source,cpp]
+----
+template<class ServerSocket, class String, class ConvertibleToPath,
+         class Message, class CompletionToken>
+typename boost::asio::async_result<
+    typename boost::asio::handler_type<CompletionToken,
+                                void(boost::system::error_code)>::type>::type
+async_response_transmit_dir(ServerSocket &socket, const String &method,
+                            const ConvertibleToPath &ipath,
+                            const Message &imessage, Message &omessage,
+                            const boost::filesystem::path &root_dir,
+                            CompletionToken &&token); // (1)
+----
+
+[source,cpp]
+----
+template<class ServerSocket, class String, class ConvertibleToPath,
+         class Message, class Predicate, class CompletionToken>
+typename asio::async_result<
+    typename boost::asio::handler_type<CompletionToken,
+                                void(boost::system::error_code)>::type>::type
+async_response_transmit_dir(ServerSocket &socket, const String &method,
+                            const ConvertibleToPath &ipath,
+                            const Message &imessage, Message &omessage,
+                            const boost::filesystem::path &root_dir,
+                            Predicate filter, CompletionToken &&token); // (2)
+----
+
+This function does a lot more than just sending bytes. It carries the
+responsibilities from <<async_response_transmit_file,
+`async_response_transmit_file`>>, but add a few more of its own:
+
+* It'll also handle the method.
+* It'll also handle the file resolution. It does so with respect to the given
+  root_dir argument.
+
+The only feature missing is mime support (`"content-type"` header). It cannot be
+done reliably within this abstraction.
+
+This function will handle even the start line and the only acceptable
+`write_state` is `empty`. It'll fail on any other `write_state`.
+
+All urls are absolute, but are absolute with respect to the given
+_root_dir_. This interface provides no means to disable this security check. If
+the user needs that much complex logic, then it should write its own path
+resolving solution and use <<async_response_transmit_file,
+`async_response_transmit_file`>>.
+
+CAUTION: This function will call the handler with
+`file_server_category::file_not_found` if the requested file, with respect to
+the given _root_dir_, cannot be found. The channel remains untouched in this
+case, giving the user the opportunity to send custom 404 messages.
+
+CAUTION: This function will call the handler with
+`file_server_category::file_type_not_supported` if resolution finishes but this
+function cannot process the result because the file is not regular (directories,
+block devices...). The channel is also left untouched, giving the user the
+opportunity to use another HTTP consumer.
+
+===== Template parameters
+
+`ServerSocket`::
+
+  Must fulfill the requirements for the <<server_socket_concept,`ServerSocket`
+  concept>>.
+
+`String`::
+
+  Must fulfill the C++ requirements for `String` (see the `std::basic_string`
+  container).
+
+`ConvertibleToPath`::
+
+  A type whose instances can be used to construct a `boost::filesystem::path`
+  object.
+
+`Message`::
+
+  Must fulfill the requirements for the <<message_concept,`Message` concept>>.
+
+`Predicate`::
+
+  A type whose instances are callable and have the following signature:
++
+[source,cpp]
+----
+bool(boost::filesystem::path &resolved_path)
+----
+
+`CompletionToken`::
+
+  Must fulfill the ASIO requirements for a completion token.
++
+The used handler signature is `void(boost::system::error_code)`.
+
+===== Parameters
+
+`ServerSocket &socket`::
+
+  The socket associated with the _imessage_ and _omessage_ that will be used for
+  the response.
+
+`const String &method`::
+
+  The request method.
++
+NOTE: Any request method is acceptable, but any method other than `"GET"` and
+`"HEAD"` will be responded with `"405 Method Not Allowed"`.
+
+`const ConvertibleToPath &ipath`::
+
+  _ipath_ (standing for input path) is the *parsed path* from the requested url.
++
+It's guaranteed that it'll only be used to construct a `boost::filesystem::path`
+object. Thus, the user can fake the requested path to force an _internal
+redirect_.
++
+WARNING: This is the input *path component*, not the input URL. Therefore, you
+MUST parse the input url before dispatching it to this function and only the
+path component must be forwarded. Extracting the path is an extra responsibility
+for the user, but it is an useful abstraction for scenarios where the user
+doesn't control the served root dir. Thanks to the security check, this
+_internal redirect_ trick doesn't work for files outside the _root_dir_.
+
+`const Message &imessage`::
+
+  The request message received.
+
+`Message &omessage`::
+
+  The message object that should be used to reply the message.
++
+The user might be interested in filling some extra headers here like
+`"content-type"` or cache policies.
+
+`const boost::filesystem::path &root_dir`::
+
+  The dir to be interpreted as the root dir of requested files.
+
+`Predicate filter`::
+
+  It is applied to the resolved path as the last step before proceeding to file
+  and network operations.
++
+If filter returns `false`, the functions finishes before touching the channel,
+with the error_code `file_server_category::filter_set`.
++
+TIP: It's possible to use a stateful non-pure _filter_ to add response headers
+and properly process mime types (content-type header).
++
+TIP: _filter_ can also be used to redirect files by modifying the input arg.
++
+NOTE: This function might throw if _filter_ throws. In this case, we provide the
+basic exception guarantee.
++
+NOTE: Available only for _overload 2_.
+
+`CompletionToken &&token`::
+
+  The token from which the handler and the return value are extracted.
++
+The extracted handler is called when the operation completes.
+
+===== Return value
+
+Extracted using _token_.
+
+===== See also
+
+* <<file_server_errc,`file_server_errc`>>
+* <<async_response_transmit_file,`async_response_transmit_file`>>

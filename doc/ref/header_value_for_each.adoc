@@ -1,0 +1,57 @@
+[[header_value_for_each]]
+==== `header_value_for_each`
+
+[source,cpp]
+----
+#include <boost/http/algorithm/header.hpp>
+----
+
+[source,cpp]
+----
+template<class StringRef, class F>
+F header_value_for_each(const StringRef &header_value, F f)
+----
+
+Apply _f_ for each element from the comma-separated list defined by the
+_header_value_ HTTP field value.
+
+NOTE: This algorithm is liberal in what it accepts and it will skip invalid
+elements. An invalid element is a sequence, possibly empty, containing no other
+character than optional white space (i.e. `'\x20'` or `'\t'`).
+
+===== Template parameters
+
+`StringRef`::
+
+  It MUST fulfill the requirements of the `StringRef` concept
+  (i.e. `boost::basic_string_ref`).
+
+`F`::
+
+  A type whose instances are callable and have the following signature:
++
+[source,cpp]
+----
+void(StringRef)
+----
+
+===== Parameters
+
+`const StringRef &header_value`::
+
+  The HTTP field value.
+
+`F f`::
+
+  The functor that will be called for the elements found on the comma-separated
+  list.
++
+Optional white space (only at the beginning and at the end) is trimmed before
+applying the element to _f_.
+
+===== Return value
+
+[source,cpp]
+----
+std::move(f)
+----

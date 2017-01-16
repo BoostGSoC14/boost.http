@@ -1,0 +1,44 @@
+[[request_continue_required]]
+==== `request_continue_required`
+
+[source,cpp]
+----
+#include <boost/http/algorithm/query.hpp>
+----
+
+[source,cpp]
+----
+template<class Message>
+bool request_continue_required(const Message &message)
+----
+
+Check if the request represented by _message_ requires a "100 (Continue)
+response" footnote:[Defined in RFC 7231, section 5.1.1.].
+
+If you can properly process and reply the message without its body, you're free
+to go. Otherwise, you should send a "100 (Continue) response" to ask for the
+message body from the HTTP client.
+
+This feature was designed to decrease network traffic, by allowing servers to
+reject sooner messages that would be discarded anyway.
+
+The name _required_ is used instead _supported_, because an action from the
+server is required.
+
+===== Template parameters
+
+`Message`::
+
+  A type fulfilling the requirements for the <<message_concept, `Message`
+  concept>>.
+
+===== Parameters
+
+`const Message &message`::
+
+  The read message.
+
+===== Return value
+
+Whether the request represented by _message_ requires a "100 (Continue)
+response".

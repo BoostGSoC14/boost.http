@@ -1,9 +1,0 @@
-[section:server_socket_adaptor_header <boost/http/server_socket_adaptor.hpp>]
-
-Import the following symbols:
-
-* [^[link reference.server_socket_adaptor server_socket_adaptor]]
-* [^[link reference.polymorphic_server_socket polymorphic_server_socket]]
-* [^[link reference.polymorphic_socket_base polymorphic_socket_base]]
-
-[endsect]

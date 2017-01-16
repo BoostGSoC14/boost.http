@@ -1,0 +1,10 @@
+[[buffered_socket_header]]
+==== `<boost/http/buffered_socket.hpp>`
+
+Import the following symbols:
+
+* <<basic_buffered_socket,`basic_buffered_socket`>>
+* <<buffered_socket,`buffered_socket`>>
+* <<read_state,`read_state`>>
+* <<write_state,`write_state`>>
+* <<http_errc,`http_errc`>>

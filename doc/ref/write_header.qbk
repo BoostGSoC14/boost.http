@@ -1,9 +1,0 @@
-[section:write_header <boost/http/algorithm/write.hpp>]
-
-Import the following symbols:
-
-* [^[link reference.async_write_response async_write_response]]
-* [^[link reference.async_write_response_metadata
-     async_write_response_metadata]]
-
-[endsect]

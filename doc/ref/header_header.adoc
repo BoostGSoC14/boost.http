@@ -1,0 +1,13 @@
+[[header_header]]
+==== `<boost/http/algorithm/header.hpp>`
+
+Import the following symbols:
+
+* <<header_to_ptime,`header_to_ptime`>>
+* <<to_http_date,`to_http_date`>>
+* <<header_value_all_of,`header_value_all_of`>>
+* <<header_value_any_of,`header_value_any_of`>>
+* <<header_value_none_of,`header_value_none_of`>>
+* <<header_value_for_each,`header_value_for_each`>>
+* <<etag_match_strong,`etag_match_strong`>>
+* <<etag_match_weak,`etag_match_weak`>>

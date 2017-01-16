@@ -1,0 +1,165 @@
+[[basic_socket]]
+==== `basic_socket`
+
+[source,cpp]
+----
+#include <boost/http/socket.hpp>
+----
+
+This template can be used to easily define classes fulfilling the strict
+<<server_socket_concept,`ServerSocket` concept>> and specializing the
+<<is_server_socket,`is_server_socket`>> trait. These classes exposes the
+`HTTP/1.1` wire format (i.e. a builtin/standalone HTTP server) into an
+easy-to-use API.
+
+The underlying I/O object is expected to have the following properties:
+
+* It is stream-oriented (i.e. no message boundaries; read or write operations
+  may transfer fewer bytes than requested...).
+* It fulfills the ASIO's `AsyncReadStream` requirement.
+* It fulfills the ASIO's `AsyncWriteStream` requirement.
+* It is backed by a reliable transport or session-layer "connection" with
+  in-order delivery of octets (i.e. any 8-bit sequence of data).
+
+[NOTE]
+--
+This class doesn't restrict the message, method, path and reason phrase types.
+Therefore, the following members are *not* defined:
+
+* `message_type`
+* `method_server_type`
+* `path_server_type`
+* `reason_phrase_server_type`
+--
+
+WARNING: The API from this class is implemented in terms of composed
+operations. As such, you MUST *NOT* initiate any async read operation while
+there is another read operation in progress and you MUST *NOT* initiate any
+async write operation while there is another write operation in progress. If you
+cannot guarantee the ordering of the operations, you should use some queueing
+socket (e.g.
+http://sourceforge.net/p/axiomq/code/ci/master/tree/include/axiomq/basic_queue_socket.hpp[
+AxioMQ's `basic_queue_socket`]).
+
+TIP: You cannot detect the lack of network inactivity properly under this
+layer. If you need to implement timeouts, you should do so under the lower
+layer.
+
+===== Template parameters
+
+`Socket`::
+
+  The underlying communication channel type. It MUST fulfill the requirements
+  for ASIO's `AsyncReadStream` and ASIO's `AsyncWriteStream`.
+
+===== Member types
+
+`typedef Socket next_layer_type`::
+
+  The type of the underlying communication channel.
+
+===== Member functions
+
+`basic_socket(boost::asio::io_service &io_service, boost::asio::mutable_buffer inbuffer)`::
+
+  Constructor. _io_service_ is passed to the constructor from the underlying
+  stream.
++
+.Exceptions:
+--
+* `std::invalid_argument`: If buffer size is zero.
+--
+
+`template<class... Args> basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args)`::
+
+  Constructor. _args_ are forwarded to the constructor from the underlying
+  stream.
++
+.Exceptions:
+--
+* `std::invalid_argument`: If buffer size is zero.
+--
+
+`next_layer_type &next_layer()`::
+
+  Returns a reference to the underlying stream.
+
+`const next_layer_type &next_layer() const`::
+
+  Returns a reference to the underlying stream.
+
+`void open()`::
+
+  Change socket state to open.
++
+NOTE: See `is_open()`
++
+WARNING: You MUST cancel current ongoing operations and wait for their
+completion handlers to be called before call this function. Otherwise, undefined
+behaviour is invoked.
+
+====== `Socket` concept
+
+See the <<socket_concept,`Socket` concept>>.
+
+* `asio::io_service& get_io_service()`
+* `bool is_open() const`
+* `read_state read_state() const`
+* `write_state write_state() const`
+* `template<class Message, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_read_some(Message &message, CompletionToken &&token)`
+* `template<class Message, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_read_trailers(Message &message, CompletionToken &&token)`
+* `template<class Message, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_write(const Message &message, CompletionToken &&token)`
+* `template<class Message, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_write_trailers(const Message &message, CompletionToken &&token)`
+* `template<class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_write_end_of_message(CompletionToken &&token)`
+
+====== `ServerSocket` concept
+
+See the <<server_socket_concept,`ServerSocket` concept>>.
+
+* `bool write_response_native_stream() const`
+* `template<class String, class Message, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_read_request(String &method, String &path, Message &message,
+                     CompletionToken &&token)`
+* `template<class StringRef, class Message, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_write_response(std::uint_fast16_t status_code,
+                       const StringRef &reason_phrase, const Message &message,
+                       CompletionToken &&token)`
+* `template<class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_write_response_continue(CompletionToken &&token)`
+* `template<class StringRef, class Message, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_write_response_metadata(std::uint_fast16_t status_code,
+                                const StringRef &reason_phrase,
+                                const Message &message,
+                                CompletionToken &&token)`

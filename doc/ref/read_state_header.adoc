@@ -1,0 +1,6 @@
+[[read_state_header]]
+==== `<boost/http/read_state.hpp>`
+
+Import the following symbol:
+
+* <<read_state,`read_state`>>

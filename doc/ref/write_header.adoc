@@ -1,0 +1,7 @@
+[[write_header]]
+==== `<boost/http/algorithm/write.hpp>`
+
+Import the following symbols:
+
+* <<async_write_response,`async_write_response`>>
+* <<async_write_response_metadata,`async_write_response_metadata`>>

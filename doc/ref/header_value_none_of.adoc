@@ -1,0 +1,56 @@
+[[header_value_none_of]]
+==== `header_value_none_of`
+
+[source,cpp]
+----
+#include <boost/http/algorithm/header.hpp>
+----
+
+[source,cpp]
+----
+template<class StringRef, class Predicate>
+bool header_value_none_of(const StringRef &header_value, const Predicate &p)
+----
+
+Checks if unary predicate _p_ returns `true` for no elements from the
+comma-separated list defined by the _header_value_ HTTP field value.
+
+NOTE: This algorithm is liberal in what it accepts and it will skip invalid
+elements. An invalid element is a sequence, possibly empty, containing no other
+character than optional white space (i.e. `'\x20'` or `'\t'`).
+
+===== Template parameters
+
+`StringRef`::
+
+  It MUST fulfill the requirements of the `StringRef` concept
+  (i.e. `boost::basic_string_ref`).
+
+`Predicate`::
+
+  A type whose instances are callable and have the following signature:
++
+[source,cpp]
+----
+bool(StringRef)
+----
+
+===== Parameters
+
+`const StringRef &header_value`::
+
+  The HTTP field value.
+
+`const Predicate &p`::
+
+  The functor predicate that will be called for the elements found on the
+  comma-separated list.
++
+Optional white space (only at the beginning and at the end) is trimmed before
+applying the element to _p_.
+
+===== Return value
+
+`true` if _p_ doesn't returns `true` for any element from the list and `false`
+otherwise. This also means that you'll get the return value `true` for empty
+lists.

@@ -1,0 +1,31 @@
+[[is_message]]
+==== `is_message`
+
+[source,cpp]
+----
+#include <boost/http/traits.hpp>
+----
+
+If `T` is an object fulfilling the <<message_concept,`Message` concept>>, this
+template inherits `std::true_type`. For any other type, this template inherits
+`std::false_type`.
+
+This template may be specialized for a user-defined type to indicate that the
+type is eligible for operations involving <<message_concept,`Message` objects>>.
+
+Initially, it was considered to create a trait that would automatically detect
+if `T` is fullfilling the <<message_concept,`Message` concept>>, but the idea
+was abandoned, because the <<message_concept,`Message` concept>> includes
+behaviour that can only be detected at runtime.
+
+===== Template parameters
+
+`T`::
+
+  The type to query.
+
+===== See also
+
+* <<message_concept,`Message` concept>>.
+* <<basic_message,`basic_message`>>.
+* <<message,`message`>>.

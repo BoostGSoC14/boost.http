@@ -1,0 +1,4 @@
+[[http_errc_header]]
+==== `<boost/http/http_errc.hpp>`
+
+Import all the symbols documented at the <<http_errc,`http_errc` page>>.

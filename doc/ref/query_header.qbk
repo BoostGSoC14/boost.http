@@ -1,8 +1,0 @@
-[section:query_header <boost/http/algorithm/query.hpp>]
-
-Import the following symbols:
-
-* [^[link reference.request_continue_required request_continue_required]]
-* [^[link reference.request_upgrade_desired request_upgrade_desired]]
-
-[endsect]

@@ -1,0 +1,55 @@
+[[request_upgrade_desired]]
+==== `request_upgrade_desired`
+
+[source,cpp]
+----
+#include <boost/http/algorithm/query.hpp>
+----
+
+[source,cpp]
+----
+template<class Message,
+         class StringRef = boost::basic_string_ref<
+             typename Message::headers_type::mapped_type::value_type>>
+bool request_upgrade_desired(const Message &message)
+----
+
+Check if the client desires to initiate a protocol upgrade.
+
+The desired protocols are present in the `"upgrade"` header as a comma-separated
+list.
+
+WARNING: You MUST *NOT* upgrade to a protocol listed in the `"upgrade"` header
+if this function returns `false`.
+
+The upgrade can always be safely ignored.
+
+The user MUST wait till the whole request is received before proceeding to the
+protocol upgrade.
+
+===== Template parameters
+
+`Message`::
+
+  A type fulfilling the requirements for the <<message_concept,`Message`
+  concept>>.
+
+`StringRef`::
+
+  A type fulfilling the requirements for the `StringRef` concept
+  (i.e. `boost::basic_string_ref`).
+
+===== Parameters
+
+`const Message &message`::
+
+  The read message.
+
+===== Return value
+
+Whether the client desires to initiate a protocol upgrade.
+
+===== See also
+
+* <<header_value_any_of,`header_value_any_of`>>
+* <<header_value_for_each,`header_value_for_each`>>

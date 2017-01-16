@@ -1,0 +1,87 @@
+[[server_socket_adaptor]]
+==== `server_socket_adaptor`
+
+[source,cpp]
+----
+#include <boost/http/server_socket_adaptor.hpp>
+----
+
+This class adapts a class fulfilling the <<server_socket_concept, `ServerSocket`
+concept>> to implement the <<basic_polymorphic_server_socket,
+`basic_polymorphic_server_socket<Message>`>> interface.
+
+This design was chosen taking a number of shortcomings in consideration.
+
+If the user can control object construction, he might benefit by less levels of
+indirection by constructing both (the HTTP socket and its runtime-based
+polymorphic adaptor) at once and at a single memory space.
+
+The scenario where the user don't control the object construction was also taken
+in consideration. In these cases, it's possible to use the
+`std::reference_wrapper` type found in the `<functional>` header. There is a
+`server_socket_adaptor` specialization that will do the job for
+`std::reference_wrapper`.
+
+Also, if the user needs to query for the specific type at runtime, the user can
+do so with a single call to `dynamic_cast` to the specific polymorphic wrapper
+(rather than calling a second function to query for the wrapped object).
+
+The design is simple to use, to learn and to read. These values were chasen to
+avoid misuse by the user's part.
+
+Although very different, the name and inspiration were borrowed from
+http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3525.pdf[N3525:
+Polymorphic Allocators].
+
+===== Template parameters
+
+`Socket`::
+
+  The type to be wrapped.
+
+`Message = message`::
+
+  The message type. Default argument is <<message,`message`>>.
+
+===== Specializations
+
+* `server_socket_adaptor<std::reference_wrapper<Socket>>`
+
+===== Member types
+
+`typedef Socket next_layer_type`::
+
+  The type of the wrapped socket.
+
+===== Member functions
+
+`template<class... Args> server_socket_adaptor(Args&&... args)`::
+
+  Constructor. `args` are forwarded to the underlying socket constructor.
++
+NOTE: Not available under the
+`server_socket_adaptor<std::reference_wrapper<Socket>>` specialization.
+
+`server_socket_adaptor(Socket &socket)`::
+
+  Constructor. `socket` is passed to the `std::reference_wrapper`
+  constructor.
++
+NOTE: Only available under the
+`server_socket_adaptor<std::reference_wrapper<Socket>>` specialization.
+
+`next_layer_type &next_layer()`::
+
+  Socket isn't exposed directly to avoid confusion over the duplication of
+  interfaces.
++
+The name socket is not used because both (the wrapped object and this object
+itself) are sockets and it would be confusing.
+
+`const next_layer_type &next_layer() const`::
+
+  Socket isn't exposed directly to avoid confusion over the duplication of
+  interfaces.
++
+The name socket is not used because both (the wrapped object and this object
+itself) are sockets and it would be confusing.

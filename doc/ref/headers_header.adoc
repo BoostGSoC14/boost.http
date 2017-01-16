@@ -1,0 +1,6 @@
+[[headers_header]]
+==== `<boost/http/headers.hpp>`
+
+Import the following symbol:
+
+* <<headers,`headers`>>

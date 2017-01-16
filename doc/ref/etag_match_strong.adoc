@@ -1,0 +1,45 @@
+[[etag_match_strong]]
+==== `etag_match_strong`
+
+[source,cpp]
+----
+#include <boost/http/algorithm/header.hpp>
+----
+
+[source,cpp]
+----
+template<class StringRef>
+bool etag_match_strong(const StringRef &a, const StringRef &b)
+----
+
+Check if _a_ and _b_ match.
+
+[NOTE]
+--
+This function doesn't pedantically check if both arguments are actual entity
+tags and you should validate at least one of the arguments yourself.
+
+Builtin validation is only done enough to protect against attacks.
+--
+
+===== Template parameters
+
+`StringRef`::
+
+  It MUST fulfill the requirements of the `StringRef` concept
+  (i.e. `boost::basic_string_ref`).
+
+===== Parameters
+
+`const StringRef &a`::
+
+  The entity tag to compare against _b_.
+
+`const StringRef &b`::
+
+  The entity tag to compare against _a_.
+
+===== Return value
+
+`true` if the entity tags match, using the strong comparison footnote:[Defined
+in RFC 7232.] or `false` otherwise.

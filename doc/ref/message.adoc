@@ -1,0 +1,24 @@
+[[message]]
+==== `message`
+
+[source,cpp]
+----
+#include <boost/http/message.hpp>
+----
+
+`message` is a simple typedef for <<basic_message,`basic_message`>>. It's
+defined as follows:
+
+[source,cpp]
+----
+typedef basic_message<headers, std::vector<std::uint8_t>> message;
+----
+
+`std::vector<std::uint8_t>` is used over `std::string`, because fits the purpose
+of the body (binary data payload container) better (no `'\0'` character
+terminator, well-defined behaviours of capacity, size and iterator invalidation,
+...).
+
+===== See also
+
+* <<headers,`headers`>>

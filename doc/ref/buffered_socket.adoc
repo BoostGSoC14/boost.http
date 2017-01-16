@@ -1,0 +1,15 @@
+[[buffered_socket]]
+==== `buffered_socket`
+
+[source,cpp]
+----
+#include <boost/http/buffered_socket.hpp>
+----
+
+`buffered_socket` is a simple typedef for <<basic_buffered_socket,
+`basic_buffered_socket`>>. It's defined as follows:
+
+[source,cpp]
+----
+typedef basic_buffered_socket<boost::asio::ip::tcp::socket> buffered_socket;
+----

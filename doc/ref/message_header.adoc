@@ -1,0 +1,8 @@
+[[message_header]]
+==== `<boost/http/message.hpp>`
+
+Import the following symbols:
+
+* <<basic_message,`basic_message`>>
+* <<message,`message`>>
+* <<headers,`headers`>>

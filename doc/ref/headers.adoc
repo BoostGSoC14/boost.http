@@ -1,0 +1,20 @@
+[[headers]]
+==== `headers`
+
+[source,cpp]
+----
+#include <boost/http/headers.hpp>
+----
+
+`headers` is a simple typedef for some unspecified multimap container.
+
+The user can safely assume that `headers::key_type` will be `std::string` and
+`headers::mapped_type` will be `std::string`. `std::string` is used because
+fulfills the requirements perfectly and is very unlikely it will ever cause any
+controversy.
+
+The user can also assume that this type fulfills the <<message_concept,Headers
+definition of message>>.
+
+NOTE: Previously, `headers` was guaranteed to be a typedef for
+`boost::container::flat_multimap`.

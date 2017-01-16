@@ -1,0 +1,45 @@
+[[header_to_ptime]]
+==== `header_to_ptime`
+
+[source,cpp]
+----
+#include <boost/http/algorithm/header.hpp>
+----
+
+[source,cpp]
+----
+template<class StringRef>
+boost::posix_time::ptime header_to_ptime(const StringRef &value)
+----
+
+Converts an _HTTP-date_ footnote:[Defined in RFC 7231, section 7.1.1.1.] field
+value into `boost::posix_time::ptime`.
+
+NOTE: Values containing extra whitespace at the beginning or at the end of
+_value_ will be rejected and no conversion will be done. This behaviour is
+intentional.
+
+===== Template parameters
+
+`StringRef`::
+
+  It MUST fulfill the requirements of the `StringRef` concept
+  (i.e. `boost::basic_string_ref`).
+
+===== Paremeters
+
+`const StringRef &value`::
+
+  An _HTTP-date_.
+
+===== Return value
+
+The converted value if _value_ is a valid _HTTP-date_ or
+`boost::posix_time::ptime(date_time::not_a_date_time)` otherwise.
+
+TIP: You can use `ptime`'s `is_not_a_date_time()` member-function to check if
+the conversion failed.
+
+===== See also
+
+* <<to_http_date,`to_http_date`>>

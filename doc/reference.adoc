@@ -1,0 +1,210 @@
+== Reference
+
+All declarations from this library resides within the `boost::http`
+namespace. For brevity, this prefix is *not* repeated on the documentation.
+
+=== Summary
+
+==== Classes
+
+* <<headers,`headers`>>
+* <<message,`message`>>
+* <<socket,`socket`>>
+* <<buffered_socket,`buffered_socket`>>
+* <<polymorphic_socket_base,`polymorphic_socket_base`>>
+* <<polymorphic_server_socket,`polymorphic_server_socket`>>
+
+==== Class Templates
+
+* <<basic_message,`basic_message`>>
+* <<basic_socket,`basic_socket`>>
+* <<basic_buffered_socket,`basic_buffered_socket`>>
+* <<basic_polymorphic_socket_base,`basic_polymorphic_socket_base`>>
+* <<basic_polymorphic_server_socket,`basic_polymorphic_server_socket`>>
+* <<server_socket_adaptor,`server_socket_adaptor`>>
+* <<is_message,`is_message`>>
+* <<is_socket,`is_socket`>>
+* <<is_server_socket,`is_server_socket`>>
+
+==== Free Functions
+
+* Header processing
+** <<header_to_ptime,`header_to_ptime`>>
+** <<to_http_date,`to_http_date`>>
+** <<header_value_all_of,`header_value_all_of`>>
+** <<header_value_any_of,`header_value_any_of`>>
+** <<header_value_none_of,`header_value_none_of`>>
+** <<header_value_for_each,`header_value_for_each`>>
+** <<etag_match_strong,`etag_match_strong`>>
+** <<etag_match_weak,`etag_match_weak`>>
+* Channel querying
+** <<request_continue_required,`request_continue_required`>>
+** <<request_upgrade_desired,`request_upgrade_desired`>>
+* Writing messages
+** <<async_write_response,`async_write_response`>>
+** <<async_write_response_metadata,`async_write_response_metadata`>>
+* File server
+** <<async_response_transmit_file,`async_response_transmit_file`>>
+** <<async_response_transmit_dir,`async_response_transmit_dir`>>
+
+==== Enumerations
+
+* <<read_state,`read_state`>>
+* <<write_state,`write_state`>>
+* <<status_code,`status_code`>>
+
+==== Error Codes
+
+* <<http_errc,`http_errc`>>
+* <<file_server_errc,`file_server_errc`>>
+
+==== Type Requirements
+
+* <<message_concept,`Message`>>
+* <<socket_concept,`Socket`>>
+* <<server_socket_concept,`ServerSocket`>>
+
+==== Headers
+
+* <<algorithm_header,`<boost/http/algorithm.hpp>`>>
+* <<header_header,`<boost/http/algorithm/header.hpp>`>>
+* <<query_header,`<boost/http/algorithm/query.hpp>`>>
+* <<write_header,`<boost/http/algorithm/write.hpp>`>>
+* <<file_server_header,`<boost/http/file_server.hpp>`>>
+* <<headers_header,`<boost/http/headers.hpp>`>>
+* <<http_category_header,`<boost/http/http_category.hpp>`>>
+* <<http_errc_header,`<boost/http/http_errc.hpp>`>>
+* <<message_header,`<boost/http/message.hpp>`>>
+* <<polymorphic_server_socket_header,
+    `<boost/http/polymorphic_server_socket.hpp>`>>
+* <<polymorphic_socket_base_header,`<boost/http/polymorphic_socket_base.hpp>`>>
+* <<read_state_header,`<boost/http/read_state.hpp>`>>
+* <<server_socket_adaptor_header,`<boost/http/server_socket_adaptor.hpp>`>>
+* <<socket_header,`<boost/http/socket.hpp>`>>
+* <<buffered_socket_header,`<boost/http/buffered_socket.hpp>`>>
+* <<status_code_header,`<boost/http/status_code.hpp>`>>
+* <<write_state_header,`<boost/http/write_state.hpp>`>>
+* <<traits_header,`<boost/http/traits.hpp>`>>
+
+==== Macros
+
+`BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE`::
+
+  This macro defines the default buffer size for
+  <<basic_buffered_socket,`basic_buffered_socket`>>. It's safe to override this
+  value (per using class or globally) and should be done before including the
+  file <<buffered_socket_header,`<boost/http/buffered_socket.hpp>`>>. The
+  default provided value (i.e. the non-overriden version) is unspecified
+  (e.g. can change among versions and platforms).
+
+=== Detailed
+
+include::ref/headers.adoc[]
+
+include::ref/message.adoc[]
+
+include::ref/socket.adoc[]
+
+include::ref/buffered_socket.adoc[]
+
+include::ref/basic_polymorphic_socket_base.adoc[]
+
+include::ref/basic_polymorphic_server_socket.adoc[]
+
+include::ref/polymorphic_socket_base.adoc[]
+
+include::ref/polymorphic_server_socket.adoc[]
+
+include::ref/basic_message.adoc[]
+
+include::ref/basic_socket.adoc[]
+
+include::ref/basic_buffered_socket.adoc[]
+
+include::ref/server_socket_adaptor.adoc[]
+
+include::ref/header_to_ptime.adoc[]
+
+include::ref/to_http_date.adoc[]
+
+include::ref/header_value_all_of.adoc[]
+
+include::ref/header_value_any_of.adoc[]
+
+include::ref/header_value_none_of.adoc[]
+
+include::ref/header_value_for_each.adoc[]
+
+include::ref/etag_match_strong.adoc[]
+
+include::ref/etag_match_weak.adoc[]
+
+include::ref/request_continue_required.adoc[]
+
+include::ref/request_upgrade_desired.adoc[]
+
+include::ref/async_write_response.adoc[]
+
+include::ref/async_write_response_metadata.adoc[]
+
+include::ref/async_response_transmit_file.adoc[]
+
+include::ref/async_response_transmit_dir.adoc[]
+
+include::ref/read_state.adoc[]
+
+include::ref/write_state.adoc[]
+
+include::ref/status_code.adoc[]
+
+include::ref/http_errc.adoc[]
+
+include::ref/file_server_errc.adoc[]
+
+include::ref/message_concept.adoc[]
+
+include::ref/socket_concept.adoc[]
+
+include::ref/server_socket_concept.adoc[]
+
+include::ref/algorithm_header.adoc[]
+
+include::ref/header_header.adoc[]
+
+include::ref/query_header.adoc[]
+
+include::ref/write_header.adoc[]
+
+include::ref/file_server_header.adoc[]
+
+include::ref/headers_header.adoc[]
+
+include::ref/http_category_header.adoc[]
+
+include::ref/http_errc_header.adoc[]
+
+include::ref/message_header.adoc[]
+
+include::ref/polymorphic_server_socket_header.adoc[]
+
+include::ref/polymorphic_socket_base_header.adoc[]
+
+include::ref/read_state_header.adoc[]
+
+include::ref/server_socket_adaptor_header.adoc[]
+
+include::ref/socket_header.adoc[]
+
+include::ref/buffered_socket_header.adoc[]
+
+include::ref/status_code_header.adoc[]
+
+include::ref/write_state_header.adoc[]
+
+include::ref/traits_header.adoc[]
+
+include::ref/is_message.adoc[]
+
+include::ref/is_socket.adoc[]
+
+include::ref/is_server_socket.adoc[]

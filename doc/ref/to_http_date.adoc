@@ -1,0 +1,42 @@
+[[to_http_date]]
+==== `to_http_date`
+
+[source,cpp]
+----
+#include <boost/http/algorithm/header.hpp>
+----
+
+[source,cpp]
+----
+template<class String>
+String to_http_date(const boost::posix_time::ptime &datetime)
+----
+
+Converts a `boost::posix_time::ptime` into the preferred string representation
+according to section 7.1.1.1 of RFC 7231 (i.e. fixed length/zone/capitalization
+subset of the format defined in section 3.3 of RFC 5322).
+
+===== Template parameters
+
+`String`::
+
+  It MUST fulfill the requirements of the `String` concept
+  (i.e. `std::basic_string`).
+
+===== Parameters
+
+`const boost::posix_time::ptime &datetime`::
+
+  The timepoint to be converted. It MUST be in UTC timezone.
+
+===== Return value
+
+The string representation in the preferred format (a.k.a. _IMF-fixdate_).
+
+===== Exceptions
+
+* `std::out_of_range`: If invalid _datetime_ is given.
+
+===== See also
+
+* <<header_to_ptime,header_to_ptime>>

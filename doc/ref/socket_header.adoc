@@ -1,0 +1,10 @@
+[[socket_header]]
+==== `<boost/http/socket.hpp>`
+
+Import the following symbols:
+
+* <<basic_socket,`basic_socket`>>
+* <<socket,`socket`>>
+* <<read_state,`read_state`>>
+* <<write_state,`write_state`>>
+* <<http_errc,`http_errc`>>

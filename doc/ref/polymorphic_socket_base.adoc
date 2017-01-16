@@ -1,0 +1,21 @@
+[[polymorphic_socket_base]]
+==== `polymorphic_socket_base`
+
+[source,cpp]
+----
+#include <boost/http/polymorphic_socket_base.hpp>
+----
+
+`polymorphic_socket_base` is a simple typedef for
+<<basic_polymorphic_socket_base,`basic_polymorphic_socket_base`>>. It's defined
+as follows:
+
+[source,cpp]
+----
+typedef basic_polymorphic_socket_base<message> polymorphic_socket_base;
+----
+
+===== See also
+
+* <<basic_polymorphic_socket_base,`basic_polymorphic_socket_base`>>
+* <<message,`message`>>

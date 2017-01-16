@@ -1,0 +1,78 @@
+[[http_errc]]
+==== `http_errc`
+
+[source,cpp]
+----
+#include <boost/http/http_errc.hpp>
+----
+
+[source,cpp]
+----
+enum class http_errc
+----
+
+This scoped enumeration defines the values for the standard error codes reported
+by HTTP message producers and consumers. They are intended to be generic and
+usable by a variety of HTTP producers.
+
+They are designed to work together <<http_errc_http_category,`http_category`>>.
+
+The traits `boost::system::is_error_code_enum` and
+`boost::system::is_error_condition_enum` are specialized to recognize
+`http_errc`.
+
+===== Member constants
+
+`out_of_order`::
+
+  Actions issued on the wrong order by the library user.
++
+Make sure to check the examples and the return value from `socket.read_state()`
+and `socket.write_state()`.
+
+`native_stream_unsupported`::
+
+  The issued action can only be used when the underlying channel supports native
+  stream, as defined in the <<socket_concept,`Socket` concept page>>.
++
+TIP: If you're using a type fulfilling the <<server_socket_concept,
+`ServerSocket` concept>>, you may be interested in the
+`write_response_native_stream()` member function.
+
+`parsing_error`::
+
+  The underlying communication channel sent an invalid message.
+
+`buffer_exhausted`::
+
+  This error should only happen if a poor parser is used.
+
+`wrong_direction`::
+
+  For flexible sockets that select the channel type upon the first use. It
+  happens if you started the socket operations behaving like an HTTP client and
+  later started to behave as an HTTP server, or vice versa, on the same channel.
+
+===== Non-member functions
+
+`boost::system::error_code make_error_code(http_errc e)`::
+
+  Creates an error code using _e_ and <<http_errc_http_category,
+  `http_category`>>.
+
+`boost::system::error_condition make_error_condition(http_errc e)`::
+
+  Creates an error codition using _e_ and <<http_errc_http_category,
+ `http_category`>>.
+
+[[http_errc_http_category]]
+===== http_category
+
+[source,cpp]
+----
+const boost::system::error_category& http_category()
+----
+
+Obtains a reference to the static error category object for HTTP errors. The
+object overrides the member function `name` to return `"http"` and overrides
+`message` to support all values from `http_errc`.

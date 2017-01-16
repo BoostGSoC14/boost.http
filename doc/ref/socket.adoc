@@ -1,0 +1,15 @@
+[[socket]]
+==== `socket`
+
+[source,cpp]
+----
+#include <boost/http/socket.hpp>
+----
+
+`socket` is a simple typedef for <<basic_socket,`basic_socket`>>. It's defined
+as follows:
+
+[source,cpp]
+----
+typedef basic_socket<boost::asio::ip::tcp::socket> socket;
+----

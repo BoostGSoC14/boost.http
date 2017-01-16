@@ -1,0 +1,5 @@
+[[http_category_header]]
+==== `<boost/http/http_category.hpp>`
+
+Import the `http_category` symbol documented at <<http_errc_http_category,
+`http_errc` page>>.

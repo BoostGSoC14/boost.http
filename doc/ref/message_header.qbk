@@ -1,9 +1,0 @@
-[section:message_header <boost/http/message.hpp>]
-
-Import the following symbols:
-
-* [^[link reference.basic_message basic_message]]
-* [^[link reference.message message]]
-* [^[link reference.headers headers]]
-
-[endsect]

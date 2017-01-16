@@ -1,0 +1,60 @@
+[[basic_message]]
+==== `basic_message`
+
+This template can be used to easily define classes fulfilling the
+<<message_concept,`Message` concept>> and specializing the
+<<is_message,`is_message`>> trait.
+
+===== Template parameters
+
+`Headers`::
+
+  The type to fulfill the `X::headers_type` from the <<message_concept,`Message`
+  concept>>.
+
+`Body`::
+
+  The type to fulfill the `X::body_type` from the <<message_concept,`Message`
+  concept>>.
+
+===== Member types
+
+`typedef Headers headers_type`::
+
+  The type to fulfill the `X::headers_type` from the <<message_concept,`Message`
+  concept>>.
+
+`typedef Body body_type`::
+
+  The type to fulfill the `X::body_type` from the <<message_concept,`Message`
+  concept>>.
+
+===== Member functions
+
+`headers_type &headers()`::
+
+  Returns the internal headers object.
+
+`const headers_type &headers() const`::
+
+  Returns the internal headers object.
+
+`body_type &body()`::
+
+  Returns the internal body object.
+
+`const body_type &body() const`::
+
+  Returns the internal body object.
+
+`headers_type &trailers()`::
+
+  Returns the internal trailers object.
+
+`const headers_type &trailers() const`::
+
+  Returns the internal trailers object.
+
+===== See also
+
+* <<message,`message`>>

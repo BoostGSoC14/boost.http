@@ -1,0 +1,21 @@
+== Using
+
+=== Requirements
+
+This library is written in {cpp11} and requires a {cpp11} supporting compiler.
+
+This library tries to reuse standard library components when possible, but this
+is not always the case. `std::error_code`, for instance, cannot be transparently
+replaced by `boost::system::error_code` within ASIO-using code.
+
+The full list of dependencies is:
+
+* CMake 3.1.0 or more recent footnote:[for tests]. It's going to be replaced
+  later.
+* Boost 1.57 or more recent.
+** algorithm, container, string_ref, ASIO, date_time and system footnote:[Used
+   in the core library.].
+** unit_test_framework footnote:[For tests.].
+** context and coroutine footnote:[For the examples and tests.].
+** filesystem footnote:[For the `file_server`.].
+** `asciidoc` footnote:[For the documentation.].

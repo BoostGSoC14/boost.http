@@ -1,0 +1,256 @@
+[[async_response_transmit_file]]
+==== `async_response_transmit_file`
+
+[source,cpp]
+----
+#include <boost/http/file_server.hpp>
+----
+
+This function has two overloads.
+
+[source,cpp]
+----
+template<class ServerSocket, class Message, class CompletionToken>
+typename boost::asio::async_result<
+    typename boost::asio::handler_type<CompletionToken,
+                                void(boost::system::error_code)>::type>::type
+async_response_transmit_file(ServerSocket &socket, const Message &imessage,
+                             Message &omessage,
+                             const boost::filesystem::path &file,
+                             CompletionToken &&token); // (1)
+----
+
+[source,cpp]
+----
+template<class ServerSocket, class Message, class CompletionToken>
+typename boost::asio::async_result<
+    typename boost::asio::handler_type<CompletionToken,
+                                void(boost::system::error_code)>::type>::type
+async_response_transmit_file(ServerSocket &socket, const Message &imessage,
+                             Message &omessage,
+                             const boost::filesystem::path &file,
+                             bool is_head_request,
+                             CompletionToken &&token); // (2)
+----
+
+This function will handle a big part of the file serving job for you, such as:
+
+* It'll interpret and process the request headers. However, it doesn't process
+  the request method nor the the input path. This means you still have to
+  guarantee the method is applicable and you're also expected to resolve the
+  input path to a valid local file path.
+* It'll fill all the applicable response headers appropriate to the request.
+* It'll interpret the file attributes to process conditional requests and
+  partial download. However, MIME detection (the `"content-type"` optional
+  header) is still left for the user to handler.
+
+Summarizing your responsibilities:
+
+* Ensure it is a `"GET"` method or a method with similar semantics before
+  calling this function. _Overload 2_ also accepts the `"HEAD"` method.
+* Resolve the input URL to the appropriate file.
+* *Optional*: MIME detection (the `"content-type"` header).
+* *Optional*: `ETag` detection (see
+   <<async_response_transmit_file_etag,below>>).
+
+A method with semantics similar to the `"GET"` method is any method fulfilling
+the following conditions:
+
+* The body data payload for the response message is compatible.
+* The following headers for the request message have the same meaning:
+** `"if-modified-since"`
+** `"if-range"`
+** `"if-unmodified-since"`
+** `"range"`
+* The following headers for the response message have the same meaning or don't
+  affect the message processing:
+** `"accept-ranges"`
+** `"content-range"`
+** `"content-type"`
+** `"date"`
+** `"last-modified"`
+* The same set of status code for the response are applicable.
+** `"200 OK"`
+** `"206 Partial Content"`
+** `"304 Not Modified"`
+** `"412 Precondition Failed"`
+** `"416 Range Not Satisfiable"`
+
+NOTE: This function will call the handler with `file_server_errc::io_error` if
+any operation on the *file stream* fails or throws an exception.
+
+NOTE: The response headers filled by this function MUST NOT be sent through
+trailers. Therefore, this function will not do any operation and it will call
+the handler with an `error_code` (`file_server_errc::write_state_not_supported`)
+set if you pass a socket for which the headers were already sent.
+
+[CAUTION]
+--
+async_response_transmit_file will make use of the streaming interface only if
+available.
+
+If you want to avoid wasting memory under HTTP/1.0 and other non-streaming
+capable channels, starting points for two solutions are:
+
+* Reject channels without a streaming interface (e.g. HTTP/1.0). RFC 2068 (a.k.a.
+  HTTP/1.1) has been available since January 1997.
+* Write a custom message type that adapts the filestream to the message concept
+  and specialize the algorithm for such message.
+--
+
+NOTE: `omessage.body()` will be used as output buffer. If
+`omessage.body().capacity() == 0`, an unspecified buffer size will be used and
+it is very likely it'll be highly inefficient.
+
+[[async_response_transmit_file_etag]]
+===== ETags
+
+An ETag is a string that identify a representation of a resource. The ETag can
+be used to perform conditional requests more robust than the ones done with
+dates (limited by HTTP to second-based precision). In the conditional request
+context, an etag is a validator.
+
+If you want to make use of the ETag implementation, just set the `"etag"` header
+in the `omessage` object to the appropriate value, as described below (also
+described in more details in RFC7232).
+
+The first decision you must do if you decide to provide an etag is if you're
+going to provide a strong validator or a weak validator.
+
+====== Strong validators
+
+A strong validator changes whenever a change occurs to the representation data
+that would be observable in the payload body. A strong validator is unique
+across all versions of all representations associated with a particular resource
+over time.
+
+A strong etag has the form (specified in Augmented Backus-Naur Form (ABNF)
+notation of [RFC5234]):
+
+----
+strong-etag = DQUOTE *etagc DQUOTE
+etagc       = %x21 / %x23-7E / obs-text
+            ; VCHAR except double quotes, plus obs-text
+obs-text    = %x80-FF
+----
+
+CAUTION: Some recipients might perform backslash unescaping. Therefore, it is a
+good practice to avoid backslash characters.
+
+Some examples:
+
+* `"xyasdzzy"`
+* `"xyz9czy"`
+* `""`
+
+NOTE: A strong validator might change for reasons other than a change to the
+representation data.
+
+NOTE: There is no implication of uniqueness across representations of different
+resources.
+
+====== Weak validators
+
+A weak validator might not change for every change to the representation data.
+
+A weak etag has the form (specified in Augmented Backus-Naur Form (ABNF)
+notation of [RFC5234]):
+
+----
+weak-etag  = weak opaque-tag
+weak       = %x57.2F ; "W/", case-sensitive
+opaque-tag = DQUOTE *etagc DQUOTE
+etagc      = %x21 / %x23-7E / obs-text
+           ; VCHAR except double quotes, plus obs-text
+obs-text   = %x80-FF
+----
+
+CAUTION: Some recipients might perform backslash unescaping. Therefore, it is a
+good practice to avoid backslash characters.
+
+Some examples:
+
+* `W/"xyasdzzy"`
+* `W/"xyz9czy"`
+* `W/""`
+
+===== Template parameters
+
+`ServerSocket`::
+
+  Must fulfill the requirements for the <<server_socket_concept,`ServerSocket
+  concept`>>.
+
+`Message`::
+
+  Must fulfill the requirements for the <<message_concept,`Message` concept>>.
++
+[CAUTION]
+--
+`Message::body_type` MUST fulfill the following extra requirements:
+
+* Its elements MUST be stored contiguously (e.g. `std::vector`).
+* It MUST support C++11 `std::vector` capicity and data semantics
+  (_vector.capacity_ and _vector.data_, respectively).
+
+These extra requirements are posed because file APIs are defined in terms of
+buffer footnote:[objects with contiguous storage of bytes.] operations.
+--
+
+`CompletionToken`::
+
+  Must fulfill the ASIO requirements for a completion token.
++
+The used handler signature is `void(boost::system::error_code)`.
+
+===== Parameters
+
+`ServerSocket &socket`::
+
+  The socket associated with the _imessage_ and _omessage_ that will be used for
+  the response.
+
+`const Message &imessage`::
+
+  The request message received.
+
+`Message &omessage`::
+
+  The message object that should be used to reply the message.
++
+The user might be interested in filling some extra headers here like
+`"content-type"` or cache policies.
+
+`const filesystem::path &file`::
+
+  The requested file that should be transmitted.
++
+CAUTION: If you cannot guarantee the _file_ did not change twice during the
+second covered by the last write time, you should remove all `"range"` and
+`"if-range"` headers from _imessage_ before calling this function. It's possible
+to construct a more robust file server by making use of system-level APIs that
+can provide unique identifiers for file revisions.
+
+`bool is_head_request`::
+
+  Whether the request was made with a `"HEAD"` method.
++
+If the received request isn't `"GET"` nor `"HEAD"`, you MAY remove all `"range"`
+and `"if-range"` headers and pass the value `false` to this argument.
++
+NOTE: Available only for _overload 2_.
+
+`CompletionToken &&token`::
+
+  The token from which the handler and the return value are extracted.
++
+The extracted handler is called when the operation completes.
+
+===== Return value
+
+Extracted using _token_.
+
+===== See also
+
+* <<file_server_errc,file_server_errc>>
+* <<async_response_transmit_dir,async_response_transmit_dir>>

@@ -1,0 +1,6 @@
+[[write_state_header]]
+==== `<boost/http/write_state.hpp>`
+
+Import the following symbol:
+
+* <<write_state,`write_state`>>
