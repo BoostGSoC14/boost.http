@@ -146,10 +146,13 @@ private:
     std::string path;
     http::message message;
 
+#define ROUTER_FUNCTION_ARGUMENTS connection*, \
+                                  asio::yield_context
+
     static
     http::basic_router<std::function<bool(const ::std::string&)>,
-                       std::function<void(connection*, asio::yield_context)>,
-                       connection*, asio::yield_context
+                       std::function<void(ROUTER_FUNCTION_ARGUMENTS)>,
+                       ROUTER_FUNCTION_ARGUMENTS
                        > router;
 
     static bool should_route(const ::std::string& /*path*/) {
@@ -164,8 +167,8 @@ private:
 using namespace std::placeholders; // for _1, _2
 
 http::basic_router<std::function<bool(const ::std::string&)>,
-                    std::function<void(connection*, asio::yield_context)>,
-                    connection*, asio::yield_context
+                    std::function<void(ROUTER_FUNCTION_ARGUMENTS)>,
+                    ROUTER_FUNCTION_ARGUMENTS
                     > connection::router =
 {
     { std::bind(&connection::should_not_route, _1), std::bind(&connection::bye_route, _1, _2) },

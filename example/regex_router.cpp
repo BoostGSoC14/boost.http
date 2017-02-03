@@ -150,9 +150,12 @@ private:
     std::string path;
     http::message message;
 
+#define ROUTER_FUNCTION_ARGUMENTS connection*, \
+                                  asio::yield_context
+
     static
-    http::regex_router<std::function<void(connection*, asio::yield_context)>,
-                       connection*, asio::yield_context
+    http::regex_router<std::function<void(ROUTER_FUNCTION_ARGUMENTS)>,
+                       ROUTER_FUNCTION_ARGUMENTS
                        > router;
 };
 
@@ -163,8 +166,8 @@ std::regex operator ""_r(const char* str, size_t len)
 
 using namespace std::placeholders; // for _1, _2
 
-http::regex_router<std::function<void(connection*, asio::yield_context)>,
-                    connection*, asio::yield_context
+http::regex_router<std::function<void(ROUTER_FUNCTION_ARGUMENTS)>,
+                    ROUTER_FUNCTION_ARGUMENTS
                   > connection::router =
 {
     { "/index.htm."_r, std::bind(&connection::index_route, _1, _2) },
