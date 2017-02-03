@@ -1,0 +1,29 @@
+[[regex_router]]
+==== `regex_router`
+
+[source,cpp]
+----
+#include <boost/http/regex_router.hpp>
+----
+
+Router based on regular expressions.  It is implemented as a vector of
+`pairs<regex,router>`.  Where `regex` is a std::regex that tests a specific path
+received by a connection, and if matches, calls the `router` function with
+an arbitary number of arguments.
+
+The `router` is an arbitary function, that must match the call to the router
+itself.  So if we call the route as `basic_router(path, arg1, arg2)` the `router`
+function will be called with `router(arg1, arg2)`.
+
+===== Template parameters
+
+`route_function_type`::
+    Functor of the route destination function.
+
+`typename... arguments`::
+    List of argument type to be passed onto the route destination function.
+
+===== See also
+
+* <<basic_router, `basic_router`>>.
+* <<filesystem_router, `filesystem_router`>>.

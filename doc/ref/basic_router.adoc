@@ -1,0 +1,37 @@
+[[basic_router]]
+==== `basic_router`
+
+[source,cpp]
+----
+#include <boost/http/basic_router.hpp>
+----
+
+Router based on simple test functions.  It is implemented as a vector of
+`pairs<test,router>`.  Where `test` is a functor that tests a specific path
+received by a connection, and if returns ture, calls the `router` function with
+an arbitary number of arguments.
+
+A `test` functor could be as simple as `bool test_path(string path) { return
+path.empty(); }`.
+
+The `router` is an arbitary function, that must match the call to the router
+itself.  So if we call the route as `basic_router(path, arg1, arg2)` the `router`
+function will be called with `router(arg1, arg2)`.
+
+===== Template parameters
+
+`unary_predicate`::
+
+  Functor that recieves `std::string path` as an argument and returns true if
+  this route should be selected.
+
+`route_function_type`::
+    Functor of the route destination function.
+
+`typename... arguments`::
+    List of argument type to be passed onto the route destination function.
+
+===== See also
+
+* <<regex_router, `regex_router`>>.
+* <<filesystem_router, `filesystem_router`>>.

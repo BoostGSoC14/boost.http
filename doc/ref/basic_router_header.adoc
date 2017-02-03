@@ -1,0 +1,6 @@
+[[basic_router_header]]
+==== `<boost/http/basic_router.hpp>`
+
+Import the following symbols:
+
+* <<basic_router,`basic_router`>>
