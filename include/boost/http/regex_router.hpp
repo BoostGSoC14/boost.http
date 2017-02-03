@@ -35,63 +35,31 @@
 namespace boost {
 namespace http {
 
-template<class RouteContext>
-class regex_router
+template<class route_function_type, typename... arguments>
+class regex_router: public std::vector<
+                                std::pair<std::regex, route_function_type>
+                            >
 {
 public:
-    typedef RouteContext conext_type;
+    regex_router(std::initializer_list<std::pair<std::regex, route_function_type>> l):
+        std::vector<std::pair<std::regex, route_function_type>>(l)
+    {}
 
-    typedef std::pair<std::regex, std::function<void(conext_type)>> route_type;
-    typedef std::vector<route_type> route_vector_type;
+    regex_router(const regex_router&) = default;
+    regex_router(regex_router&&) = default;
 
-    typename route_vector_type::iterator begin()
+    bool operator()(const ::std::string& path, arguments... params)
     {
-        return route_vector.begin();
-    }
-
-    typename route_vector_type::iterator end()
-    {
-        return route_vector.end();
-    }
-
-    typename route_vector_type::iterator
-    insert(typename route_vector_type::iterator pos, route_type route)
-    {
-        return route_vector.insert(pos, std::move(route));
-    }
-
-    typename route_vector_type::iterator
-    insert(typename route_vector_type::iterator pos,
-           std::regex route, std::function<void(conext_type)> handler)
-    {
-        insert(pos, std::make_pair(std::move(route), std::move(handler)));
-    }
-
-    void push_back(route_type route)
-    {
-        route_vector.push_back(std::move(route));
-    }
-
-    void push_back(std::regex route, std::function<void(conext_type)> handler)
-    {
-        push_back(std::make_pair(std::move(route), std::move(handler)));
-    }
-
-    bool operator()(const ::std::string& path, RouteContext context)
-    {
-        for(auto& it : route_vector)
+        for(auto& it : *this)
         {
             if (std::regex_match(path, it.first))
             {
-                it.second(context);
+                it.second(params...);
                 return true;
             }
         }
         return false;
     }
-
-private:
-    route_vector_type route_vector;
 };
 
 } // namespace http
