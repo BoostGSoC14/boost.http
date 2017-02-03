@@ -38,17 +38,13 @@ namespace boost {
 namespace http {
 
 template<class route_function_type, typename... arguments>
-class filesystem_router
+class filesystem_router: public std::vector<
+                                std::pair<::boost::filesystem::path, route_function_type>
+                            >
 {
-private:
-    ::boost::filesystem::path root_;
-    route_function_type route_;
-
 public:
-    filesystem_router(::boost::filesystem::path root,
-                      std::initializer_list<route_function_type> l):
-        std::vector<route_function_type>(l),
-        root_(root)
+    filesystem_router(std::initializer_list<std::pair<::boost::filesystem::path, route_function_type>> l):
+        std::vector<std::pair<::boost::filesystem::path, route_function_type>>(l)
     {}
 
     filesystem_router(const filesystem_router&) = default;
@@ -56,13 +52,16 @@ public:
 
     bool operator()(const ::std::string& path, arguments... params)
     {
-        auto p = root_;
-        p += path;
-
-        if (::boost::filesystem::exists(p))
+        for(auto& it : *this)
         {
-            route_(params...);
-            return true;
+            auto p = it.first;
+            p += path;
+
+            if (::boost::filesystem::exists(p))
+            {
+                it.second(params...);
+                return true;
+            }
         }
 
         return false;
