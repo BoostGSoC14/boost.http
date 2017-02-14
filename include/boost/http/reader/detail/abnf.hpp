@@ -57,7 +57,9 @@ inline bool is_vchar(unsigned char c)
 
 inline bool is_obs_text(unsigned char c)
 {
-    return c >= 0x80 && c <= 0xFF;
+    return c >= 0x80
+        // && c <= 0xFF <- This is always true for unsigned char
+        ;
 }
 
 inline bool is_ows(unsigned char c)
