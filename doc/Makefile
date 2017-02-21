@@ -1,5 +1,8 @@
 http.html: http.adoc
-	asciidoctor -d book http.adoc
+	asciidoctor http.adoc
 
-http.epub: http.adoc
-	a2x -fepub -dbook http.adoc
+http.epub: http.xml
+	pandoc -f docbook http.xml -o http.epub
+
+http.xml: http.adoc
+	asciidoctor -b docbook5 http.adoc

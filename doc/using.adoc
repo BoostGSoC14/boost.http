@@ -10,12 +10,13 @@ replaced by `boost::system::error_code` within ASIO-using code.
 
 The full list of dependencies is:
 
-* CMake 3.1.0 or more recent footnote:[for tests]. It's going to be replaced
-  later.
+* CMake 3.1.0 or more recent footnote:[for tests]. You can skip this requirement
+  if you don't intend to run the tests.
 * Boost 1.57 or more recent.
 ** algorithm, container, string_ref, ASIO, date_time and system footnote:[Used
    in the core library.].
 ** unit_test_framework footnote:[For tests.].
 ** context and coroutine footnote:[For the examples and tests.].
 ** filesystem footnote:[For the `file_server`.].
-** `asciidoc` footnote:[For the documentation.].
+* http://asciidoctor.org/[asciidoctor] footnote:[For the documentation.]. You'll
+  also need http://pandoc.org/[pandoc] if you want to generate the ePUB output.

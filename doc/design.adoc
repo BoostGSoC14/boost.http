@@ -84,15 +84,6 @@ between the statically declared routers and dynamic routers? I hope this will be
 rather polemic and will require a lot of iterations to get it right, maybe with
 a mini-review for acceptance.
 
-Why is the library not header-only?::
-
-  Besides not affecting the code you *write* at all, the library demands linkage
-  thanks to the reasons below:
-+
-* It uses Ryan Dahl's HTTP C parser, which is not header-only.
-* It uses custom error code categories, which demands static objects.
-* Code that only needs to compiled once. This will decrease build times.
-
 Why doesn't the library use a Spirit-based HTTP parser exposed to the user?::
 
   Code reuse. We might do that later.
@@ -382,8 +373,6 @@ to any friend who helped to maintain my mind at a happy state.
 * Cookies and sessions (RFC 6265).
 * WebSocket.
 * Alternative backends.
-* Expose an HTTP parser based on Boost.Spirit (maybe
-  https://github.com/felipealmeida/http-parsers[Felipe Almeida's]).
 * Increase test coverage a lot.
 * Benchmarks.
 * Compress replies.
