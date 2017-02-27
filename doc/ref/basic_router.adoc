@@ -34,4 +34,3 @@ function will be called with `router(arg1, arg2)`.
 ===== See also
 
 * <<regex_router, `regex_router`>>.
-* <<filesystem_router, `filesystem_router`>>.

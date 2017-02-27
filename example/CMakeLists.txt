@@ -24,7 +24,6 @@ set(examples
   "spawn"
   "regex_router"
   "basic_router"
-  "filesystem_router"
 )
 
 macro(add_example_target target)

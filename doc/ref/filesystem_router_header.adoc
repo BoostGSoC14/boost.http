@@ -1,6 +1,0 @@
-[[filesystem_router_header]]
-==== `<boost/http/filesystem_router.hpp>`
-
-Import the following symbols:
-
-* <<filesystem_router,`filesystem_router`>>

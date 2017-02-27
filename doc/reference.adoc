@@ -27,7 +27,6 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * <<is_server_socket,`is_server_socket`>>
 * <<basic_router, `basic_router`>>
 * <<regex_router, `regex_router`>>
-* <<filesystem_router, `filesystem_router`>>
 
 ==== Free Functions
 
@@ -90,7 +89,6 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * <<traits_header,`<boost/http/traits.hpp>`>>
 * <<basic_router_header,`<boost/http/basic_router.hpp>`>>
 * <<regex_router_header,`<boost/http/regex_router.hpp>`>>
-* <<filesystem_router_header,`<boost/http/filesystem_router.hpp>`>>
 
 ==== Macros
 
@@ -213,8 +211,6 @@ include::ref/basic_router_header.adoc[]
 
 include::ref/regex_router_header.adoc[]
 
-include::ref/filesystem_router_header.adoc[]
-
 include::ref/is_message.adoc[]
 
 include::ref/is_socket.adoc[]
@@ -224,5 +220,3 @@ include::ref/is_server_socket.adoc[]
 include::ref/basic_router.adoc[]
 
 include::ref/regex_router.adoc[]
-
-include::ref/filesystem_router.adoc[]

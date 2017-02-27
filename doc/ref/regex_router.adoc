@@ -26,4 +26,3 @@ function will be called with `router(arg1, arg2)`.
 ===== See also
 
 * <<basic_router, `basic_router`>>.
-* <<filesystem_router, `filesystem_router`>>.
