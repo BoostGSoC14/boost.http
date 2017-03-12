@@ -249,7 +249,7 @@ basic_socket<Socket>
                       (const system::error_code &ec, std::size_t) mutable {
         is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
         if (!is_open_)
-            channel.close();
+            channel.lowest_layer().close();
         handler(ec);
     });
 
@@ -496,7 +496,7 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
                       (const system::error_code &ec, std::size_t) mutable {
         is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
         if (!is_open_)
-            channel.close();
+            channel.lowest_layer().close();
         handler(ec);
     });
 
@@ -532,7 +532,7 @@ basic_socket<Socket>
                       (const system::error_code &ec, std::size_t) mutable {
         is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
         if (!is_open_)
-            channel.close();
+            channel.lowest_layer().close();
         handler(ec);
     });
 

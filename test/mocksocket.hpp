@@ -5,6 +5,8 @@
 class mock_socket
 {
 public:
+    typedef mock_socket lowest_layer_type;
+
     mock_socket(boost::asio::io_service &io_service) :
         io_service(io_service)
     {}
@@ -91,19 +93,14 @@ public:
         return result.get();
     }
 
+    lowest_layer_type& lowest_layer()
+    {
+        return *this;
+    }
+
     std::vector<std::vector<char>> input_buffer;
     std::vector<char> output_buffer;
 
 private:
     boost::asio::io_service &io_service;
 };
-
-
-
-
-
-
-
-
-
-
