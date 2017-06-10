@@ -18,6 +18,18 @@ if `T` is fullfilling the <<message_concept,`Message` concept>>, but the idea
 was abandoned, because the <<message_concept,`Message` concept>> includes
 behaviour that can only be detected at runtime.
 
+The default definition follows:
+
+[source,cpp]
+----
+template<class T>
+struct is_message
+    : public std::integral_constant<bool,
+                                    is_request_message<T>::value
+                                    || is_response_message<T>::value>
+{};
+----
+
 ===== Template parameters
 
 `T`::
@@ -27,5 +39,5 @@ behaviour that can only be detected at runtime.
 ===== See also
 
 * <<message_concept,`Message` concept>>.
-* <<basic_message,`basic_message`>>.
-* <<message,`message`>>.
+* <<is_request_message,`is_request_message`>>.
+* <<is_response_message,`is_response_message`>>.

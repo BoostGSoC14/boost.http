@@ -10,24 +10,26 @@ This function has two overloads.
 
 [source,cpp]
 ----
-template<class ServerSocket, class Message, class CompletionToken>
+template<class ServerSocket, class Request, class Response,
+         class CompletionToken>
 typename boost::asio::async_result<
     typename boost::asio::handler_type<CompletionToken,
                                 void(boost::system::error_code)>::type>::type
-async_response_transmit_file(ServerSocket &socket, const Message &imessage,
-                             Message &omessage,
+async_response_transmit_file(ServerSocket &socket, const Request &imessage,
+                             Response &omessage,
                              const boost::filesystem::path &file,
                              CompletionToken &&token); // (1)
 ----
 
 [source,cpp]
 ----
-template<class ServerSocket, class Message, class CompletionToken>
+template<class ServerSocket, class Request, class Response,
+         class CompletionToken>
 typename boost::asio::async_result<
     typename boost::asio::handler_type<CompletionToken,
                                 void(boost::system::error_code)>::type>::type
-async_response_transmit_file(ServerSocket &socket, const Message &imessage,
-                             Message &omessage,
+async_response_transmit_file(ServerSocket &socket, const Request &imessage,
+                             Response &omessage,
                              const boost::filesystem::path &file,
                              bool is_head_request,
                              CompletionToken &&token); // (2)
@@ -42,7 +44,7 @@ This function will handle a big part of the file serving job for you, such as:
 * It'll fill all the applicable response headers appropriate to the request.
 * It'll interpret the file attributes to process conditional requests and
   partial download. However, MIME detection (the `"content-type"` optional
-  header) is still left for the user to handler.
+  header) is still left for the user to handle.
 
 Summarizing your responsibilities:
 
@@ -92,8 +94,8 @@ available.
 If you want to avoid wasting memory under HTTP/1.0 and other non-streaming
 capable channels, starting points for two solutions are:
 
-* Reject channels without a streaming interface (e.g. HTTP/1.0). RFC 2068 (a.k.a.
-  HTTP/1.1) has been available since January 1997.
+* Reject channels without a streaming interface (e.g. HTTP/1.0). RFC 2068
+  (a.k.a.  HTTP/1.1) has been available since January 1997.
 * Write a custom message type that adapts the filestream to the message concept
   and specialize the algorithm for such message.
 --
@@ -107,7 +109,7 @@ it is very likely it'll be highly inefficient.
 
 An ETag is a string that identify a representation of a resource. The ETag can
 be used to perform conditional requests more robust than the ones done with
-dates (limited by HTTP to second-based precision). In the conditional request
+dates (limited by HTTP to seconds-based precision). In the conditional request
 context, an etag is a validator.
 
 If you want to make use of the ETag implementation, just set the `"etag"` header
@@ -181,13 +183,17 @@ Some examples:
   Must fulfill the requirements for the <<server_socket_concept,`ServerSocket
   concept`>>.
 
-`Message`::
+`Request`::
 
-  Must fulfill the requirements for the <<message_concept,`Message` concept>>.
+  Must fulfill the requirements for the <<request_concept,`Request` concept>>.
+
+`Response`::
+
+  Must fulfill the requirements for the <<response_concept,`Response` concept>>.
 +
 [CAUTION]
 --
-`Message::body_type` MUST fulfill the following extra requirements:
+`Response::body_type` MUST fulfill the following extra requirements:
 
 * Its elements MUST be stored contiguously (e.g. `std::vector`).
 * It MUST support C++11 `std::vector` capicity and data semantics
@@ -210,11 +216,11 @@ The used handler signature is `void(boost::system::error_code)`.
   The socket associated with the _imessage_ and _omessage_ that will be used for
   the response.
 
-`const Message &imessage`::
+`const Request &imessage`::
 
   The request message received.
 
-`Message &omessage`::
+`Response &omessage`::
 
   The message object that should be used to reply the message.
 +

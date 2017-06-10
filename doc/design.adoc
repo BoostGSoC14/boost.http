@@ -233,8 +233,8 @@ say you work at a more constrained environment where memory copying is banned,
 for instance. You could provide your HTTP backend (e.g. a non-copying embedded
 server) tied to your specific HTTP message type implementing our ideas and you
 still may benefit from this libray. This library provides some HTTP algorithms
-and some HTTP algorithms (e.g. file server) and these abstractions will save
-some time from you.
+and some HTTP handlers (e.g. file server) and these abstractions will save some
+time from you.
 
 Another difference in this library is the presence of an associated state for
 reading and writing messages. I believe this abstraction can be extended to also
@@ -285,7 +285,7 @@ support a wider range of HTTP communication channels.
 
 You create one HTTP socket for each HTTP client and should handle them all
 concurrently. In case you're using the embeddable HTTP server backend, you must
-use an acceptor to initialize the `basic_socket`s' `next_layer()` and then
+use an acceptor to initialize the ``basic_socket``s' `next_layer()` and then
 consume them. `basic_socket` templatize the underlying internal socket, so you
 can use SSL, queue wrapping socket (to work around Asio's composed operations)
 and so on. The intention of Boost.Http is not only to generalize over data
@@ -322,9 +322,6 @@ Member-functions as opposed to member-variables are used in HTTP messages,
 because some setup (e.g. a proxy who doesn't want to reformat the messages) may
 want to move the HTTP parser to the HTTP message object. I want to allow a
 library who will beat C servers in every aspect.
-
-For type safety sake, the HTTP first line (request line or response's status
-line) isn't part of the HTTP message object, as its attributes are variant.
 
 As per {rfc7230}, "a server MUST NOT apply a request to the target resource
 until the entire request header section is received, since later header fields

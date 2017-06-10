@@ -8,10 +8,10 @@
 
 [source,cpp]
 ----
-template<class Message,
+template<class Request,
          class StringRef = boost::basic_string_ref<
-             typename Message::headers_type::mapped_type::value_type>>
-bool request_upgrade_desired(const Message &message)
+             typename Request::headers_type::mapped_type::value_type>>
+bool request_upgrade_desired(const Request &request)
 ----
 
 Check if the client desires to initiate a protocol upgrade.
@@ -22,16 +22,16 @@ list.
 WARNING: You MUST *NOT* upgrade to a protocol listed in the `"upgrade"` header
 if this function returns `false`.
 
-The upgrade can always be safely ignored.
+The upgrade desire can always be safely ignored.
 
 The user MUST wait till the whole request is received before proceeding to the
 protocol upgrade.
 
 ===== Template parameters
 
-`Message`::
+`Request`::
 
-  A type fulfilling the requirements for the <<message_concept,`Message`
+  A type fulfilling the requirements for the <<request_concept,`Request`
   concept>>.
 
 `StringRef`::
@@ -41,7 +41,7 @@ protocol upgrade.
 
 ===== Parameters
 
-`const Message &message`::
+`const Request &request`::
 
   The read message.
 

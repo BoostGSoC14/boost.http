@@ -7,20 +7,30 @@
 #define BOOST_HTTP_SERVER_SOCKET_ADAPTOR_HPP
 
 #include <boost/http/polymorphic_server_socket.hpp>
+#include <boost/http/request.hpp>
+#include <boost/http/response.hpp>
 
 namespace boost {
 namespace http {
 
-template<class Socket, class Message = message>
+template<class Socket, class Request = request, class Response = response,
+         class Message = request_response_wrapper<Request, Response>>
 class server_socket_adaptor
-    : public basic_polymorphic_server_socket<Message>, private Socket
+    : public basic_polymorphic_server_socket<Request, Response, Message>
+    , private Socket
 {
 public:
     static_assert(is_server_socket<Socket>::value,
                   "Socket must fulfill the ServerSocket concept");
 
-    using typename basic_polymorphic_server_socket<Message>::message_type;
-    using typename basic_polymorphic_server_socket<Message>::callback_type;
+    using typename basic_polymorphic_server_socket<Request, Response, Message>
+        ::request_server_type;
+    using typename basic_polymorphic_server_socket<Request, Response, Message>
+        ::response_server_type;
+    using typename basic_polymorphic_server_socket<Request, Response, Message>
+        ::message_type;
+    using typename basic_polymorphic_server_socket<Request, Response, Message>
+        ::callback_type;
     typedef Socket next_layer_type;
 
     template<class... Args>
@@ -36,20 +46,15 @@ public:
     http::read_state read_state() const override;
     http::write_state write_state() const override;
     bool write_response_native_stream() const override;
-    void async_read_request(std::string &method, std::string &path,
-                            message_type &message,
+    void async_read_request(request_server_type &request,
                             callback_type handler) override;
     void async_read_some(message_type &message, callback_type handler) override;
     void async_read_trailers(message_type &message,
                              callback_type handler) override;
-    void async_write_response(std::uint_fast16_t status_code,
-                              const boost::string_ref &reason_phrase,
-                              const message_type &message,
+    void async_write_response(const response_server_type &response,
                               callback_type handler) override;
     void async_write_response_continue(callback_type handler) override;
-    void async_write_response_metadata(std::uint_fast16_t status_code,
-                                       const boost::string_ref &reason_phrase,
-                                       const message_type &message,
+    void async_write_response_metadata(const response_server_type &response,
                                        callback_type handler) override;
     void async_write(const message_type &message,
                      callback_type handler) override;
@@ -58,16 +63,23 @@ public:
     void async_write_end_of_message(callback_type handler) override;
 };
 
-template<class Socket, class Message>
-class server_socket_adaptor<std::reference_wrapper<Socket>, Message>
-    : public basic_polymorphic_server_socket<Message>
+template<class Socket, class Request, class Response, class Message>
+class server_socket_adaptor<std::reference_wrapper<Socket>, Request, Response,
+                            Message>
+    : public basic_polymorphic_server_socket<Request, Response, Message>
 {
 public:
     static_assert(is_server_socket<Socket>::value,
                   "Socket must fulfill the ServerSocket concept");
 
-    using typename basic_polymorphic_server_socket<Message>::message_type;
-    using typename basic_polymorphic_server_socket<Message>::callback_type;
+    using typename basic_polymorphic_server_socket<Request, Response, Message>
+        ::request_server_type;
+    using typename basic_polymorphic_server_socket<Request, Response, Message>
+        ::response_server_type;
+    using typename basic_polymorphic_server_socket<Request, Response, Message>
+        ::message_type;
+    using typename basic_polymorphic_server_socket<Request, Response, Message>
+        ::callback_type;
     typedef Socket next_layer_type;
 
     server_socket_adaptor(Socket &socket);
@@ -84,20 +96,15 @@ public:
     http::read_state read_state() const override;
     http::write_state write_state() const override;
     bool write_response_native_stream() const override;
-    void async_read_request(std::string &method, std::string &path,
-                            message_type &message,
+    void async_read_request(request_server_type &request,
                             callback_type handler) override;
     void async_read_some(message_type &message, callback_type handler) override;
     void async_read_trailers(message_type &message,
                              callback_type handler) override;
-    void async_write_response(std::uint_fast16_t status_code,
-                              const boost::string_ref &reason_phrase,
-                              const message_type &message,
+    void async_write_response(const response_server_type &response,
                               callback_type handler) override;
     void async_write_response_continue(callback_type handler) override;
-    void async_write_response_metadata(std::uint_fast16_t status_code,
-                                       const boost::string_ref &reason_phrase,
-                                       const message_type &message,
+    void async_write_response_metadata(const response_server_type &response,
                                        callback_type handler) override;
     void async_write(const message_type &message,
                      callback_type handler) override;

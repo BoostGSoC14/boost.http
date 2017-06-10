@@ -1,0 +1,8 @@
+[[response_header]]
+==== `<boost/http/response.hpp>`
+
+Import the following symbols:
+
+* <<basic_response,`basic_response`>>
+* <<response,`response`>>
+* <<headers,`headers`>>

@@ -1,0 +1,91 @@
+[[basic_response]]
+==== `basic_response`
+
+[source,cpp]
+----
+#include <boost/http/response.hpp>
+----
+
+This template can be used to easily define classes fulfilling the
+<<response_concept,`Response` concept>> and specializing the
+<<is_response_message,`is_response_message`>> trait.
+
+===== Template parameters
+
+`String`::
+
+  The type to fulfill the `X::string_type` from the <<response_concept,
+  `Response` concept>>.
+
+`Headers`::
+
+  The type to fulfill the `X::headers_type` from the <<response_concept,
+  `Response` concept>>.
+
+`Body`::
+
+  The type to fulfill the `X::body_type` from the <<response_concept,`Response`
+  concept>>.
+
+===== Member types
+
+`typedef String string_type`::
+
+  The type to fulfill the `X::string_type` from the <<response_concept,
+  `Response` concept>>.
+
+`typedef Headers headers_type`::
+
+  The type to fulfill the `X::headers_type` from the <<response_concept,
+  `Response` concept>>.
+
+`typedef Body body_type`::
+
+  The type to fulfill the `X::body_type` from the <<response_concept,`Response`
+  concept>>.
+
+===== Member functions
+
+`std::uint_least16_t &status_code()`::
+
+  Returns the internal status code object.
+
+`const std::uint_least16_t &status_code() const`::
+
+  Returns the internal status code object.
+
+`string_type &reason_phrase()`::
+
+  Returns the internal reason phrase object.
+
+`const string_type &reason_phrase() const`::
+
+  Returns the internal reason phrase object.
+
+`headers_type &headers()`::
+
+  Returns the internal headers object.
+
+`const headers_type &headers() const`::
+
+  Returns the internal headers object.
+
+`body_type &body()`::
+
+  Returns the internal body object.
+
+`const body_type &body() const`::
+
+  Returns the internal body object.
+
+`headers_type &trailers()`::
+
+  Returns the internal trailers object.
+
+`const headers_type &trailers() const`::
+
+  Returns the internal trailers object.
+
+===== See also
+
+* <<response,`response`>>

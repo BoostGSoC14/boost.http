@@ -1,4 +1,4 @@
-/* Copyright (c) 2014 Vinícius dos Santos Oliveira
+/* Copyright (c) 2014, 2017 Vinícius dos Santos Oliveira
 
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
@@ -12,7 +12,9 @@
 
 #include <boost/http/read_state.hpp>
 #include <boost/http/write_state.hpp>
-#include <boost/http/message.hpp>
+#include <boost/http/request.hpp>
+#include <boost/http/response.hpp>
+#include <boost/http/request_response_wrapper.hpp>
 
 namespace boost {
 namespace http {
@@ -76,7 +78,9 @@ public:
     async_write_end_of_message(CompletionToken &&token);
 };
 
-typedef basic_polymorphic_socket_base<message> polymorphic_socket_base;
+typedef basic_polymorphic_socket_base<
+    request_response_wrapper<request, response>>
+    polymorphic_socket_base;
 
 template<class Message>
 struct is_socket<basic_polymorphic_socket_base<Message>>: public std::true_type

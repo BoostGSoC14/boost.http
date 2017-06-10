@@ -1,17 +1,17 @@
-[[message]]
-==== `message`
+[[response]]
+==== `response`
 
 [source,cpp]
 ----
-#include <boost/http/message.hpp>
+#include <boost/http/response.hpp>
 ----
 
-`message` is a simple typedef for <<basic_message,`basic_message`>>. It's
+`response` is a simple typedef for <<basic_response,`basic_response`>>. It's
 defined as follows:
 
 [source,cpp]
 ----
-typedef basic_message<headers, std::vector<std::uint8_t>> message;
+typedef basic_response<std::string, headers, std::vector<std::uint8_t>> response;
 ----
 
 `std::vector<std::uint8_t>` is used over `std::string`, because fits the purpose

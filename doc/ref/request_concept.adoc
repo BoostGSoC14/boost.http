@@ -1,0 +1,66 @@
+[[request_concept]]
+==== `Request`
+
+A container able to hold HTTP request messages.
+
+===== Refinement of
+
+* <<message_concept,`Message`>>
+
+===== Notation
+
+`X`::
+
+  A type that is a model of `Request`.
+
+`String`::
+
+  A type that is a model of {cpp}'s `String`.
+
+`a`::
+
+  Object of type `X`.
+
+`ca`::
+
+  Object of type `const X`.
+
+===== Requirements
+
+[options="header"]
+|===
+|Expression|Return type|Precondition|Semantics|Postcondition
+
+|`std::is_base_of<std::true_type, http::is_request_message<X>>`|`std::true_type`| | |
+
+|`X::string_type`|`String`| | |
+
+|`a.method()`|`X::string_type&`|
+a|
+* It should be used to represent the HTTP request method.
+* Always returns a reference to the same object.
+|
+
+|`ca.method()`|`const X::string_type&`|
+a|
+* It should be used to represent the HTTP request method.
+* Always returns a reference to the same object.
+|
+
+|`a.target()`|`X::string_type&`|
+a|
+* It should be used to represent the HTTP request target.
+* Always returns a reference to the same object.
+|
+
+|`ca.target()`|`const X::string_type&`|
+a|
+* It should be used to represent the HTTP request target.
+* Always returns a reference to the same object.
+|
+|===
+
+===== Models
+
+* <<request,`request`>>
+* <<basic_request,`basic_request`>>

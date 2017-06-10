@@ -12,10 +12,13 @@ as follows:
 
 [source,cpp]
 ----
-typedef basic_polymorphic_socket_base<message> polymorphic_socket_base;
+typedef basic_polymorphic_socket_base<request_response_wrapper<request, response>>
+  polymorphic_socket_base;
 ----
 
 ===== See also
 
 * <<basic_polymorphic_socket_base,`basic_polymorphic_socket_base`>>
-* <<message,`message`>>
+* <<request,`request`>>
+* <<response,`response`>>
+* <<request_response_wrapper,`request_response_wrapper`>>

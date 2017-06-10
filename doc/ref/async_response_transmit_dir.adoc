@@ -10,28 +10,28 @@ This function has two overloads.
 
 [source,cpp]
 ----
-template<class ServerSocket, class String, class ConvertibleToPath,
-         class Message, class CompletionToken>
+template<class ServerSocket, class ConvertibleToPath, class Request,
+         class Response, class CompletionToken>
 typename boost::asio::async_result<
     typename boost::asio::handler_type<CompletionToken,
                                 void(boost::system::error_code)>::type>::type
-async_response_transmit_dir(ServerSocket &socket, const String &method,
+async_response_transmit_dir(ServerSocket &socket,
                             const ConvertibleToPath &ipath,
-                            const Message &imessage, Message &omessage,
+                            const Request &imessage, Response &omessage,
                             const boost::filesystem::path &root_dir,
                             CompletionToken &&token); // (1)
 ----
 
 [source,cpp]
 ----
-template<class ServerSocket, class String, class ConvertibleToPath,
-         class Message, class Predicate, class CompletionToken>
+template<class ServerSocket, class ConvertibleToPath, class Request,
+         class Response, class Predicate, class CompletionToken>
 typename asio::async_result<
     typename boost::asio::handler_type<CompletionToken,
                                 void(boost::system::error_code)>::type>::type
-async_response_transmit_dir(ServerSocket &socket, const String &method,
+async_response_transmit_dir(ServerSocket &socket,
                             const ConvertibleToPath &ipath,
-                            const Message &imessage, Message &omessage,
+                            const Request &imessage, Response &omessage,
                             const boost::filesystem::path &root_dir,
                             Predicate filter, CompletionToken &&token); // (2)
 ----
@@ -40,9 +40,9 @@ This function does a lot more than just sending bytes. It carries the
 responsibilities from <<async_response_transmit_file,
 `async_response_transmit_file`>>, but add a few more of its own:
 
-* It'll also handle the method.
+* It'll also handle the HTTP method.
 * It'll also handle the file resolution. It does so with respect to the given
-  root_dir argument.
+  _root_dir_ argument.
 
 The only feature missing is mime support (`"content-type"` header). It cannot be
 done reliably within this abstraction.
@@ -74,19 +74,18 @@ opportunity to use another HTTP consumer.
   Must fulfill the requirements for the <<server_socket_concept,`ServerSocket`
   concept>>.
 
-`String`::
-
-  Must fulfill the C++ requirements for `String` (see the `std::basic_string`
-  container).
-
 `ConvertibleToPath`::
 
   A type whose instances can be used to construct a `boost::filesystem::path`
   object.
 
-`Message`::
+`Request`::
 
-  Must fulfill the requirements for the <<message_concept,`Message` concept>>.
+  Must fulfill the requirements for the <<request_concept,`Request` concept>>.
+
+`Response`::
+
+  Must fulfill the requirements for the <<response_concept,`Response` concept>>.
 
 `Predicate`::
 
@@ -110,13 +109,6 @@ The used handler signature is `void(boost::system::error_code)`.
   The socket associated with the _imessage_ and _omessage_ that will be used for
   the response.
 
-`const String &method`::
-
-  The request method.
-+
-NOTE: Any request method is acceptable, but any method other than `"GET"` and
-`"HEAD"` will be responded with `"405 Method Not Allowed"`.
-
 `const ConvertibleToPath &ipath`::
 
   _ipath_ (standing for input path) is the *parsed path* from the requested url.
@@ -132,11 +124,14 @@ for the user, but it is an useful abstraction for scenarios where the user
 doesn't control the served root dir. Thanks to the security check, this
 _internal redirect_ trick doesn't work for files outside the _root_dir_.
 
-`const Message &imessage`::
+`const Request &imessage`::
 
   The request message received.
++
+NOTE: Any request method is acceptable, but any method other than `"GET"` and
+`"HEAD"` will be responded with `"405 Method Not Allowed"`.
 
-`Message &omessage`::
+`Response &omessage`::
 
   The message object that should be used to reply the message.
 +

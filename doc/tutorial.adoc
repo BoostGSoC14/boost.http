@@ -123,15 +123,14 @@ gracefully, the loop will eventually stop by `is_open()` returning `false`.
 
 [source,cpp]
 ----
-self->socket.async_read_request(self->method, self->path,
-                                self->message, yield);
+self->socket.async_read_request(self->request, yield);
 ----
 
 So, the first part to actually handle is to ask for the request message. You'll
 get the full method and path by the time the completion handler is called (in
 the case of coroutines, this means the next line of code). You must not touch
 any of these variables while the operation is in progress (hard to get it wrong
-if you're using coroutines). `self->message->headers()` will also be filled and
+if you're using coroutines). `self->request->headers()` will also be filled and
 whatever part of the body that has already been received.
 
 [source,cpp]
@@ -141,11 +140,11 @@ while (self->socket.read_state() != http::read_state::empty) {
     switch (self->socket.read_state()) {
     case http::read_state::message_ready:
         // ...
-        self->socket.async_read_some(self->message, yield);
+        self->socket.async_read_some(self->request, yield);
         break;
     case http::read_state::body_ready:
         // ...
-        self->socket.async_read_trailers(self->message, yield);
+        self->socket.async_read_trailers(self->request, yield);
         break;
 ----
 
@@ -158,7 +157,7 @@ mean to better use network traffic, by allowing you to reject requests sooner.
 
 [source,cpp]
 ----
-if (http::request_continue_required(self->message)) {
+if (http::request_continue_required(self->request)) {
     // ...
     self->socket.async_write_response_continue(yield);
 }
@@ -172,7 +171,7 @@ with it. Pretty easy, see?
 
 [source,cpp]
 ----
-http::message reply;
+http::response reply;
 ----
 
 The response message we're about to send.
@@ -180,7 +179,7 @@ The response message we're about to send.
 [source,cpp]
 ----
 std::string body{"Hello World from \""};
-body += self->path;
+body += self->request.target();
 body += "\"\n";
 std::copy(body.begin(), body.end(),
           std::back_inserter(reply.body()));
@@ -190,15 +189,12 @@ We feed some bytes to the body.
 
 [source,cpp]
 ----
-self->socket.async_write_response(200, string_ref("OK"), reply,
-                                  yield);
+reply.status_code() = 200;
+reply.reason_phrase() = "OK";
+self->socket.async_write_response(reply, yield);
 ----
 
 And then we send the response. Our application is complete.
-
-TIP: Alternatively, we don't need to specify the status code and its associated
-reason phrases. The header `<boost/http/algorithm/write.hpp>` provide algorithms
-that can take care of the standard status codes.
 
 There is a gotcha here. If you use pure `asio::ip::tcp::socket`, you're subject
 to Asio composed operations restrictions and you should not schedule any
@@ -222,7 +218,7 @@ want to learn more about HTTP pipelining and HTTP in general.
 
 [source,cpp]
 ----
-self->message.body().clear(); // free unused resources
+self->request.body().clear(); // free unused resources
 ----
 
 Given we're consuming the body, it's a good idea to free unused resources. We
@@ -236,7 +232,7 @@ bytes.
 acceptor.async_accept(connection->tcp_layer(), yield);
 ----
 
-HTTP doesn't require to handle protocol negotiation separately from the
+HTTP doesn't require you to handle protocol negotiation separately from the
 remaining protocol or any super special handshaking flow. Therefore, we use a
 "naked" acceptor to fuel an usable HTTP socket. Other HTTP backends may have
 different usage.
@@ -254,7 +250,7 @@ include::tutorial2.cpp[]
 In the previous example, we used atomic messages to respond the request. But
 this is limiting when we're trying to achieve certain kind of tasks, like
 serving a live video stream. A second option for us is to use chunked messages
-to respond to request.
+to respond the request.
 
 WARNING: Chunked messages are not always available and you must check if you can
 use chunked messages for every request with the `write_response_native_stream()`
@@ -270,7 +266,7 @@ to respond the request:
 === Runtime-based polymorphic abstractions
 
 If you want to create a function that will handle requests originated from
-different HTTP backends, you have three choice:
+different HTTP backends, you have three choices:
 
 * Rewrite the handler for every HTTP backend.
 * Write generic handlers.

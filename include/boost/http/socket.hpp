@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2016 Vinícius dos Santos Oliveira
+/* Copyright (c) 2014, 2016, 2017 Vinícius dos Santos Oliveira
 
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
@@ -26,7 +26,6 @@
 #include <boost/http/traits.hpp>
 #include <boost/http/read_state.hpp>
 #include <boost/http/write_state.hpp>
-#include <boost/http/message.hpp>
 #include <boost/http/http_errc.hpp>
 #include <boost/http/detail/writer_helper.hpp>
 #include <boost/http/detail/constchar_helper.hpp>
@@ -54,12 +53,11 @@ public:
 
     // ### READ FUNCTIONS ###
 
-    template<class String, class Message, class CompletionToken>
+    template<class Request, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_read_request(String &method, String &path, Message &message,
-                       CompletionToken &&token);
+    async_read_request(Request &request, CompletionToken &&token);
 
     template<class Message, class CompletionToken>
     typename asio::async_result<
@@ -77,13 +75,11 @@ public:
 
     // ### WRITE FUNCTIONS ###
 
-    template<class StringRef, class Message, class CompletionToken>
+    template<class Response, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write_response(std::uint_fast16_t status_code,
-                         const StringRef &reason_phrase, const Message &message,
-                         CompletionToken &&token);
+    async_write_response(const Response &response, CompletionToken &&token);
 
     template<class CompletionToken>
     typename asio::async_result<
@@ -91,13 +87,11 @@ public:
                                     void(system::error_code)>::type>::type
     async_write_response_continue(CompletionToken &&token);
 
-    template<class StringRef, class Message, class CompletionToken>
+    template<class Response, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
-    async_write_response_metadata(std::uint_fast16_t status_code,
-                                  const StringRef &reason_phrase,
-                                  const Message &message,
+    async_write_response_metadata(const Response &response,
                                   CompletionToken &&token);
 
     template<class Message, class CompletionToken>

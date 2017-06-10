@@ -8,6 +8,5 @@
 
 #include <boost/http/algorithm/header.hpp>
 #include <boost/http/algorithm/query.hpp>
-#include <boost/http/algorithm/write.hpp>
 
 #endif // BOOST_HTTP_ALGORITHM_HPP

@@ -1,4 +1,5 @@
-#include <boost/http/message.hpp>
+#include <boost/http/request.hpp>
+#include <boost/http/response.hpp>
 #include <boost/http/buffered_socket.hpp>
 #include <boost/http/server_socket_adaptor.hpp>
 
@@ -15,10 +16,22 @@ struct is_server_socket<dummy_server_socket>: public std::true_type {};
 } // namespace boost {
 
 static_assert(!http::is_message<int>::value, "int is a message?!");
-static_assert(http::is_message<http::message>::value,
-              "http::message is not a message?!");
-static_assert(http::is_message<http::basic_message<int, int>>::value,
-              "http::basic_message<int, int> is not a message?!");
+static_assert(http::is_message<http::request>::value,
+              "http::request is not a message?!");
+static_assert(http::is_request_message<http::request>::value,
+              "http::request is not a request?!");
+static_assert(!http::is_request_message<http::response>::value,
+              "http::response is a request?!");
+static_assert(http::is_message<http::response>::value,
+              "http::response is not a message?!");
+static_assert(http::is_response_message<http::response>::value,
+              "http::response is not a response?!");
+static_assert(!http::is_response_message<http::request>::value,
+              "http::request is a response?!");
+static_assert(http::is_message<http::basic_request<int, int, int>>::value,
+              "http::basic_request<int, int, int> is not a message?!");
+static_assert(http::is_message<http::basic_response<int, int, int>>::value,
+              "http::basic_response<int, int, int> is not a message?!");
 
 static_assert(!http::is_server_socket<int>::value,
               "int is a server_socket?!");
@@ -60,14 +73,15 @@ static_assert(http::is_socket<http::basic_polymorphic_socket_base<int>>::value,
 
 static_assert(http::is_server_socket<http::polymorphic_server_socket>::value,
               "http::polymorphic_server_socket is a server_socket?!");
-static_assert(http::is_server_socket<http::basic_polymorphic_server_socket<int>>
+static_assert(http::is_server_socket<http::basic_polymorphic_server_socket<int,
+                                                                           int>>
               ::value,
               "http::basic_polymorphic_server_socket<int> is not a"
               " server_socket?!");
 
 static_assert(http::is_socket<http::polymorphic_server_socket>::value,
               "http::polymorphic_server_socket is not a socket?!");
-static_assert(http::is_socket<http::basic_polymorphic_server_socket<int>>
+static_assert(http::is_socket<http::basic_polymorphic_server_socket<int, int>>
               ::value,
               "http::basic_polymorphic_server_socket<int> is not a socket?!");
 

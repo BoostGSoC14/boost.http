@@ -1,4 +1,4 @@
-/* Copyright (c) 2014 Vinícius dos Santos Oliveira
+/* Copyright (c) 2014, 2017 Vinícius dos Santos Oliveira
 
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
@@ -6,14 +6,13 @@
 namespace boost {
 namespace http {
 
-template<class Message>
+template<class Request, class Response, class Message>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_polymorphic_server_socket<Message>
-::async_read_request(std::string &method, std::string &path,
-                     message_type &message, CompletionToken &&token)
+basic_polymorphic_server_socket<Request, Response, Message>
+::async_read_request(request_server_type &request, CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -22,20 +21,19 @@ basic_polymorphic_server_socket<Message>
 
     asio::async_result<Handler> result(handler);
 
-    async_read_request(method, path, message, callback_type(handler));
+    async_read_request(request, callback_type(handler));
 
     return result.get();
 }
 
-template<class Message>
+template<class Request, class Response, class Message>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_polymorphic_server_socket<Message>
-::async_write_response(std::uint_fast16_t status_code,
-                       const boost::string_ref &reason_phrase,
-                       const message_type &message, CompletionToken &&token)
+basic_polymorphic_server_socket<Request, Response, Message>
+::async_write_response(const response_server_type &response,
+                       CompletionToken &&token)
 {
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -44,18 +42,17 @@ basic_polymorphic_server_socket<Message>
 
     asio::async_result<Handler> result(handler);
 
-    async_write_response(status_code, reason_phrase, message,
-                         callback_type(handler));
+    async_write_response(response, callback_type(handler));
 
     return result.get();
 }
 
-template<class Message>
+template<class Request, class Response, class Message>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_polymorphic_server_socket<Message>
+basic_polymorphic_server_socket<Request, Response, Message>
 ::async_write_response_continue(CompletionToken &&token)
 {
     typedef typename asio::handler_type<
@@ -70,15 +67,13 @@ basic_polymorphic_server_socket<Message>
     return result.get();
 }
 
-template<class Message>
+template<class Request, class Response, class Message>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_polymorphic_server_socket<Message>
-::async_write_response_metadata(std::uint_fast16_t status_code,
-                                const boost::string_ref &reason_phrase,
-                                const message_type &message,
+basic_polymorphic_server_socket<Request, Response, Message>
+::async_write_response_metadata(const response_server_type &response,
                                 CompletionToken &&token)
 {
     typedef typename asio::handler_type<
@@ -88,8 +83,7 @@ basic_polymorphic_server_socket<Message>
 
     asio::async_result<Handler> result(handler);
 
-    async_write_response_metadata(status_code, reason_phrase, message,
-                                  callback_type(handler));
+    async_write_response_metadata(response, callback_type(handler));
 
     return result.get();
 }

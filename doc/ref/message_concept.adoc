@@ -97,7 +97,7 @@ _ISO-8859-1_ charset.
 |===
 |Expression|Return type|Precondition|Semantics|Postcondition
 
-|`std::is_base_of<std::true_type, boost::http::is_message<X>>`|`std::true_type`| | |
+|`std::is_base_of<std::true_type, http::is_message<X>>`|`std::true_type`| | |
 
 |`X::headers_type`|`Headers`| | |
 
@@ -155,7 +155,7 @@ a|
 . Failing to comply with the "MUST" and "MUST *NOT*" conditions described
   previously invokes undefined behaviour.
 
-===== Models
+===== See also
 
-* <<message,`message`>>
-* <<basic_message,`basic_message`>>
+* <<request_concept,`Request` concept>>.
+* <<response_concept,`Response` concept>>.

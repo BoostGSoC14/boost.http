@@ -1,0 +1,66 @@
+[[response_concept]]
+==== `Response`
+
+A container able to hold HTTP response messages.
+
+===== Refinement of
+
+* <<message_concept,`Message`>>
+
+===== Notation
+
+`X`::
+
+  A type that is a model of `Response`.
+
+`String`::
+
+  A type that is a model of {cpp}'s `String`.
+
+`a`::
+
+  Object of type `X`.
+
+`ca`::
+
+  Object of type `const X`.
+
+===== Requirements
+
+[options="header"]
+|===
+|Expression|Return type|Precondition|Semantics|Postcondition
+
+|`std::is_base_of<std::true_type, http::is_response_message<X>>`|`std::true_type`| | |
+
+|`X::string_type`|`String`| | |
+
+|`a.status_code()`|`std::uint_least16_t&`|
+a|
+* It should be used to represent the HTTP response status code.
+* Always returns a reference to the same object.
+|
+
+|`ca.status_code()`|`const std::uint_least16_t&`|
+a|
+* It should be used to represent the HTTP response status code.
+* Always returns a reference to the same object.
+|
+
+|`a.reason_phrase()`|`X::string_type&`|
+a|
+* It should be used to represent the HTTP response reason phrase.
+* Always returns a reference to the same object.
+|
+
+|`ca.reason_phrase()`|`const X::string_type&`|
+a|
+* It should be used to represent the HTTP response reason phrase.
+* Always returns a reference to the same object.
+|
+|===
+
+===== Models
+
+* <<response,`response`>>
+* <<basic_response,`basic_response`>>

@@ -1,0 +1,91 @@
+[[basic_request]]
+==== `basic_request`
+
+[source,cpp]
+----
+#include <boost/http/request.hpp>
+----
+
+This template can be used to easily define classes fulfilling the
+<<request_concept,`Request` concept>> and specializing the
+<<is_request_message,`is_request_message`>> trait.
+
+===== Template parameters
+
+`String`::
+
+  The type to fulfill the `X::string_type` from the <<request_concept,`Request`
+  concept>>.
+
+`Headers`::
+
+  The type to fulfill the `X::headers_type` from the <<request_concept,`Request`
+  concept>>.
+
+`Body`::
+
+  The type to fulfill the `X::body_type` from the <<request_concept,`Request`
+  concept>>.
+
+===== Member types
+
+`typedef String string_type`::
+
+  The type to fulfill the `X::string_type` from the <<request_concept,`Request`
+  concept>>.
+
+`typedef Headers headers_type`::
+
+  The type to fulfill the `X::headers_type` from the <<request_concept,`Request`
+  concept>>.
+
+`typedef Body body_type`::
+
+  The type to fulfill the `X::body_type` from the <<request_concept,`Request`
+  concept>>.
+
+===== Member functions
+
+`string_type &method()`::
+
+  Returns the internal method object.
+
+`const string_type &method() const`::
+
+  Returns the internal method object.
+
+`string_type &target()`::
+
+  Returns the internal request target object.
+
+`const string_type &target() const`::
+
+  Returns the internal request target object.
+
+`headers_type &headers()`::
+
+  Returns the internal headers object.
+
+`const headers_type &headers() const`::
+
+  Returns the internal headers object.
+
+`body_type &body()`::
+
+  Returns the internal body object.
+
+`const body_type &body() const`::
+
+  Returns the internal body object.
+
+`headers_type &trailers()`::
+
+  Returns the internal trailers object.
+
+`const headers_type &trailers() const`::
+
+  Returns the internal trailers object.
+
+===== See also
+
+* <<request,`request`>>

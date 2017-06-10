@@ -8,7 +8,7 @@
 
 This class adapts a class fulfilling the <<server_socket_concept, `ServerSocket`
 concept>> to implement the <<basic_polymorphic_server_socket,
-`basic_polymorphic_server_socket<Message>`>> interface.
+`basic_polymorphic_server_socket<Request, Response, Message>`>> interface.
 
 This design was chosen taking a number of shortcomings in consideration.
 
@@ -39,9 +39,18 @@ Polymorphic Allocators].
 
   The type to be wrapped.
 
-`Message = message`::
+`Request = request`::
 
-  The message type. Default argument is <<message,`message`>>.
+  The request message type. Default argument is <<request,`request`>>.
+
+`Response = response`::
+
+  The response message type. Default argument is <<response,`response`>>.
+
+`Message = request_response_wrapper<Request, Response>`::
+
+  The message type. Default argument is <<request_response_wrapper,
+  `request_response_wrapper<Request, Response>`>>.
 
 ===== Specializations
 

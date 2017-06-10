@@ -8,7 +8,8 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 ==== Classes
 
 * <<headers,`headers`>>
-* <<message,`message`>>
+* <<request,`request`>>
+* <<response,`response`>>
 * <<socket,`socket`>>
 * <<buffered_socket,`buffered_socket`>>
 * <<polymorphic_socket_base,`polymorphic_socket_base`>>
@@ -16,13 +17,17 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 
 ==== Class Templates
 
-* <<basic_message,`basic_message`>>
+* <<basic_request,`basic_request`>>
+* <<basic_response,`basic_response`>>
 * <<basic_socket,`basic_socket`>>
 * <<basic_buffered_socket,`basic_buffered_socket`>>
+* <<request_response_wrapper,`request_response_wrapper`>>
 * <<basic_polymorphic_socket_base,`basic_polymorphic_socket_base`>>
 * <<basic_polymorphic_server_socket,`basic_polymorphic_server_socket`>>
 * <<server_socket_adaptor,`server_socket_adaptor`>>
 * <<is_message,`is_message`>>
+* <<is_request_message,`is_request_message`>>
+* <<is_response_message,`is_response_message`>>
 * <<is_socket,`is_socket`>>
 * <<is_server_socket,`is_server_socket`>>
 * <<basic_router, `basic_router`>>
@@ -42,9 +47,6 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * Channel querying
 ** <<request_continue_required,`request_continue_required`>>
 ** <<request_upgrade_desired,`request_upgrade_desired`>>
-* Writing messages
-** <<async_write_response,`async_write_response`>>
-** <<async_write_response_metadata,`async_write_response_metadata`>>
 * File server
 ** <<async_response_transmit_file,`async_response_transmit_file`>>
 ** <<async_response_transmit_dir,`async_response_transmit_dir`>>
@@ -63,6 +65,8 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 ==== Type Requirements
 
 * <<message_concept,`Message`>>
+* <<request_concept,`Request`>>
+* <<response_concept,`Response`>>
 * <<socket_concept,`Socket`>>
 * <<server_socket_concept,`ServerSocket`>>
 
@@ -71,12 +75,13 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * <<algorithm_header,`<boost/http/algorithm.hpp>`>>
 * <<header_header,`<boost/http/algorithm/header.hpp>`>>
 * <<query_header,`<boost/http/algorithm/query.hpp>`>>
-* <<write_header,`<boost/http/algorithm/write.hpp>`>>
 * <<file_server_header,`<boost/http/file_server.hpp>`>>
 * <<headers_header,`<boost/http/headers.hpp>`>>
 * <<http_category_header,`<boost/http/http_category.hpp>`>>
 * <<http_errc_header,`<boost/http/http_errc.hpp>`>>
-* <<message_header,`<boost/http/message.hpp>`>>
+* <<request_header,`<boost/http/request.hpp>`>>
+* <<response_header,`<boost/http/response.hpp>`>>
+* <<request_response_wrapper_header,`<boost/http/request_response_wrapper.hpp>`>>
 * <<polymorphic_server_socket_header,
     `<boost/http/polymorphic_server_socket.hpp>`>>
 * <<polymorphic_socket_base_header,`<boost/http/polymorphic_socket_base.hpp>`>>
@@ -105,11 +110,15 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 
 include::ref/headers.adoc[]
 
-include::ref/message.adoc[]
+include::ref/request.adoc[]
+
+include::ref/response.adoc[]
 
 include::ref/socket.adoc[]
 
 include::ref/buffered_socket.adoc[]
+
+include::ref/request_response_wrapper.adoc[]
 
 include::ref/basic_polymorphic_socket_base.adoc[]
 
@@ -119,7 +128,9 @@ include::ref/polymorphic_socket_base.adoc[]
 
 include::ref/polymorphic_server_socket.adoc[]
 
-include::ref/basic_message.adoc[]
+include::ref/basic_request.adoc[]
+
+include::ref/basic_response.adoc[]
 
 include::ref/basic_socket.adoc[]
 
@@ -147,10 +158,6 @@ include::ref/request_continue_required.adoc[]
 
 include::ref/request_upgrade_desired.adoc[]
 
-include::ref/async_write_response.adoc[]
-
-include::ref/async_write_response_metadata.adoc[]
-
 include::ref/async_response_transmit_file.adoc[]
 
 include::ref/async_response_transmit_dir.adoc[]
@@ -167,6 +174,10 @@ include::ref/file_server_errc.adoc[]
 
 include::ref/message_concept.adoc[]
 
+include::ref/request_concept.adoc[]
+
+include::ref/response_concept.adoc[]
+
 include::ref/socket_concept.adoc[]
 
 include::ref/server_socket_concept.adoc[]
@@ -177,8 +188,6 @@ include::ref/header_header.adoc[]
 
 include::ref/query_header.adoc[]
 
-include::ref/write_header.adoc[]
-
 include::ref/file_server_header.adoc[]
 
 include::ref/headers_header.adoc[]
@@ -187,7 +196,11 @@ include::ref/http_category_header.adoc[]
 
 include::ref/http_errc_header.adoc[]
 
-include::ref/message_header.adoc[]
+include::ref/request_header.adoc[]
+
+include::ref/response_header.adoc[]
+
+include::ref/request_response_wrapper_header.adoc[]
 
 include::ref/polymorphic_server_socket_header.adoc[]
 
@@ -212,6 +225,10 @@ include::ref/basic_router_header.adoc[]
 include::ref/regex_router_header.adoc[]
 
 include::ref/is_message.adoc[]
+
+include::ref/is_request_message.adoc[]
+
+include::ref/is_response_message.adoc[]
 
 include::ref/is_socket.adoc[]
 

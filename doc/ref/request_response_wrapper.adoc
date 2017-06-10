@@ -1,0 +1,91 @@
+[[request_response_wrapper]]
+==== `request_response_wrapper`
+
+[source,cpp]
+----
+#include <boost/http/request_response_wrapper.hpp>
+----
+
+`request_response_wrapper` is an adapter which acts like a common type (akin to
+`std::common_type`) for different `Request` and `Response` types. There is no
+type erasure and only <<message_concept,`Message` interface>> will be available.
+
+The purpose of this class is *not* to be a polymorphic wrapper. Therefore, it's
+not our concern to make sure compatible objects (i.e. objects with the same
+`header_type` and so on) are of the *same* `request_response_wrapper` type. In
+other words, `request_response_wrapper` will not free you from the template work
+if you want to support different `Request`/`Response` types. This is *not* a
+design issue. However, there is a templated constructor which can accept *some*
+different types.
+
+===== Template parameters
+
+`Request`::
+
+  A model of the <<message_concept,`Message` concept>>.
+
+`Response`::
+
+  A model of the <<message_concept,`Message` concept>>.
++
+NOTE: `Response::headers_type` must be the same as `Request::headers_type`. And
+the same applies to `Response::body_type`. Also, if `const` is applied to
+`Request` or `Response`, it must be applied to both.
+
+===== Member types
+
+`headers_type`::
+
+  If `Request` is `const`, then it is defined as `const typename
+  Request::headers_type`. Otherwise, it's defined as `typename
+  Request::headers_type`.
+
+`body_type`::
+
+  If `Request` is `const`, then it is defined as `const typename
+  Request::body_type`. Otherwise, it's defined as `typename Request::body_type`.
+
+===== Member functions
+
+`request_response_wrapper(Request &request)`::
+
+  Constructs a `request_response_wrapper` from a `Request`.
+
+`request_response_wrapper(Response &response)`::
+
+  Constructs a `request_response_wrapper` from a `Response`.
+
+`template<class Request2, class Response2> request_response_wrapper(request_response_wrapper<Request2, Response2> &other)`::
+
+  Constructs a `request_response_wrapper` from another
+  `request_response_wrapper` with compatible `headers_type` and `body_type`.
+
+====== `Message` concept
+
+`headers_type &headers()`::
+
+  Returns the wrapped headers object.
+
+`const headers_type &headers() const`::
+
+  Returns the wrapped headers object.
+
+`body_type &body()`::
+
+  Returns the wrapped body object.
+
+`const body_type &body() const`::
+
+  Returns the wrapped body object.
+
+`headers_type &trailers()`::
+
+  Returns the wrapped trailers object.
+
+`const headers_type &trailers() const`::
+
+  Returns the wrapped trailers object.
+
+===== See also
+
+* <<polymorphic_socket_base,`polymorphic_socket_base`>>

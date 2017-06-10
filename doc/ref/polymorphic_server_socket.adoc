@@ -12,7 +12,8 @@ defined as follows:
 
 [source,cpp]
 ----
-typedef basic_polymorphic_server_socket<message> polymorphic_server_socket;
+typedef basic_polymorphic_server_socket<request, response>
+  polymorphic_server_socket;
 ----
 
 ===== See also

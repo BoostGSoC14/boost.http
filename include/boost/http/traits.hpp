@@ -12,7 +12,17 @@ namespace boost {
 namespace http {
 
 template<class T>
-struct is_message: public std::false_type {};
+struct is_request_message: public std::false_type {};
+
+template<class T>
+struct is_response_message: public std::false_type {};
+
+template<class T>
+struct is_message
+    : public std::integral_constant<bool,
+                                    is_request_message<T>::value
+                                    || is_response_message<T>::value>
+{};
 
 template<class T>
 struct is_server_socket: public std::false_type {};

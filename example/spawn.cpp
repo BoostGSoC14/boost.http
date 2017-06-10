@@ -6,6 +6,8 @@
 #include <boost/asio/spawn.hpp>
 #include <boost/http/buffered_socket.hpp>
 #include <boost/http/algorithm.hpp>
+#include <boost/http/request.hpp>
+#include <boost/http/response.hpp>
 
 using namespace std;
 using namespace boost;
@@ -20,11 +22,10 @@ public:
             while (self->socket.is_open()) {
                 cout << "--\n[" << self->counter
                      << "] About to receive a new message" << endl;
-                self->socket.async_read_request(self->method, self->path,
-                                                self->message, yield);
-                //self->message.body().clear(); // freeing not used resources
+                self->socket.async_read_request(self->request, yield);
+                //self->request.body().clear(); // freeing not used resources
 
-                if (http::request_continue_required(self->message)) {
+                if (http::request_continue_required(self->request)) {
                     cout << '[' << self->counter
                          << "] Continue required. About to send"
                         " \"100-continue\""
@@ -39,32 +40,32 @@ public:
                     case http::read_state::message_ready:
                         cout << '[' << self->counter
                              << "] About to receive some body" << endl;
-                        self->socket.async_read_some(self->message, yield);
+                        self->socket.async_read_some(self->request, yield);
                         break;
                     case http::read_state::body_ready:
                         cout << '[' << self->counter
                              << "] About to receive trailers" << endl;
-                        self->socket.async_read_trailers(self->message, yield);
+                        self->socket.async_read_trailers(self->request, yield);
                         break;
                     default:;
                     }
                 }
 
                 //cout << "BODY:==";
-                //for (const auto &e: self->message.body()) {
+                //for (const auto &e: self->request.body()) {
                 //    cout << char(e);
                 //}
                 //cout << "==" << endl;
 
                 cout << '[' << self->counter << "] Message received. State = "
                      << int(self->socket.read_state()) << endl;
-                cout << '[' << self->counter << "] Method: " << self->method
-                     << endl;
-                cout << '[' << self->counter << "] Path: " << self->path
-                     << endl;
+                cout << '[' << self->counter << "] Method: "
+                     << self->request.method() << endl;
+                cout << '[' << self->counter << "] Path: "
+                     << self->request.target() << endl;
                 {
-                    auto host = self->message.headers().find("host");
-                    if (host != self->message.headers().end())
+                    auto host = self->request.headers().find("host");
+                    if (host != self->request.headers().end())
                         cout << '[' << self->counter << "] Host header: "
                              << host->second << endl;
                 }
@@ -75,14 +76,15 @@ public:
                 cout << '[' << self->counter << "] About to send a reply"
                      << endl;
 
-                http::message reply;
+                http::response reply;
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 //reply.headers().emplace("connection", "close");
                 const char body[] = "Hello World\n";
                 std::copy(body, body + sizeof(body) - 1,
                           std::back_inserter(reply.body()));
 
-                self->socket.async_write_response(200, string_ref("OK"), reply,
-                                                  yield);
+                self->socket.async_write_response(reply, yield);
             }
         } catch (system::system_error &e) {
             if (e.code() != system::error_code{asio::error::eof}) {
@@ -119,9 +121,7 @@ private:
     http::buffered_socket socket;
     int counter;
 
-    std::string method;
-    std::string path;
-    http::message message;
+    http::request request;
 };
 
 int main()

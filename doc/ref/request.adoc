@@ -1,0 +1,24 @@
+[[request]]
+==== `request`
+
+[source,cpp]
+----
+#include <boost/http/request.hpp>
+----
+
+`request` is a simple typedef for <<basic_request,`basic_request`>>. It's
+defined as follows:
+
+[source,cpp]
+----
+typedef basic_request<std::string, headers, std::vector<std::uint8_t>> request;
+----
+
+`std::vector<std::uint8_t>` is used over `std::string`, because fits the purpose
+of the body (binary data payload container) better (no `'\0'` character
+terminator, well-defined behaviours of capacity, size and iterator invalidation,
+...).
+
+===== See also
+
+* <<headers,`headers`>>

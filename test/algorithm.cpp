@@ -1,7 +1,8 @@
 #include "unit_test.hpp"
 
 #include <boost/http/algorithm.hpp>
-#include <boost/http/message.hpp>
+#include <boost/http/request.hpp>
+#include <boost/http/response.hpp>
 #include <boost/http/socket.hpp>
 
 struct my_accumulator
@@ -854,7 +855,7 @@ BOOST_AUTO_TEST_CASE(header_value_for_each_case) {
 }
 
 BOOST_AUTO_TEST_CASE(request_continue_required) {
-    boost::http::message m;
+    boost::http::request m;
     m.headers().emplace("expect", "100-continue");
     BOOST_CHECK(boost::http::request_continue_required(m) == true);
     m.headers().clear();
@@ -869,7 +870,7 @@ BOOST_AUTO_TEST_CASE(request_continue_required) {
 }
 
 BOOST_AUTO_TEST_CASE(request_upgrade_desired) {
-    boost::http::message m;
+    boost::http::request m;
     m.headers().emplace("upgrade", "websocket");
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == false);
     m.headers().emplace("connection", "close");
@@ -881,19 +882,6 @@ BOOST_AUTO_TEST_CASE(request_upgrade_desired) {
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == false);
     m.headers().emplace("upgrade", "websocket");
     BOOST_CHECK(boost::http::request_upgrade_desired(m) == true);
-}
-
-/* This test is pretty much just to ensure that these functions compile and
-   don't try very hard to enforce the Socket concept. */
-BOOST_AUTO_TEST_CASE(write_without_reason_phrase) {
-    boost::asio::io_service ios;
-    char buffer[1];
-    boost::http::socket socket(ios, boost::asio::buffer(buffer));
-    boost::http::message m;
-    async_write_response(socket, boost::http::status_code::ok, m,
-                         [](boost::system::error_code) {});
-    async_write_response_metadata(socket, boost::http::status_code::ok, m,
-                                  [](boost::system::error_code) {});
 }
 
 BOOST_AUTO_TEST_CASE(header_value_etag_match) {

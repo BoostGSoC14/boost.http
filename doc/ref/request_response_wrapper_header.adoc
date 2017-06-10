@@ -1,0 +1,6 @@
+[[request_response_wrapper_header]]
+==== `<boost/http/request_response_wrapper.hpp>`
+
+Import the following symbols:
+
+* <<request_response_wrapper,`request_response_wrapper`>>

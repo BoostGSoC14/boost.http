@@ -8,6 +8,8 @@
 #include <boost/asio/spawn.hpp>
 #include <boost/http/buffered_socket.hpp>
 #include <boost/http/algorithm.hpp>
+#include <boost/http/request.hpp>
+#include <boost/http/response.hpp>
 
 using namespace std;
 using namespace boost;
@@ -22,11 +24,10 @@ public:
             while (self->socket.is_open()) {
                 cout << "--\n[" << self->counter
                      << "] About to receive a new message" << endl;
-                self->socket.async_read_request(self->method, self->path,
-                                                self->message, yield);
-                //self->message.body().clear(); // freeing not used resources
+                self->socket.async_read_request(self->request, yield);
+                //self->request.body().clear(); // freeing not used resources
 
-                if (http::request_continue_required(self->message)) {
+                if (http::request_continue_required(self->request)) {
                     cout << '[' << self->counter
                          << "] Continue required. About to send"
                         " \"100-continue\""
@@ -41,12 +42,12 @@ public:
                     case http::read_state::message_ready:
                         cout << '[' << self->counter
                              << "] About to receive some body" << endl;
-                        self->socket.async_read_some(self->message, yield);
+                        self->socket.async_read_some(self->request, yield);
                         break;
                     case http::read_state::body_ready:
                         cout << '[' << self->counter
                              << "] About to receive trailers" << endl;
-                        self->socket.async_read_trailers(self->message, yield);
+                        self->socket.async_read_trailers(self->request, yield);
                         break;
                     default:;
                     }
@@ -54,13 +55,13 @@ public:
 
                 cout << '[' << self->counter << "] Message received. State = "
                      << int(self->socket.read_state()) << endl;
-                cout << '[' << self->counter << "] Method: " << self->method
-                     << endl;
-                cout << '[' << self->counter << "] Path: " << self->path
-                     << endl;
+                cout << '[' << self->counter << "] Method: "
+                     << self->request.method() << endl;
+                cout << '[' << self->counter << "] Path: "
+                     << self->request.target() << endl;
                 {
-                    auto host = self->message.headers().find("host");
-                    if (host != self->message.headers().end())
+                    auto host = self->request.headers().find("host");
+                    if (host != self->request.headers().end())
                         cout << '[' << self->counter << "] Host header: "
                              << host->second << endl;
                 }
@@ -71,15 +72,16 @@ public:
                 cout << '[' << self->counter << "] About to send a reply"
                      << endl;
 
-                if (!router(self->path, this, yield))
+                if (!router(self->request.target(), this, yield))
                 {
-                    http::message reply;
+                    http::response reply;
+                    reply.status_code() = 500;
+                    reply.reason_phrase() = "Internal Server Error";
                     const char body[] = "500 Internal Server Error \n";
                     std::copy(body, body + sizeof(body) - 1,
                                 std::back_inserter(reply.body()));
 
-                    self->socket.async_write_response(500, string_ref("OK"),
-                                                      reply, yield);
+                    self->socket.async_write_response(reply, yield);
                 }
 
             }
@@ -102,19 +104,24 @@ public:
     {
         auto self = shared_from_this();
 
-        http::message reply;
+        http::response reply;
+        reply.status_code() = 200;
+        reply.reason_phrase() = "OK";
         const char body[] = "Hello World\n";
         std::copy(body, body + sizeof(body) - 1,
                     std::back_inserter(reply.body()));
 
-        self->socket.async_write_response(200, string_ref("OK"), reply, yield);
+        self->socket.async_write_response(reply, yield);
     }
 
     void redirect_route(asio::yield_context yield)
     {
         auto self = shared_from_this();
 
-        http::message reply;
+        http::response reply;
+
+        reply.status_code() = 303;
+        reply.reason_phrase() = "Moved temporarily";
 
         reply.headers().emplace("Location", "index.html");
 
@@ -122,8 +129,7 @@ public:
         std::copy(body, body + sizeof(body) - 1,
                     std::back_inserter(reply.body()));
 
-        self->socket.async_write_response(303, ::boost::string_ref("Moved temporarily"),
-                                        reply, yield);
+        self->socket.async_write_response(reply, yield);
     }
 
     asio::ip::tcp::socket &tcp_layer()
@@ -146,9 +152,7 @@ private:
     http::buffered_socket socket;
     int counter;
 
-    std::string method;
-    std::string path;
-    http::message message;
+    http::request request;
 
 #define ROUTER_FUNCTION_ARGUMENTS connection*, \
                                   asio::yield_context

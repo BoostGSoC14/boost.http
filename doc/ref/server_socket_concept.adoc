@@ -17,18 +17,23 @@ Types fulfilling the `ServerSocket` concept and also possessing the _strict_ pro
 
 ===== Notation
 
-`Message`::
+`Request`::
 
-  A type fulfilling the requirements for the <<message_concept,`Message`
+  A type fulfilling the requirements for the <<request_concept,`Request`
   concept>>.
 
-`m`::
+`Response`::
 
-  Object of type `Message`.
+  A type fulfilling the requirements for the <<response_concept,`Response`
+  concept>>.
 
-`cm`::
+`im`::
 
-  Object of type `const Message`.
+  Object of type `Request`.
+
+`om`::
+
+  Object of type `const Response`.
 
 `CompletionToken`::
 
@@ -62,10 +67,6 @@ boost::asio::async_result<
 
   Object of type `const X`.
 
-`sc`::
-
-  A value of type `std::uint_fast16_t`.
-
 ===== Requirements
 
 [options="header"]
@@ -75,23 +76,18 @@ boost::asio::async_result<
 |`std::is_base_of<std::true_type, boost::http::is_server_socket<X>>`
 |`std::true_type`| | |
 
-|`X::method_server_type`|
-|`ServerSocket` only supports operations involving a single type of method.
-|Must be a type fulfilling the requirements for the `String` concept (i.e.
- `std::basic_string`).
+|`X::request_type`|
+|`ServerSocket` only supports operations involving a single type of request
+ message.
+|Must be a type fulfilling the requirements for the <<request_concept,`Request`
+ concept>>.
 |
 
-|`X::path_server_type`|
-|`ServerSocket` only supports operations involving a single type of path.
-|Must be a type fulfilling the requirements for the `String` concept (i.e.
- `std::basic_string`).
-|
-
-|`X::reason_phrase_server_type`|
-|`ServerSocket` only supports operations involving a single type of reason
- phrase.
-|Must be a type fulfilling the requirements for the `StringRef` concept (i.e.
- `boost::basic_string_ref`).
+|`X::response_type`|
+|`ServerSocket` only supports operations involving a single type of response
+ message.
+|Must be a type fulfilling the requirements for the
+ <<response_concept,`Response` concept>>.
 |
 
 |`ca.write_response_native_stream()`|`bool`
@@ -100,64 +96,43 @@ boost::asio::async_result<
 |The same value and property is maintained until the end of the current message
  exchange.
 
-|`method`||
-|Object of method type supported by `X` (i.e. `X::method_server_type` if only
- one method type is supported or any type fulfilling the requirements of the
- `String` concept (i.e. `std::basic_string`) otherwise).
-|
-
-|`path`||
-|Object of path type supported by `X` (i.e. `X::path_server_type` if only one
- path type is supported or any type fulfilling the requirements of the `String`
- concept (i.e. `std::basic_string`) otherwise).
-|
-
-|`reason_phrase`||
-|Const object of reason phrase type supported by `X`
- (i.e. `X::reason_phrase_server_type` if only one reason phrase type is
- supported or any type fulfilling the requirements of the `StringRef` concept
- (i.e. `boost::basic_string_ref`) otherwise).
-|
-
-|`a.async_read_request(method, path, m, token)`|`AsyncResultType`
+|`a.async_read_request(im, token)`|`AsyncResultType`
 |`a.read_state() == read_state::empty`
 |Initiate an asynchronous operation to read enough of the message to apply the
  request to a target resource (i.e. request line plus the header section).
  Handler is called when the operation completes with an appropriate parameter.
 
- `method`, `path` and `m` are left in a unspecified state while the operation is
- in progress.
+ `im` is left in a unspecified state while the operation is in progress.
 
- The ServerSocket object MUST prevent the user from issuing new replies while
+ The `ServerSocket` object MUST prevent the user from issuing new replies while
  the request isn't ready. The prevention MUST be done by changing the write
  state to `write_state::finished` while the read_request operation is in
  progress.
-|By the time the handler is called, `method` value represents the read method,
- `path` represents the read url and all headers for the current request are
- inserted into `m.headers()`, if no error happened.
+|By the time the handler is called, `im.method()` value represents the read
+ method, `im.target()` represents the read url and all headers for the current
+ request are inserted into `m.headers()`, if no error happened.
 
-|`a.async_read_request(method, path, m, token)`|`AsyncResultType`
+|`a.async_read_request(im, token)`|`AsyncResultType`
 |`a.read_state() != read_state::empty`
 |No actions are done and the handler from the completion token is called with
  `boost::system::error_code {http_errc::out_of_order}`.
 |
 
-|`a.async_write_response(sc, reason_phrase, cm, token)`|`AsyncResultType`
+|`a.async_write_response(om, token)`|`AsyncResultType`
 |`a.write_state() == write_state::empty
   \|\| a.write_state() == write_state::continue_issued`
 |Initiate an asynchronous operation to write the response message (atomic
- message). Handler is called when the operation completes with an appropriate
- parameter.
+ message). Handler is called with an appropriate argument when the operation
+ completes.
 
- `reason_phrase` and `cm` MUST *NOT* be modified while the operation is in
- progress.
+ `om` MUST *NOT* be modified while the operation is in progress.
 a|
 
 * `a.write_state() == write_state ::finished`
-* By the time the handler is called, the `cm` message is considered delivered,
+* By the time the handler is called, the `om` message is considered delivered,
   if no error happened.
 
-|`a.async_write_response(sc, reason_phrase, cm, token)`|`AsyncResultType`
+|`a.async_write_response(om, token)`|`AsyncResultType`
 |`a.write_state() != write_state::empty
  && a.write_state() != write_state::continue_issued`
 |No actions are done and the handler from the completion token is called with
@@ -182,25 +157,24 @@ a|
  `boost::system::error_code {http_errc::out_of_order}`.
 |
 
-|`a .async_write_response_metadata(sc, reason_phrase, cm, token)`
+|`a .async_write_response_metadata(om, token)`
 |`AsyncResultType`
 |`(a.write_state() == write_state::empty
    \|\| a.write_state() == write_state::continue_issued)
   && a.write_response_native_stream() == true`
 |Initiate an asynchronous operation to write the response metadata (chunked
- message). Handler is called when the operation completes with an appropriate
- parameter.
+ message). Handler is called with an appropriate argument when the operation
+ completes.
 
- `reason_phrase` and `cm.headers()` MUST *NOT* be modified while the operation
- is in progress.
+ `om` MUST *NOT* be modified while the operation is in progress.
 a|
 
 * `a.write_state() == write_state ::metadata_issued`
-* By the time the handler is called, the response metadata (i.e. `sc`,
-  `reason_phrase` and `cm.headers()`) is considered delivered, if no error
-  happened.
+* By the time the handler is called, the response metadata
+  (i.e. `om.status_code()`, `om.reason_phrase()` and `cm.headers()`) is
+  considered delivered, if no error happened.
 
-|`a .async_write_response_metadata(sc, reason_phrase, cm, token)`
+|`a .async_write_response_metadata(om, token)`
 |`AsyncResultType`
 |`a.write_state() != write_state::empty
   && a.write_state() != write_state::continue_issued`
@@ -213,7 +187,7 @@ a|
  either way.].
 |
 
-|`a .async_write_response_metadata(sc, reason_phrase, cm, token)`
+|`a .async_write_response_metadata(om, token)`
 |`AsyncResultType`
 |`(a.write_state() == write_state::empty
    \|\| a.write_state() == write_state::continue_issued)
@@ -228,7 +202,7 @@ a|
   previously invokes undefined behaviour.
 . Any HTTP field name received through the wire is normalized (i.e. uppercase
   characters are converted to lowercase) before they're inserted into objects of
-  type `Message::headers_type`.
+  type `Request::headers_type`.
 . If the user pass a `"connection: close"` header on the message object passed
   as argument to the `async_write_response` or `async_write_response_metadata`
   member-functions and no errors arose during the delivery of the message, the

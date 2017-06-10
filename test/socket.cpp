@@ -6,6 +6,8 @@
 
 #include <boost/http/socket.hpp>
 #include <boost/http/algorithm.hpp>
+#include <boost/http/request.hpp>
+#include <boost/http/response.hpp>
 
 #include "mocksocket.hpp"
 
@@ -162,19 +164,17 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                             "GET /whats_up HTTP/1.0\r\n"
                             "\r\n");
 
-                std::string method;
-                std::string path;
-                http::message message;
+                http::request request;
 
-                BOOST_REQUIRE(method.size() == 0);
-                BOOST_REQUIRE(path.size() == 0);
+                BOOST_REQUIRE(request.method().size() == 0);
+                BOOST_REQUIRE(request.target().size() == 0);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
                 {
                     outer_storage storage(yield);
                     auto fut = socket
-                        .async_read_request(method, path, message,
+                        .async_read_request(request,
                                             use_yielded_future_t(storage));
                     BOOST_REQUIRE(socket.write_state()
                                   == http::write_state::finished);
@@ -184,9 +184,9 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/");
                 {
                     http::headers expected_headers{
                         {"host", "localhosT:8080"},
@@ -195,20 +195,21 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                         {"x-code", "meaw"},
                         {"x-enemy", "y \t y,y"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
 
                 BOOST_CHECK(socket.write_state() == http::write_state::empty);
-                http::message reply;
+                http::response reply;
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "Hello World\n";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -226,7 +227,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 {
                     bool cond = (socket.read_state()
@@ -235,34 +236,35 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                     BOOST_REQUIRE(cond);
                 }
                 BOOST_CHECK(socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "POST");
-                BOOST_CHECK(path == "/file_upload");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "POST");
+                BOOST_CHECK(request.target() == "/file_upload");
                 {
                     http::headers expected_headers{
                         {"content-length", "4"},
                         {"host", "canyoushowmewhereithurts.org"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
                 while (socket.read_state() != http::read_state::empty)
-                    socket.async_read_some(message, yield);
+                    socket.async_read_some(request, yield);
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
 
                 {
                     vector<uint8_t> v{'p', 'i', 'n', 'g'};
-                    BOOST_CHECK(message.body() == v);
+                    BOOST_CHECK(request.body() == v);
                 }
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "pong";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -280,17 +282,19 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(!socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/whats_up");
-                BOOST_CHECK(message.headers() == http::headers{});
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/whats_up");
+                BOOST_CHECK(request.headers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "nothing special";
                     copy(body, body + sizeof(body) - 1,
@@ -299,8 +303,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
 
                 bool captured = false;
                 try {
-                    socket.async_write_response_metadata(200, string_ref("OK"),
-                                                         reply, yield);
+                    socket.async_write_response_metadata(reply, yield);
                 } catch(system::system_error &e) {
                     BOOST_REQUIRE(e.code()
                                   == system::error_code{http::http_errc
@@ -309,8 +312,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 }
                 BOOST_REQUIRE(captured);
 
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_REQUIRE(!socket.is_open());
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
@@ -367,24 +369,22 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                             "Expect: 100-continue\r\n"
                             "\r\n");
 
-                std::string method;
-                std::string path;
-                http::message message;
+                http::request request;
 
-                BOOST_REQUIRE(method.size() == 0);
-                BOOST_REQUIRE(path.size() == 0);
+                BOOST_REQUIRE(request.method().size() == 0);
+                BOOST_REQUIRE(request.target().size() == 0);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(socket.write_response_native_stream());
 
-                BOOST_ASSERT(http::request_continue_required(message));
+                BOOST_ASSERT(http::request_continue_required(request));
                 socket.async_write_response_continue(yield);
 
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/");
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/");
                 {
                     http::headers expected_headers{
                         {"expect", "100-continue"},
@@ -394,21 +394,22 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                         {"x-code", "meaw"},
                         {"x-enemy", "y \t y,y"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
 
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::continue_issued);
-                http::message reply;
+                http::response reply;
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "Hello World\n";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -428,31 +429,32 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_ASSERT(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/");
                 {
                     http::headers expected_headers{
                         {"host", "github.com"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                BOOST_CHECK(message.body().size() == 0);
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.body().size() == 0);
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "pong";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -470,7 +472,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 {
                     bool cond = (socket.read_state()
@@ -480,38 +482,39 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 }
                 BOOST_CHECK(socket.write_response_native_stream());
 
-                BOOST_CHECK(http::request_continue_required(message));
+                BOOST_CHECK(http::request_continue_required(request));
                 socket.async_write_response_continue(yield);
 
-                BOOST_CHECK(method == "POST");
-                BOOST_CHECK(path == "/file_upload");
+                BOOST_CHECK(request.method() == "POST");
+                BOOST_CHECK(request.target() == "/file_upload");
                 {
                     http::headers expected_headers{
                         {"content-length", "4"},
                         {"host", "canyoushowmewhereithurts.org"},
                         {"expect", "100-continue"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
                 while (socket.read_state() != http::read_state::empty)
-                    socket.async_read_some(message, yield);
+                    socket.async_read_some(request, yield);
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
 
                 {
                     vector<uint8_t> v{'p', 'i', 'n', 'g'};
-                    BOOST_CHECK(message.body() == v);
+                    BOOST_CHECK(request.body() == v);
                 }
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state()
                               == http::write_state::continue_issued);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "pong";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -531,17 +534,19 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(!socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/whats_up");
-                BOOST_CHECK(message.headers() == http::headers{});
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/whats_up");
+                BOOST_CHECK(request.headers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "nothing special";
                     copy(body, body + sizeof(body) - 1,
@@ -550,8 +555,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
 
                 bool captured = false;
                 try {
-                    socket.async_write_response_metadata(200, string_ref("OK"),
-                                                         reply, yield);
+                    socket.async_write_response_metadata(reply, yield);
                 } catch(system::system_error &e) {
                     BOOST_REQUIRE(e.code()
                                   == system::error_code{http::http_errc
@@ -560,8 +564,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 }
                 BOOST_REQUIRE(captured);
 
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_REQUIRE(!socket.is_open());
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
@@ -651,15 +654,13 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                             "\r\n");
 
                 // ### First request
-                std::string method;
-                std::string path;
-                http::message message;
+                http::request request;
 
-                BOOST_REQUIRE(method.size() == 0);
-                BOOST_REQUIRE(path.size() == 0);
+                BOOST_REQUIRE(request.method().size() == 0);
+                BOOST_REQUIRE(request.target().size() == 0);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 {
                     bool cond = (socket.read_state()
@@ -669,9 +670,9 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     BOOST_REQUIRE(cond);
                 }
                 BOOST_CHECK(socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "POST");
-                BOOST_CHECK(path == "/1");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "POST");
+                BOOST_CHECK(request.target() == "/1");
                 {
                     http::headers expected_headers{
                         {"host", "example.com"},
@@ -679,7 +680,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         {"te", "trailers"},
                         {"trailer", "Content-MD5"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
                 while (socket.read_state() != http::read_state::empty) {
@@ -689,11 +690,11 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         BOOST_FAIL("this state should be unreachable");
                         break;
                     case http::read_state::message_ready:
-                        BOOST_REQUIRE(message.trailers().size() == 0);
-                        socket.async_read_some(message, yield);
+                        BOOST_REQUIRE(request.trailers().size() == 0);
+                        socket.async_read_some(request, yield);
                         break;
                     case http::read_state::body_ready:
-                        socket.async_read_trailers(message, yield);
+                        socket.async_read_trailers(request, yield);
                         break;
                     }
                 }
@@ -703,25 +704,26 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     vector<uint8_t> v{'W', 'i', 'k', 'i', 'p', 'e', 'd', 'i',
                             'a', ' ', 'i', 'n', '\r', '\n', '\r', '\n', 'c',
                             'h', 'u', 'n', 'k', 's', '.'};
-                    BOOST_CHECK(message.body() == v);
+                    BOOST_CHECK(request.body() == v);
                 }
 
                 {
                     http::headers expected_trailers{
                         {"content-md5", "25b83662323c397c9944a8a7b3fef7ab"}
                     };
-                    BOOST_CHECK(message.trailers() == expected_trailers);
+                    BOOST_CHECK(request.trailers() == expected_trailers);
                 }
 
                 BOOST_CHECK(socket.write_state() == http::write_state::empty);
-                http::message reply;
+                http::response reply;
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "Hello World\n";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
-                socket.async_write_response_metadata(200, string_ref("OK"),
-                                                     reply, yield);
+                socket.async_write_response_metadata(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::metadata_issued);
                 socket.async_write(reply, yield);
@@ -748,7 +750,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 {
                     bool cond = (socket.read_state()
@@ -759,11 +761,11 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                 }
                 BOOST_CHECK(socket.write_response_native_stream());
 
-                BOOST_CHECK(http::request_continue_required(message));
+                BOOST_CHECK(http::request_continue_required(request));
                 socket.async_write_response_continue(yield);
 
-                BOOST_CHECK(method == "POST");
-                BOOST_CHECK(path == "/2");
+                BOOST_CHECK(request.method() == "POST");
+                BOOST_CHECK(request.target() == "/2");
 
                 {
                     http::headers expected_headers{
@@ -772,7 +774,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         {"transfer-encoding", "chunked"},
                         {"te", "trailers"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
                 while (socket.read_state() != http::read_state::empty) {
@@ -782,11 +784,11 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         BOOST_FAIL("this state should be unreachable");
                         break;
                     case http::read_state::message_ready:
-                        BOOST_REQUIRE(message.trailers().size() == 0);
-                        socket.async_read_some(message, yield);
+                        BOOST_REQUIRE(request.trailers().size() == 0);
+                        socket.async_read_some(request, yield);
                         break;
                     case http::read_state::body_ready:
-                        socket.async_read_trailers(message, yield);
+                        socket.async_read_trailers(request, yield);
                         break;
                     }
                 }
@@ -796,11 +798,13 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     vector<uint8_t> v{'W', 'i', 'k', 'i', 'p', 'e', 'd', 'i',
                             'a', ' ', 'i', 'n', '\r', '\n', '\r', '\n', 'c',
                             'h', 'u', 'n', 'k', 's', '.'};
-                    BOOST_CHECK(message.body() == v);
+                    BOOST_CHECK(request.body() == v);
                 }
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state()
                               == http::write_state::continue_issued);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 reply.headers().emplace("trailer", "Content-MD5");
                 {
                     const char body[] = "karate do";
@@ -809,8 +813,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                 }
                 reply.trailers().emplace("content-md5",
                                          "fa7d2a3fba7a239ef30f825827e613ef");
-                socket.async_write_response_metadata(200, string_ref("OK"),
-                                                     reply, yield);
+                socket.async_write_response_metadata(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::metadata_issued);
                 socket.async_write(reply, yield);
@@ -842,7 +845,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 {
                     bool cond = (socket.read_state()
@@ -852,9 +855,9 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     BOOST_REQUIRE(cond);
                 }
                 BOOST_CHECK(socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "POST");
-                BOOST_CHECK(path == "/3");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "POST");
+                BOOST_CHECK(request.target() == "/3");
 
                 {
                     http::headers expected_headers{
@@ -863,7 +866,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         {"te", "trailers"},
                         {"trailer", "Content-MD5, X-Content-SHA1"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
                 while (socket.read_state() != http::read_state::empty) {
@@ -873,11 +876,11 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         BOOST_FAIL("this state should be unreachable");
                         break;
                     case http::read_state::message_ready:
-                        BOOST_REQUIRE(message.trailers().size() == 0);
-                        socket.async_read_some(message, yield);
+                        BOOST_REQUIRE(request.trailers().size() == 0);
+                        socket.async_read_some(request, yield);
                         break;
                     case http::read_state::body_ready:
-                        socket.async_read_trailers(message, yield);
+                        socket.async_read_trailers(request, yield);
                         break;
                     }
                 }
@@ -888,7 +891,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                             'a', 'r', 'e', ' ', 'b', 'l', 'u', 'e', ',', ' ',
                             'r', 'o', 's', 'e', 's', ' ', 'a', 'r', 'e', ' ',
                             'r', 'e', 'd'};
-                    BOOST_CHECK(message.body() == v);
+                    BOOST_CHECK(request.body() == v);
                 }
 
                 {
@@ -897,18 +900,19 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         {"x-content-sha1",
                          "ac507bbd7ec6d868f2840dd8c6e283e2c96a5900"}
                     };
-                    BOOST_CHECK(message.trailers() == expected_trailers);
+                    BOOST_CHECK(request.trailers() == expected_trailers);
                 }
 
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "nothing special";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
 
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -945,41 +949,40 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                             "\r\n");
 
                 // First request
-                std::string method;
-                std::string path;
-                http::message message;
+                http::request request;
 
-                BOOST_REQUIRE(method.size() == 0);
-                BOOST_REQUIRE(path.size() == 0);
+                BOOST_REQUIRE(request.method().size() == 0);
+                BOOST_REQUIRE(request.target().size() == 0);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/1");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/1");
                 {
                     http::headers expected_headers{
                         {"host", "example.com"},
                         {"connection", "close"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
 
                 BOOST_CHECK(socket.write_state() == http::write_state::empty);
-                http::message reply;
+                http::response reply;
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "Hello World\n";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
 
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_REQUIRE(!socket.is_open());
                 socket.open();
                 BOOST_REQUIRE(socket.is_open());
@@ -1002,23 +1005,25 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/2");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/2");
                 {
                     http::headers expected_headers{
                         {"host", "example.com"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "Hello World";
                     copy(body, body + sizeof(body) - 1,
@@ -1027,8 +1032,7 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
 
                 reply.headers().emplace("connection", "close");
 
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_REQUIRE(!socket.is_open());
                 socket.open();
                 BOOST_REQUIRE(socket.is_open());
@@ -1051,25 +1055,26 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(!socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/3");
-                BOOST_CHECK(message.headers() == http::headers{});
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/3");
+                BOOST_CHECK(request.headers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "nothing special";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
 
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_REQUIRE(!socket.is_open());
 
                 BOOST_CHECK(socket.write_state()
@@ -1119,42 +1124,41 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                             "\r\n");
 
                 // First request
-                std::string method;
-                std::string path;
-                http::message message;
+                http::request request;
 
-                BOOST_REQUIRE(method.size() == 0);
-                BOOST_REQUIRE(path.size() == 0);
+                BOOST_REQUIRE(request.method().size() == 0);
+                BOOST_REQUIRE(request.target().size() == 0);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(http::request_upgrade_desired(message));
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/1");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(http::request_upgrade_desired(request));
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/1");
                 {
                     http::headers expected_headers{
                         {"host", "example.com"},
                         {"connection", "upgrade"},
                         {"upgrade", "vinipsmaker/0.1"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
 
                 BOOST_CHECK(socket.write_state() == http::write_state::empty);
-                http::message reply;
+                http::response reply;
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "Sing now!\n";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -1172,17 +1176,17 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(socket.write_response_native_stream());
 
-                BOOST_CHECK(http::request_continue_required(message));
+                BOOST_CHECK(http::request_continue_required(request));
                 socket.async_write_response_continue(yield);
 
-                BOOST_CHECK(http::request_upgrade_desired(message));
-                BOOST_CHECK(method == "OPTIONS");
-                BOOST_CHECK(path == "/2");
+                BOOST_CHECK(http::request_upgrade_desired(request));
+                BOOST_CHECK(request.method() == "OPTIONS");
+                BOOST_CHECK(request.target() == "/2");
                 {
                     http::headers expected_headers{
                         {"host", "example.com"},
@@ -1190,20 +1194,21 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                         {"connection", "upgrade"},
                         {"upgrade", "vinipsmaker/0.1"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state()
                               == http::write_state::continue_issued);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "I'm scatman!";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -1223,33 +1228,34 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                 clear_message(reply);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(!socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(!http::request_upgrade_desired(message));
-                BOOST_CHECK(method == "GET");
-                BOOST_CHECK(path == "/3");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(!http::request_upgrade_desired(request));
+                BOOST_CHECK(request.method() == "GET");
+                BOOST_CHECK(request.target() == "/3");
 
                 {
                     http::headers expected_headers{
                         {"connection", "upgrade"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                BOOST_CHECK(message.body() == vector<uint8_t>{});
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.body() == vector<uint8_t>{});
+                BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "nothing special";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
 
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_REQUIRE(!socket.is_open());
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
@@ -1281,15 +1287,13 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                             "\r\n"
                             "!git");
 
-                std::string method;
-                std::string path;
-                http::message message;
+                http::request request;
 
-                BOOST_REQUIRE(method.size() == 0);
-                BOOST_REQUIRE(path.size() == 0);
+                BOOST_REQUIRE(request.method().size() == 0);
+                BOOST_REQUIRE(request.target().size() == 0);
 
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
-                socket.async_read_request(method, path, message, yield);
+                socket.async_read_request(request, yield);
 
                 {
                     bool cond = (socket.read_state()
@@ -1298,10 +1302,10 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                     BOOST_REQUIRE(cond);
                 }
                 BOOST_CHECK(socket.write_response_native_stream());
-                BOOST_CHECK(!http::request_continue_required(message));
-                BOOST_CHECK(http::request_upgrade_desired(message));
-                BOOST_CHECK(method == "POST");
-                BOOST_CHECK(path == "/pink%20floyd/the%20wall");
+                BOOST_CHECK(!http::request_continue_required(request));
+                BOOST_CHECK(http::request_upgrade_desired(request));
+                BOOST_CHECK(request.method() == "POST");
+                BOOST_CHECK(request.target() == "/pink%20floyd/the%20wall");
                 {
                     http::headers expected_headers{
                         {"host", "hyrule.org"},
@@ -1309,28 +1313,29 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                         {"content-length", "4"},
                         {"upgrade", "h2c"}
                     };
-                    BOOST_CHECK(message.headers() == expected_headers);
+                    BOOST_CHECK(request.headers() == expected_headers);
                 }
 
                 while (socket.read_state() != http::read_state::empty)
-                    socket.async_read_some(message, yield);
+                    socket.async_read_some(request, yield);
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
 
                 {
                     vector<uint8_t> v{'!', 'g', 'i', 't'};
-                    BOOST_CHECK(message.body() == v);
+                    BOOST_CHECK(request.body() == v);
                 }
-                BOOST_CHECK(message.trailers() == http::headers{});
+                BOOST_CHECK(request.trailers() == http::headers{});
 
                 BOOST_CHECK(socket.write_state() == http::write_state::empty);
-                http::message reply;
+                http::response reply;
+                reply.status_code() = 200;
+                reply.reason_phrase() = "OK";
                 {
                     const char body[] = "Sing now!\n";
                     copy(body, body + sizeof(body) - 1,
                          back_inserter(reply.body()));
                 }
-                socket.async_write_response(200, string_ref("OK"), reply,
-                                            yield);
+                socket.async_write_response(reply, yield);
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {

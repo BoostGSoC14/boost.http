@@ -1,0 +1,26 @@
+[[is_request_message]]
+==== `is_request_message`
+
+[source,cpp]
+----
+#include <boost/http/traits.hpp>
+----
+
+If `T` is an object fulfilling the <<request_concept,`Request` concept>>, this
+template inherits `std::true_type`. For any other type, this template inherits
+`std::false_type`.
+
+This template may be specialized for a user-defined type to indicate that the
+type is eligible for operations involving <<request_concept,`Request` objects>>.
+
+===== Template parameters
+
+`T`::
+
+  The type to query.
+
+===== See also
+
+* <<request_concept,`Request` concept>>.
+* <<is_message,`is_message`>>.
+* <<is_response_message,`is_response_message`>>.
