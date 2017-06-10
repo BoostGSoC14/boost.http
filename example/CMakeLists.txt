@@ -24,6 +24,11 @@ set(examples
   "spawn"
   "regex_router"
   "basic_router"
+  "spawn-chunked"
+  "spawn-with-runtime"
+  "spawn-with-runtime2"
+  "spawn-fileserver"
+  "spawn-fileserver2"
 )
 
 macro(add_example_target target)
