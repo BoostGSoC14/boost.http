@@ -1,5 +1,5 @@
 http.html: http.adoc
-	asciidoctor http.adoc
+	asciidoctor -a toc=left http.adoc
 
 http.epub: http.xml
 	pandoc -f docbook http.xml -o http.epub
