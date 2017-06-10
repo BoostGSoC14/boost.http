@@ -4,6 +4,10 @@ Vinícius dos Santos Oliveira <vini.ipsmaker@gmail.com>
 
 :source-highlighter: pygments
 
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 4
+
 :cpp: C++
 :cpp98: C++98
 :cpp11: C++11
