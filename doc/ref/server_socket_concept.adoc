@@ -73,7 +73,7 @@ boost::asio::async_result<
 |===
 |Expression|Return type|Precondition|Semantics|Postcondition
 
-|`std::is_base_of<std::true_type, boost::http::is_server_socket<X>>`
+|`std::is_base_of<std::true_type, http::is_server_socket<X>>`
 |`std::true_type`| | |
 
 |`X::request_type`|
