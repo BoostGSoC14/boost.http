@@ -8,7 +8,7 @@
 
 This function inherits <<basic_polymorphic_socket_base,
 `basic_polymorphic_socket_base<Message>`>> and extends its interface with
-virtual functions useful for server sockets. This class itself is also a
+virtual functions useful for server sockets. This class itself is also an
 abstract class with no state (i.e. an _interface_).
 
 References for objects of this class are expected to fulfill the

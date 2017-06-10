@@ -65,7 +65,7 @@ layer.
 
 `basic_buffered_socket(boost::asio::io_service &io_service)`::
 
-  Constructor. /io_service/ is passed to the constructor from the underlying
+  Constructor. _io_service_ is passed to the constructor from the underlying
   stream.
 
 `template<class... Args> basic_buffered_socket(Args&&... args)`::
