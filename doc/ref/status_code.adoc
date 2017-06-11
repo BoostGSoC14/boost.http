@@ -13,7 +13,7 @@ enum class status_code: std::uint_fast16_t
 
 This scoped enumeration defines the values for the
 http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml[
-"Hypertext Transfer Protocol (HTTP) Status Code Registry"].
+“Hypertext Transfer Protocol (HTTP) Status Code Registry”].
 
 ===== Member constants
 

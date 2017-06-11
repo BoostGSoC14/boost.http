@@ -9,7 +9,7 @@ should provide.
 Types fulfilling the `Socket` concept and also possessing the _strict_ property::
 
   Instances from this type will *not* insert illegal characters
-  footnote:[Defined in the <<message_concept,`Message` concept's "definitions"
+  footnote:[Defined in the <<message_concept,`Message` concept's “definitions”
   section>>.] in the HTTP fields.
 
 Native stream::
@@ -210,7 +210,7 @@ a|
 
 |===
 
-. Failing to comply with the "MUST" and "MUST *NOT*" conditions described
+. Failing to comply with the “MUST” and “MUST *NOT*” conditions described
   previously invokes undefined behaviour.
 . Any HTTP field name received through the wire is normalized (i.e. uppercase
   characters are converted to lowercase) before they're inserted into objects of

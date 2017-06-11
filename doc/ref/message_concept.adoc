@@ -152,7 +152,7 @@ a|
 |
 |===
 
-. Failing to comply with the "MUST" and "MUST *NOT*" conditions described
+. Failing to comply with the “MUST” and “MUST *NOT*” conditions described
   previously invokes undefined behaviour.
 
 ===== See also

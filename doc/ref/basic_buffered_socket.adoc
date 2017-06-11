@@ -17,7 +17,7 @@ The underlying I/O object is expected to have the following properties:
   may transfer fewer bytes than requested...).
 * It fulfills the ASIO's `AsyncReadStream` requirement.
 * It fulfills the ASIO's `AsyncWriteStream` requirement.
-* It is backed by a reliable transport or session-layer "connection" with
+* It is backed by a reliable transport or session-layer “connection” with
   in-order delivery of octets (i.e. any 8-bit sequence of data).
 
 [NOTE]

@@ -107,7 +107,7 @@ function to ensure the object will be live as long as the coroutine.
 === Receiving requests
 
 You can find the whole code at the end of the secion. For now, we build upon the
-code from the previous code (just replace the "our code goes" here comment with
+code from the previous code (just replace the “our code goes” here comment with
 the code we'll build in this section.
 
 [source,cpp]
@@ -234,7 +234,7 @@ acceptor.async_accept(connection->tcp_layer(), yield);
 
 HTTP doesn't require you to handle protocol negotiation separately from the
 remaining protocol or any super special handshaking flow. Therefore, we use a
-"naked" acceptor to fuel an usable HTTP socket. Other HTTP backends may have
+“naked” acceptor to fuel an usable HTTP socket. Other HTTP backends may have
 different usage.
 
 And, like I promised, here is the complete code (with a lot of print statements

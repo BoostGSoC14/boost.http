@@ -125,11 +125,11 @@ a pool or a cache layer, but a cluster may even demand these layers to properly
 handle thousands of requests every second. With this use case in mind,
 modularity was achieved.
 
-The plan to finish such ambitious project was "to expose an HTTP abstraction
+The plan to finish such ambitious project was “to expose an HTTP abstraction
 able to make use of the HTTP power (chunking/streaming, pipelining, upgrade for
 supporting channels and multiplexing for supporting channels), at the same time
 that a complete separation of communication channels and HTTP messages is
-achieved".
+achieved”.
 
 With the separation of HTTP messages and HTTP communication channels, alongside
 the use of an active model (you ask by the next request instead providing a
@@ -200,7 +200,7 @@ This library may be very pleasant to use for any ASIO-centered mind.
 * Completion tokens received as the last argument for aync functions.
 * Async operations have the `async_` prefix.
 * User control the bufferring mechanism, passing the opaque `asio::buffer` type.
-* User provides _output_ arguments as references and they'll be "filled" by the
+* User provides _output_ arguments as references and they'll be “filled” by the
   time the operation completes.
 * Memory management is left for the user.
 * An active model is presented.
@@ -323,10 +323,10 @@ because some setup (e.g. a proxy who doesn't want to reformat the messages) may
 want to move the HTTP parser to the HTTP message object. I want to allow a
 library who will beat C servers in every aspect.
 
-As per {rfc7230}, "a server MUST NOT apply a request to the target resource
+As per {rfc7230}, “a server MUST NOT apply a request to the target resource
 until the entire request header section is received, since later header fields
 might include conditionals, authentication credentials, or deliberately
-misleading duplicate header fields that would impact request processing", so we
+misleading duplicate header fields that would impact request processing”, so we
 define an interface who will only expose a message once the complete header
 section is ready. The message body can be progressively received later. The API
 also unifies HTTP messages and HTTP chunking.
@@ -343,8 +343,8 @@ HTTP pipelining (and futurely multiplexing in `HTTP/2.0`).
 
 ==== The when
 
-I couldn't resist the temptation of adding a "_when_" named section after I
-already had written a "_what_" and a "_why_" section.
+I couldn't resist the temptation of adding a “_when_” named section after I
+already had written a “_what_” and a “_why_” section.
 
 Just too much research time went into this proposal. Really, a lot of time. I
 developed some broken HTTP projects some years ago, learned a lot of design with

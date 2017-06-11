@@ -68,7 +68,7 @@ be received.
   Only possible in incoming response mode. It means the message is complete and
   you can no longer issue another `receive_message` until something else is done
   (e.g. send another http request). This is a different/special value, because
-  the "something else to do" might not be related to read actions.
+  the “something else to do” might not be related to read actions.
 +
 It can be reached from `body_ready` state, after all trailers have been
 received. It's safe to assume that all message data is available at the time
