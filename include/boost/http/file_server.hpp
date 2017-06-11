@@ -1502,7 +1502,6 @@ async_response_transmit_dir(ServerSocket &socket,
             });
     } catch(system::system_error &e) {
         auto err = e.code();
-        std::cout << e.what() << std::endl;
         socket.get_io_service().post([handler,err]() mutable {
                 handler(err);
             });
