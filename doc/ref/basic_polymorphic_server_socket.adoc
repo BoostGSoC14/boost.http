@@ -6,7 +6,7 @@
 #include <boost/http/polymorphic_server_socket.hpp>
 ----
 
-This function inherits <<basic_polymorphic_socket_base,
+This class inherits <<basic_polymorphic_socket_base,
 `basic_polymorphic_socket_base<Message>`>> and extends its interface with
 virtual functions useful for server sockets. This class itself is also an
 abstract class with no state (i.e. an _interface_).
