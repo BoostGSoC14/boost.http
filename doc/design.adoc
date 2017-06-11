@@ -84,10 +84,6 @@ between the statically declared routers and dynamic routers? I hope this will be
 rather polemic and will require a lot of iterations to get it right, maybe with
 a mini-review for acceptance.
 
-Why doesn't the library use a Spirit-based HTTP parser exposed to the user?::
-
-  Code reuse. We might do that later.
-
 === Design choices
 
 To convince you about the solution, I'll start the text highlighting some
