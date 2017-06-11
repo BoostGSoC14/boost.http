@@ -76,19 +76,34 @@ public:
                 cout << '[' << self->counter << "] About to send a reply"
                      << endl;
 
+                system::error_code ec;
+
                 /* WARNING: a correct implementation would parse and extract
                    path. A correct implementation WOULD NOT mirror the usage
                    pattern below. */
                 http::response reply;
-                reply.status_code() = 200;
-                reply.reason_phrase() = "OK";
                 //reply.headers().emplace("connection", "close");
+
                 http::async_response_transmit_dir(self->socket,
                                                   self->request.target(),
                                                   self->request, reply,
-                                                  self->dir, yield);
+                                                  self->dir, yield[ec]);
+
+                if (ec) {
+                    if (ec.category() != http::file_server_category())
+                        throw system::system_error(ec);
+
+                    reply.status_code() = 404;
+                    reply.reason_phrase() = "Not found";
+                    reply.body().clear();
+                    const char body[] = "File not found\n";
+                    std::copy(body, body + sizeof(body) - 1,
+                              std::back_inserter(reply.body()));
+
+                    self->socket.async_write_response(reply, yield);
+                }
             }
-        } catch (system::system_error &e) {
+        } catch (const system::system_error &e) {
             if (e.code() != system::error_code{asio::error::eof}) {
                 cerr << '[' << self->counter << "] Aborting on exception: "
                      << e.what() << endl;
@@ -96,7 +111,7 @@ public:
             }
 
             cout << '[' << self->counter << "] Error: " << e.what() << endl;
-        } catch (std::exception &e) {
+        } catch (const std::exception &e) {
             cerr << '[' << self->counter << "] Aborting on exception: "
                  << e.what() << endl;
             std::exit(1);
