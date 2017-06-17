@@ -222,7 +222,7 @@ a|
   (i.e. the user can use a different `message` object to receive a different
   message). This requirement is extended to refinements of this concept.
 . The `Socket` object MUST *NOT* insert HTTP headers with empty keys (i.e. `""`)
-  or empty values (i.e. `""`) in message objects provided by the user.
+  in message, request or response objects provided by the user.
 . You MUST *NOT* write messages with the `"transfer-encoding: chunked"` header.
 . You MUST *NOT* write *atomic* messages with the `"transfer-encoding"` header.
 

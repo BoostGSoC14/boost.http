@@ -153,6 +153,8 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                             "x-Pants: On\r\n"
                             "x-code: meaw\r\n"
                             "X-ENEMY: y \t y,y\t\r\n"
+                            "x-moRe:\r\n"
+                            "x-mOre2:  \r\n"
                             "\r\n"
                             // second
                             "POST /file_upload HTTP/1.1\r\n"
@@ -193,7 +195,9 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                         {"x-men", "the   beginning"},
                         {"x-pants", "On"},
                         {"x-code", "meaw"},
-                        {"x-enemy", "y \t y,y"}
+                        {"x-enemy", "y \t y,y"},
+                        {"x-more", ""},
+                        {"x-more2", ""}
                     };
                     BOOST_CHECK(request.headers() == expected_headers);
                 }

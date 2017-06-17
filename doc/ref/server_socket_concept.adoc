@@ -254,8 +254,8 @@ library and the `ServerSocket` and can differ from the communication between the
 +
 The `ServerSocket` MUST adopt a behaviour that is compatible with the behaviour
 defined in the section 3.3.2 of the RFC 7230.
-. The `Socket` object MUST *NOT* insert HTTP headers with empty keys (i.e. `""`)
-  or empty values (i.e. `""`) in message objects provided by the user.
+. The `ServerSocket` object MUST *NOT* insert HTTP headers with empty keys
+  (i.e. `""`) in message, request or response objects provided by the user.
 
 ===== Models
 
