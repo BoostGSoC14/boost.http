@@ -617,6 +617,8 @@ void basic_socket<Socket>
                         Message &message, const system::error_code &ec,
                         std::size_t bytes_transferred)
 {
+    using detail::string_literal_buffer;
+
     if (ec) {
         clear_buffer();
         handler(ec);
@@ -654,15 +656,104 @@ void basic_socket<Socket>
             BOOST_HTTP_DETAIL_UNREACHABLE("client API not implemented yet");
             break;
         case token::code::error_invalid_data:
-        case token::code::error_no_host:
-        case token::code::error_invalid_content_length:
-        case token::code::error_content_length_overflow:
-        case token::code::error_invalid_transfer_encoding:
-        case token::code::error_chunk_size_overflow:
-            // TODO: send HTTP reply before proceeding
             {
                 clear_buffer();
-                handler(system::error_code(http_errc::parsing_error));
+
+                auto error_message
+                    = string_literal_buffer("HTTP/1.1 400 Bad Request\r\n"
+                                            "Content-Length: 13\r\n"
+                                            "Connection: close\r\n"
+                                            "\r\n"
+                                            "Invalid data\n");
+                asio::async_write(channel, asio::buffer(error_message),
+                                  [this,handler](system::error_code
+                                                 /*ignored_ec*/,
+                                                 std::size_t
+                                                 /*bytes_transferred*/)
+                                  mutable {
+                                      handler(http_errc::parsing_error);
+                                  });
+                return;
+            }
+        case token::code::error_no_host:
+            {
+                clear_buffer();
+
+                auto error_message
+                    = string_literal_buffer("HTTP/1.1 400 Bad Request\r\n"
+                                            "Content-Length: 13\r\n"
+                                            "Connection: close\r\n"
+                                            "\r\n"
+                                            "Host missing\n");
+                asio::async_write(channel, asio::buffer(error_message),
+                                  [this,handler](system::error_code
+                                                 /*ignored_ec*/,
+                                                 std::size_t
+                                                 /*bytes_transferred*/)
+                                  mutable {
+                                      handler(http_errc::parsing_error);
+                                  });
+                return;
+            }
+        case token::code::error_invalid_content_length:
+        case token::code::error_content_length_overflow:
+            {
+                clear_buffer();
+
+                auto error_message
+                    = string_literal_buffer("HTTP/1.1 400 Bad Request\r\n"
+                                            "Content-Length: 23\r\n"
+                                            "Connection: close\r\n"
+                                            "\r\n"
+                                            "Invalid content-length\n");
+                asio::async_write(channel, asio::buffer(error_message),
+                                  [this,handler](system::error_code
+                                                 /*ignored_ec*/,
+                                                 std::size_t
+                                                 /*bytes_transferred*/)
+                                  mutable {
+                                      handler(http_errc::parsing_error);
+                                  });
+                return;
+            }
+        case token::code::error_invalid_transfer_encoding:
+            {
+                clear_buffer();
+
+                auto error_message
+                    = string_literal_buffer("HTTP/1.1 400 Bad Request\r\n"
+                                            "Content-Length: 25\r\n"
+                                            "Connection: close\r\n"
+                                            "\r\n"
+                                            "Invalid transfer-encoding\n");
+                asio::async_write(channel, asio::buffer(error_message),
+                                  [this,handler](system::error_code
+                                                 /*ignored_ec*/,
+                                                 std::size_t
+                                                 /*bytes_transferred*/)
+                                  mutable {
+                                      handler(http_errc::parsing_error);
+                                  });
+                return;
+            }
+        case token::code::error_chunk_size_overflow:
+            {
+                clear_buffer();
+
+                auto error_message
+                    = string_literal_buffer("HTTP/1.1 400 Bad Request\r\n"
+                                            "Content-Length: 25\r\n"
+                                            "Connection: close\r\n"
+                                            "\r\n"
+                                            "Can't process chunk size\n");
+                asio::async_write(channel, asio::buffer(error_message),
+                                  [this,handler](system::error_code
+                                                 /*ignored_ec*/,
+                                                 std::size_t
+                                                 /*bytes_transferred*/)
+                                  mutable {
+                                      handler(http_errc::parsing_error);
+                                  });
                 return;
             }
         case token::code::skip:
