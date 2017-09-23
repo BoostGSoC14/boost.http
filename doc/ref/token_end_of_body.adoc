@@ -1,0 +1,19 @@
+[[token_end_of_body]]
+==== `token::end_of_body`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct end_of_body
+{
+    static const token::code::value code = token::code::end_of_body;
+};
+
+} // namespace token
+----

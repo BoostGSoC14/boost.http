@@ -1,0 +1,41 @@
+[[design_choices]]
+== Design choices
+
+=== FAQ
+
+[qanda]
+How robust is this parser?::
+
+  It doesn't try to parse URLs at all. It'll ensure that only valid characters
+  (according to HTTP request target BNF rule) are present, but invalid sequences
+  are accepted.
++
+This parser is a little (but not too much) more liberal in what accepts and
+it'll accept invalid sequences for rarely used elements that don't impact upper
+layers of the application. The reason to accept such non-conformant sequences is
+a simpler algorithm that can be more performant (e.g. we only check for invalid
+chars, but not invalid sequences). Therefore, it's advised to reframe the
+message if you intend to forward it to some other participant. Not doing so,
+might be a security issue if the participant you are forwarding your message to
+is know to show improper behaviour when parsing invalid streams. There are
+several references within the RFC7230 where similar decisions are suggested
+(e.g. if you receive redundant Content-Length header field, you must merge it
+into one before forwarding or reject the message as a whole).
+
+Why not make a parser using Boost.Spirit?::
+
+  TODO.
+
+What is the recommended buffer size?::
+
+  A buffer of size 7990 is recommended (suggested request line of 8000 by
+  section 3.1.1 of RFC7230 minus spaces, minus http version information minus
+  the minimum size of the other token in the request line). However, the real
+  suggested buffer size should be how long names you expect to have on your own
+  servers.
+
+=== Roadmap
+
+* Parsers combinators.
+* Incremental message generator.
+* Iterator adaptors.

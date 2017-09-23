@@ -1,0 +1,21 @@
+[[syntax_ows]]
+==== `syntax::ows`
+
+[source,cpp]
+----
+#include <boost/http/syntax/ows.hpp>
+----
+
+[source,cpp]
+----
+namespace syntax {
+
+template<class CharT>
+struct ows {
+    typedef basic_string_ref<CharT> view_type;
+
+    static std::size_t match(view_type view);
+};
+
+} // namespace syntax
+----

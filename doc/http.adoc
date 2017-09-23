@@ -1,0 +1,66 @@
+= Boost.Http
+Vinícius dos Santos Oliveira <vini.ipsmaker@gmail.com>
+:doctype: book
+
+:source-highlighter: pygments
+
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 4
+
+:cpp: C++
+:cpp98: C++98
+:cpp11: C++11
+:rfc7230: https://tools.ietf.org/html/rfc7230#section-3.2.2[RFC 7230]
+
+Distributed under the Boost Software License, Version 1.0. (See accompanying
+file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+This library can be used to create applications that need to parse HTTP streams.
+
+WARNING: This is not an official Boost C++ library. It wasn't reviewed and can't
+be downloaded from www.boost.org. This library will be reviewed eventually.
+
+''''
+
+Boost.Http is a library that provides an incremental HTTP parser and a set of
+mini-parsers that can be used independently or combined footnote:[parser
+combinators algorithms are on the way to ease it up even
+further. https://vimeo.com/171704565[Check the talk from Scott Wlaschin for
+more].]. A future version will also provide a message generator.
+
+The highlights are:
+
+* Support for modern HTTP features.
+* Simple.
+* Portable (C++03 and little dependencies).
+* Just like Ryan Dahl's HTTP parser, this parser does not make any syscalls nor
+  allocations. It also does not buffer data.
+* You can mutate the passed buffer footnote:[The larger explanation being:
+  incomplete tokens are kept in buffer, so you are not required to allocate them
+  on a secondary buffer, but you're still allowed to mutate/move/grow the buffer
+  (as opposed to... say... some C++ iterators that would get invalidated once
+  the container changes).].
+* It doesn't steal control flow from your application footnote:[parsing is done
+  one token at a time no matter how much data is buffered]. Great for HTTP
+  pipelining.
+* Matching and decoding token as separate steps footnote:[Proper extraction of
+  header fields (some popular parsers like NodeJS's will force you to know
+  protocol details and parser internals to manually remove leading and trailing
+  whitespace from field values). This point is not only about header field
+  extraction, but really about a parser that indeed abstract and understand the
+  protocol and that is easy to use right by people that don't know HTTP.].
+
+include::using.adoc[]
+
+include::tutorial.adoc[]
+
+include::design.adoc[]
+
+////
+== Examples
+
+include::examples.adoc[]
+////
+
+include::reference.adoc[]

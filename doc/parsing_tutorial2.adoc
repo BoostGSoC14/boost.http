@@ -1,0 +1,223 @@
+[[parsing_tutorial2]]
+=== Parsing (advanced)
+
+In this tutorial, you'll learn how to use this library to parse HTTP streams
+easily.
+
+The architecture of the library is broken into two classes of parsers, the
+content parsers and the structural parsers.
+
+The content parsers handle non-structural elements, terminal tokens, all easy to
+match and decode. They are stateless. They are mini-parsers for elements easy to
+parse and by themselves don't add much value to justify a library (don't confuse
+_low value_ with _valueless_). They live in the `boost::http::syntax`
+namespace. They are useful when you want to parse individual HTTP elements like
+the `range` header value. We won't see them in this tutorial.
+
+The structural parsers handle structured data formats (e.g. HTTP). To achieve
+flexibility and performance requirements, they follow the incremental/pull
+parser model (a bit like the more traditional Iterator design pattern as
+described in the Gang-of-Four book, instead of C++ iterators). These parsers
+live in the `boost::http::reader` namespace. These are the parsers we will look
+into now.
+
+In the future, we may add support for HTTP/2.0 stream format, but for now, we
+are left with two structural parsers:
+
+* `boost::http::reader::request` for HTTP/1.0 and HTTP/1.1 request messages.
+* `boost::http::reader::response` for HTTP/1.0 and HTTP/1.1 response messages.
+
+Each structural parser is prepared to receive a continuous stream of messages
+(i.e. what NodeJS correctly refer to as keep-alive persistent streams). Because
+the structure of messages is flexible enough to be non-representable in simple
+non-allocating C++ structures, we don't decode the whole stream as a single
+parsing result as this would force allocation. What we do instead is to feed the
+user with one token at a time and internally we keep a lightweight non-growing
+state required to decode further tokens.
+
+We use the same token definition for HTTP requests and HTTP responses. The
+tokens can be either of status (e.g. `error` or `skip`), delimiters (e.g.
+`boost::http::token::code::end_of_headers`) or data (e.g.
+`boost::http::token::code::field_name`) categories. Only tokens of the data
+category have an associated value.
+
+Each token is associated with a slice (possibly 0-sized if `error` token or a
+token from the delimiters category) of the byte stream. The process goes as
+follow:
+
+. Set the buffer used by the reader.
+. Consume tokens.
+.. Call `next()`.
+.. Check `code()` return.
+.. Possibly call `value<T>()` to extract token value.
+. Remove parsed data from the buffer.
+.. You'll need to keep state of parsed vs unparsed data by calling
+   `token_size()`.
+. If the address of the unparsed data changes, the reader is invalidated, so to
+  speak. You can restore its valid state by setting the buffer to null or to
+  the new address of the unparsed data.
+
+Enough with abstract info. Take the following part of an HTTP stream:
+
+....
+GET / HTTP/1.1\r\n
+Host: www.example.com\r\n
+\r\n
+....
+
+This stream can be broken in the following series of tokens (order preserved):
+
+* `method`.
+* `request_target`.
+* `skip`.
+* `version`.
+* `field_name`.
+* `field_value`.
+* `skip`.
+* `end_of_headers`.
+* `end_of_body`.
+* `end_of_message`.
+
+The parser is required to give you a `token_size()` so you can remove parsed
+data from the stream. However, the parser is not required to give the same
+series of tokens for the same stream. The strucutral and data tokens will always
+be emitted the same. However, the parser may choose to merge some status token
+(e.g.  `skip`) with a data token (e.g. `request_target`). Therefore, the
+following series of tokens would also be possible for the same example given
+previously:
+
+* `method`.
+* `skip`.
+* `request_target`.
+* `version`.
+* `field_name`.
+* `skip`.
+* `field_value`.
+* `end_of_headers`.
+* `end_of_body`.
+* `end_of_message`.
+
+This (non-)guarantee is to give freedom to vary the implementation. It'd be
+absurd to expect different implementations of this interface generating the same
+result byte by byte. You may expect different algorithms also in future
+versions.
+
+Another useful feature of this non-guarantee is to make possible to discard
+`skip` tokens in the buffer, but merge them if the stream is received in the
+buffer at once.
+
+Just imagine documenting the guarantees of the token stream if we were to make
+it predictable. It'd be insane.
+
+However, there is one guarantee that the reader object must provide. It must not
+discard bytes of data tokens while the token is incomplete. To illustrate this
+point, let's go to an example. Given the current token is `request_target`, you
+have the following code.
+
+[source,cpp]
+----
+assert(parser.code() == boost::http::token::code::request_target);
+auto value = parser.value<boost::http::token::request_target>();
+----
+
+While we traverse the stream, the parser will only _match_ tokens. We don't
+expect the parser to also _decode_ the tokens. The parser will only decode the
+tokens if necessary to further match the following tokens. And even when the
+parser decod'em, the intermediary results may be discarded. In other words,
+_match_ and _decode_ are separate steps and you can spare CPU time when you
+don't need to decode certain elements.
+
+The point is that the token value must be extracted directly from the byte
+stream and the parser is not allowed to buffer data about the stream (or the
+decoded values, for that matter). The implication of this rule gives a guarantee
+about the token order and its relationship to the bytem stream.
+
+You can imagine the stream as having two views. The tokens and the byte
+streams. The token view spans windows over the byte view.
+
+....
+tokens: | method | skip  | request_target | skip          | version
+bytes:  |  GET   | <SPC> |     /          | <SPC> HTTP/1. | 1 <CRLF>
+....
+
+The slice of data associated with a data token can grow larger than the
+equivalent bytes:
+
+....
+tokens: |  method    | request_target | skip  | version
+bytes:  |  GET <SPC> |     /          | <SPC> | HTTP/1.1 <CRLF>
+....
+
+But it cannot shrink smaller than its associated bytes:
+
+....
+tokens: | method | skip    | request_target | skip           | version
+bytes:  |  GE    | T <SPC> |     /          | <SPC> HTTP/1.1 | <CRLF>
+....
+
+So you have a token interface easy to inspect and you have a lot of freedom to
+manage the underlying buffer. Let's see the `boost::http::reader::request`
+parser as used in Tufão:
+
+[source,cpp]
+----
+include::tufao.cpp[]
+----
+
+Boost.Http higher level message framework's socket has a buffer of fixed size
+and cannot have the luxury of appending data every time. Both high level
+projects have many fundamental differences.
+
+|===
+|Boost.Http |Tufão
+
+|Boost.Asio active style.
+|Qt event loop passive style.
+
+|Boost usage allowed.
+|It uses this header-only parser lib at Tufão build time and Tufão user will
+ never need Boost again.
+
+|Message-based framework which allows different backends to be plugged later
+ keeping the same handlers.
+|Tied to HTTP/1.1 embedded server.
+
+|Callbacks and completion tokens. It may read more than asked for, but it'll use
+ `read_state` to keep user informed.
+|Combined with Qt network reactive programming style, it has a strange logic
+ related to event signalling.
+
+|Proper HTTP upgrade semantics.
+|Strange HTTP upgrade semantics thanks to the immaturity of following NodeJS
+ design decisions.
+
+|It normalizes all header keys to lower case.
+|Case insensitive string classes for the C++ counterpart of the HTTP field names
+ structure.
+
+|===
+
+These are the main differences that I wanted to note. You can be sure this
+parser will fit you and it'll be easy to use. And more importantly, easy to use
+*right*.
+https://vinipsmaker.wordpress.com/2016/08/05/boost-http-has-a-new-parser/[NodeJS
+parser demands too much HTTP knowledge on the user behalf]. And thanks to the
+NodeJS parser hard to use API, Tufão only was able to support proper HTTP
+pipelining once it migrated to Boost.Http parser (although Boost.Http managed to
+do lots of ninja techs to support it under NodeJS parser).
+
+To sum up the data received handler structure, you need:
+
+. Get the buffer right with `parser.set_buffer(buf)`.
+. Loop to consume — `parser.next()` — tokens while
+  `http::token::code::error_insufficient_data`.
+.. Examine token with `parser.code()`.
+.. Maybe handle error.
+.. Extract data with `parser.value<T>()` if a data token.
+. Remove parsed data.
+
+There are a lot of different HTTP server/client models you can build on top of
+this framework and the notification style you're to use is entirely up
+to you. Most likely, you'll want to hook some actions when the
+always-to-be-triggered delimiters category tokens (e.g.
+`boost::http::token::code::end_of_headers`) are reached.

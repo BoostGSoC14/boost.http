@@ -1,0 +1,11 @@
+== Using
+
+=== Requirements
+
+* CMake 3.1.0 or more recent footnote:[for tests]. You can skip this requirement
+  if you don't intend to run the tests.
+* Boost 1.57 or more recent.
+** `boost::asio::const_buffer`.
+** `boost::string_ref`.
+* http://asciidoctor.org/[asciidoctor] footnote:[For the documentation.]. You'll
+  also need http://pandoc.org/[pandoc] if you want to generate the ePUB output.

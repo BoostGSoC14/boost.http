@@ -1,0 +1,6 @@
+[[reader_request_header]]
+==== `<boost/http/reader/request.hpp>`
+
+Import the following symbols:
+
+* <<reader_request,`reader::request`>>

@@ -1,0 +1,32 @@
+[[syntax_chunk_size]]
+==== `syntax::chunk_size`
+
+[source,cpp]
+----
+#include <boost/http/syntax/chunk_size.hpp>
+----
+
+[source,cpp]
+----
+namespace syntax {
+
+template<class CharT>
+struct chunk_size {
+    typedef basic_string_ref<CharT> view_type;
+
+    BOOST_SCOPED_ENUM_DECLARE_BEGIN(result)
+    {
+        invalid,
+        ok,
+        overflow
+    }
+    BOOST_SCOPED_ENUM_DECLARE_END(result)
+
+    static std::size_t match(view_type view);
+
+    template<class Target>
+    static result decode(view_type in, Target &out);
+};
+
+} // namespace syntax
+----

@@ -1,0 +1,218 @@
+[[reader_response]]
+==== `reader::response`
+
+[source,cpp]
+----
+#include <boost/http/reader/response.hpp>
+----
+
+This class represents an `HTTP/1.1` (and `HTTP/1.0`) incremental parser. It'll
+use the token definitions found in <<token_code_value,`token::code::value`>>.
+You may want to check the <<parsing_tutorial1,basic parsing tutorial>> to learn
+the basics.
+
+[IMPORTANT]
+--
+Once the parser enters in an error state (*and* the error is different than
+`token::code::error_insufficient_data`), the internal buffer is said to be in an
+invalidated state. Therefore, the parser won't access the data anymore and the
+user is free to invalidate the data (e.g. resize/free it) without calling
+`set_buffer()` or `reset()` first.
+
+If you want to reuse the same reader object to parse another stream, just call
+`reset()`.
+--
+
+===== Member types
+
+`typedef std::size_t size_type`::
+
+  Type used to represent sizes.
+
+`typedef const char value_type`::
+
+  Type used to represent the value of a single element in the buffer.
+
+`typedef value_type *pointer`::
+
+  Pointer-to-value type.
+
+`typedef boost::string_ref view_type`::
+
+  Type used to refer to non-owning string slices.
+
+===== Member functions
+
+`response()`::
+
+  Constructor.
+
+`void set_method(view_type method)`::
+
+  Use it to inform the request method of the request message associated with
+  this response message. This is necessary internally to compute the body
+  size. If you do not call this function when `code() ==
+  token::code::status_code`, then `token::code::error_set_method` will be the
+  next token.
++
+WARNING: The `assert(code() == token::code::status_code)` precondition is
+assumed.
+
+`void reset()`::
+
+  After a call to this function, the object has the same internal state as an
+  object that was just constructed.
+
+`void puteof()`::
+
+  If the connection is closed, call this function. `HTTP/1.0` used this event to
+  signalize `token::code::end_of_body`.
+
+`token::code::value code() const`::
+
+  Use it to inspect current token. Returns code.
++
+[NOTE]
+--
+The following values are *never* returned:
+
+* `token::code::error_no_host`.
+* `token::code::method`.
+* `token::code::request_target`.
+--
+
+`size_type token_size() const`::
+
+  Returns the size of current token.
++
+[NOTE]
+--
+After you call `next()`, you're free to remove, from the buffer, the amount of
+bytes equals to the value returned here.
+
+If you do remove the parsed data from the buffer, the address of the data
+shouldn't change (i.e. you must not invalidate the pointers/iterators to old
+unparsed data). If you do change the address of old unparsed data, call
+`set_buffer` before using this object again.
+
+.Example
+
+[source,cpp]
+----
+std::size_t nparsed = reader.token_size();
+reader.next();
+buffer.erase(0, nparsed);
+reader.set_buffer(buffer);
+----
+--
++
+WARNING: Do *not* use `string_length(reader.value<T>())` to compute the token
+size. `string_length(reader.value<T>())` and `reader.token_size()` may
+differ. <<parsing_tutorial2,Check the advanced parsing tutorial for more
+details>>.
+
+`template<class T> typename T::type value() const`::
+
+  Extracts the value of current token and returns it.
++
+`T` must be one of:
++
+* `token::status_code`.
+* `token::version`.
+* `token::reason_phrase`.
+* `token::field_name`.
+* `token::field_value`.
+* `token::body_chunk`.
++
+WARNING: The `assert(code() == T::code)` precondition is assumed.
++
+NOTE: This parser doesn't buffer data. The value is extracted directly from
+buffer.
+
+`token::code::value expected_token() const`::
+
+  Returns the expected token code.
++
+Useful when the buffer has been exhausted and `code() ==
+token::code::error_insufficient_data`. Use it to log error to _cout_ or another
+error-handling strategy.
++
+[WARNING]
+--
+The returned value is a *heuristic*, not a _truth_. If your buffer is too small,
+the buffer will be exhausted with too little info to know which element is
+expected for sure.
+
+For instance, `expected_token()` might return `token::code::field_name`, but
+when you have enough info in the buffer, the actual token happens to be
+`token::code::end_of_headers`.
+--
+
+`void next()`::
+
+  Consumes the current token and advances in the buffer.
++
+NOTE: Given the current token is complete (i.e. `code() !=
+token::code::error_insufficient_data`), a call to this function *always*
+consumes the current token.
+
+`void set_buffer(asio::const_buffer inbuffer)`::
+
+  Sets buffer to _inbuffer_.
++
+[NOTE]
+--
+_inbuffer_ should hold the data at the same point of unparsed data from the
+internal buffer from before this call.
+
+.Example
+
+[source,cpp]
+----
+std::size_t nparsed = reader.token_size();
+
+// now unparsed data becomes ahead
+// of `buffer.begin()`
+reader.next();
+
+reader.set_buffer(buffer + nparsed);
+----
+--
++
+WARNING: The reader object follows the HTTP stream orchestrated by the
+continuous flow of `set_buffer()` and `next()`. You should treat this region as
+read-only. For instance, if I pass `"header-a: something"` to the reader and
+then change the contents to `"header-a: another thing"`, there are no guarantees
+about the reader object behaviour. You can safely change only the contents of
+the buffer region not yet exposed to `reader` through
+`reader.set_buffer(some_buffer)` (i.e. the region outside of `some_buffer` never
+seen by `reader`).
++
+[NOTE]
+--
+You're free to pass larger buffers at will.
+
+You're also free to pass a buffer just as big as current token
+(i.e. `token_size()`). In other words, you're free to shrink the buffer *if* the
+new buffer is at least as big as current token.
+--
++
+[TIP]
+--
+If you want to free the buffer while maintaining the reader object valid, just
+set the buffer to current token size, call `next()` and then set buffer to an
+empty buffer.
+
+Do notice that this will consume current token as well. And as values are
+decoded directly from the buffer, this strategy is the only choice.
+
+.Example
+
+[source,cpp]
+----
+reader.set_buffer(boost::asio::buffer(buffer, reader.token_size()));
+reader.next();
+reader.set_buffer(boost::asio::const_buffer());
+buffer.clear();
+----
+--

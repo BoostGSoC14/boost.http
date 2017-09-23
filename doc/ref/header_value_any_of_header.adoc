@@ -1,0 +1,6 @@
+[[header_value_any_of_header]]
+==== `<boost/http/algorithm/header/header_value_any_of.hpp>`
+
+Import the following symbols:
+
+* <<header_value_any_of,`header_value_any_of`>>

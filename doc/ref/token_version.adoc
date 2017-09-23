@@ -1,0 +1,20 @@
+[[token_version]]
+==== `token::version`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct version
+{
+    typedef int type;
+    static const token::code::value code = token::code::version;
+};
+
+} // namespace token
+----

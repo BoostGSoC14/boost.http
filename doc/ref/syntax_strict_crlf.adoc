@@ -1,0 +1,21 @@
+[[syntax_strict_crlf]]
+==== `syntax::strict_crlf`
+
+[source,cpp]
+----
+#include <boost/http/syntax/crlf.hpp>
+----
+
+[source,cpp]
+----
+namespace syntax {
+
+template<class CharT>
+struct strict_crlf {
+    typedef basic_string_ref<CharT> view_type;
+
+    static std::size_t match(view_type view);
+};
+
+} // namespace syntax
+----

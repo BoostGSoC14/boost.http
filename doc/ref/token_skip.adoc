@@ -1,0 +1,22 @@
+[[token_skip]]
+==== `token::skip`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct skip
+{
+    static const token::code::value code = token::code::skip;
+};
+
+} // namespace token
+----
+
+Used to skip unneeded bytes so user can keep buffer small when asking for more
+data.

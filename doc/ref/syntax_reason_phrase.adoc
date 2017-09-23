@@ -1,0 +1,21 @@
+[[syntax_reason_phrase]]
+==== `syntax::reason_phrase`
+
+[source,cpp]
+----
+#include <boost/http/syntax/reason_phrase.hpp>
+----
+
+[source,cpp]
+----
+namespace syntax {
+
+template<class CharT>
+struct reason_phrase {
+    typedef basic_string_ref<CharT> view_type;
+
+    static std::size_t match(view_type view);
+};
+
+} // namespace syntax
+----

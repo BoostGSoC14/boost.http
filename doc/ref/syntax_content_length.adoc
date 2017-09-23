@@ -1,0 +1,30 @@
+[[syntax_content_length]]
+==== `syntax::content_length`
+
+[source,cpp]
+----
+#include <boost/http/syntax/content_length.hpp>
+----
+
+[source,cpp]
+----
+namespace syntax {
+
+template<class CharT>
+struct content_length {
+    typedef basic_string_ref<CharT> view_type;
+
+    BOOST_SCOPED_ENUM_DECLARE_BEGIN(result)
+    {
+        invalid,
+        ok,
+        overflow
+    }
+    BOOST_SCOPED_ENUM_DECLARE_END(result)
+
+    template<class Target>
+    static result decode(view_type in, Target &out);
+};
+
+} // namespace syntax
+----

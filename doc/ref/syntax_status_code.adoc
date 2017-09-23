@@ -1,0 +1,23 @@
+[[syntax_status_code]]
+==== `syntax::status_code`
+
+[source,cpp]
+----
+#include <boost/http/syntax/status_code.hpp>
+----
+
+[source,cpp]
+----
+namespace syntax {
+
+template<class CharT>
+struct status_code {
+    typedef basic_string_ref<CharT> view_type;
+
+    static std::size_t match(view_type view);
+
+    static uint_least16_t decode(view_type view);
+};
+
+} // namespace syntax
+----
