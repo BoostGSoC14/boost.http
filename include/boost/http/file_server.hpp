@@ -443,7 +443,8 @@ struct on_async_response_transmit_file_multi
 
         auto schedule_more = [this]() {
             auto self = this->shared_from_this();
-            socket.async_write(message, [self](const system::error_code &ec) {
+            this->socket
+                .async_write(message, [self](const system::error_code &ec) {
                     self->process(ec);
                 });
         };
@@ -807,7 +808,6 @@ resolve_dots_or_throw_not_found(const std::basic_string<CharT> &ipath)
 {
     using boost::algorithm::split_iterator;
     using boost::algorithm::first_finder;
-    using boost::algorithm::equal;
 
     typedef std::basic_string<CharT> StringT;
     typedef split_iterator<typename StringT::const_iterator>
@@ -822,10 +822,13 @@ resolve_dots_or_throw_not_found(const std::basic_string<CharT> &ipath)
              make_split_iterator(ipath, first_finder("/", is_iequal()));
          it != string_split_iterator();
          ++it) {
-        if (equal(it->begin(), it->end(), dot.begin(), dot.end()))
+        if (boost::algorithm::equal(it->begin(), it->end(), dot.begin(),
+            dot.end())) {
             continue;
+        }
 
-        if (equal(it->begin(), it->end(), dot_dot.begin(), dot_dot.end())) {
+        if (boost::algorithm::equal(it->begin(), it->end(), dot_dot.begin(),
+            dot_dot.end())) {
             if (ret.has_filename()) {
                 ret.remove_filename();
             } else {

@@ -1,3 +1,5 @@
+#include <boost/asio.hpp>
+
 #include "unit_test.hpp"
 
 #include <iostream>

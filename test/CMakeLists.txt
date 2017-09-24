@@ -10,6 +10,7 @@ find_package(Boost 1.55 COMPONENTS
   system
   context
   coroutine
+  regex
   REQUIRED)
 
 # Config
@@ -55,6 +56,14 @@ macro(add_test_target target version)
   set_property(TARGET "${target}" PROPERTY CXX_STANDARD ${version})
   set_property(TARGET "${target}" PROPERTY CXX_STANDARD_REQUIRED ON)
 
+  if(WIN32)
+    if(MSVC)
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO")
+      set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SAFESEH:NO")
+      set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /SAFESEH:NO")
+    endif()
+  endif()
+
   target_include_directories("${target}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include" ${Boost_INCLUDE_DIR})
 
@@ -63,7 +72,8 @@ macro(add_test_target target version)
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_COROUTINE_LIBRARY}
-    ${Boost_CONTEXT_LIBRARY})
+    ${Boost_CONTEXT_LIBRARY}
+    ${Boost_REGEX_LIBRARY})
 
   add_test(NAME "${target}" COMMAND $<TARGET_FILE:${target}>)
 endmacro()

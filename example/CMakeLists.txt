@@ -37,6 +37,14 @@ macro(add_example_target target)
   set_property(TARGET "${target}" PROPERTY CXX_STANDARD 11)
   set_property(TARGET "${target}" PROPERTY CXX_STANDARD_REQUIRED ON)
 
+  if(WIN32)
+    if(MSVC)
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO")
+      set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SAFESEH:NO")
+      set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /SAFESEH:NO")
+    endif()
+  endif()
+
   target_include_directories("${target}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include" ${Boost_INCLUDE_DIR})
 

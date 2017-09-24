@@ -23,7 +23,7 @@ install:
   - ps: "[IO.Compression.ZipFile]::ExtractToDirectory('C:\\master.zip', 'C:\\')"
   - cd "C:\boost-release-master"
   - bootstrap.bat --with-toolset=msvc-14.0
-  - b2 --with-container --with-context --with-coroutine --with-date_time --with-filesystem --with-system
+  - b2 --with-container --with-context --with-coroutine --with-date_time --with-filesystem --with-system --with-regex
   - cd "%APPVEYOR_BUILD_FOLDER%"
 
 build_script:
