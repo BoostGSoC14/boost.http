@@ -34,6 +34,21 @@ What is the recommended buffer size?::
   suggested buffer size should be how long names you expect to have on your own
   servers.
 
+What are the differences between `reader::request` and `reader::response`?::
+
++
+[[request_response_diff]]
+--
+* `response` has the `void set_method(view_type method)` member-function.
++
+WARNING: This member-function *MUST* be called for each HTTP response message
+being parsed in the stream.
+* `response` has the `void puteof()` member-function.
+* `code()` member function return value has different guarantees in each class.
+* `template<class T> typename T::type value() const` member function accepts
+  different input template arguments in each class.
+--
+
 === Roadmap
 
 * Parsers combinators.

@@ -190,3 +190,8 @@ HTTP request — with such state cleanup.
 By now, you're ready to use this library in your projects. You may want to check
 Boost.Http own usage of the parser or the Tufão library as real-world and
 complete examples of this parser.
+
+.See also
+
+* <<request_response_diff,What are the differences between `reader::request` and
+    `reader::response`?>>

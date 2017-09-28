@@ -216,3 +216,8 @@ reader.set_buffer(boost::asio::const_buffer());
 buffer.clear();
 ----
 --
+
+===== See also
+
+* <<request_response_diff,What are the differences between `reader::request` and
+    `reader::response`?>>
