@@ -7,7 +7,7 @@ easily.
 NOTE: We assume the reader has basic understanding of C++ and Boost.Asio.
 
 We start with the code that should resemble the structure of the program you're
-about to code. And this structure is as follow:
+about to code. And this structure is as follows:
 
 [source,cpp]
 ----

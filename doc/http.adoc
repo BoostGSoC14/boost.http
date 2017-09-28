@@ -33,8 +33,8 @@ The highlights are:
 
 * Support for modern HTTP features.
 * Simple.
-* Portable (C++03 and little dependencies).
-* Just like Ryan Dahl's HTTP parser, this parser does not make any syscalls nor
+* Portable (C++03 and very few other dependencies).
+* Just like Ryan Dahl's HTTP parser, this parser does not make any syscalls or
   allocations. It also does not buffer data.
 * You can mutate the passed buffer footnote:[The larger explanation being:
   incomplete tokens are kept in buffer, so you are not required to allocate them
@@ -44,7 +44,7 @@ The highlights are:
 * It doesn't steal control flow from your application footnote:[parsing is done
   one token at a time no matter how much data is buffered]. Great for HTTP
   pipelining.
-* Matching and decoding token as separate steps footnote:[Proper extraction of
+* Matching and decoding tokens as separate steps footnote:[Proper extraction of
   header fields (some popular parsers like NodeJS's will force you to know
   protocol details and parser internals to manually remove leading and trailing
   whitespace from field values). This point is not only about header field
