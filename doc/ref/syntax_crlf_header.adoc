@@ -1,0 +1,7 @@
+[[syntax_crlf_header]]
+==== `<boost/http/syntax/crlf.hpp>`
+
+Import the following symbols:
+
+* <<syntax_strict_crlf,`syntax::strict_crlf`>>
+* <<syntax_liberal_crlf,`syntax::liberal_crlf`>>

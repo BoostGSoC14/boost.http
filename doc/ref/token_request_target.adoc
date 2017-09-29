@@ -1,0 +1,20 @@
+[[token_request_target]]
+==== `token::request_target`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct request_target
+{
+    typedef boost::string_ref type;
+    static const token::code::value code = token::code::request_target;
+};
+
+} // namespace token
+----

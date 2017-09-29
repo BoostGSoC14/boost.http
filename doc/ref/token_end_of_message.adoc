@@ -1,0 +1,19 @@
+[[token_end_of_message]]
+==== `token::end_of_message`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct end_of_message
+{
+    static const token::code::value code = token::code::end_of_message;
+};
+
+} // namespace token
+----

@@ -1,0 +1,42 @@
+[[token_code_value]]
+==== `token::code::value`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct code
+{
+    enum value
+    {
+        error_insufficient_data,
+        error_set_method,
+        error_use_another_connection,
+        error_invalid_data,
+        error_no_host,
+        error_invalid_content_length,
+        error_content_length_overflow,
+        error_invalid_transfer_encoding,
+        error_chunk_size_overflow,
+        skip,
+        method,
+        request_target,
+        version,
+        status_code,
+        reason_phrase,
+        field_name,
+        field_value,
+        end_of_headers,
+        body_chunk,
+        end_of_body,
+        end_of_message
+    };
+};
+
+} // namespace token
+----

@@ -1,0 +1,21 @@
+[[syntax_left_trimmed_field_value]]
+==== `syntax::left_trimmed_field_value`
+
+[source,cpp]
+----
+#include <boost/http/syntax/field_value.hpp>
+----
+
+[source,cpp]
+----
+namespace syntax {
+
+template<class CharT>
+struct left_trimmed_field_value {
+    typedef basic_string_ref<CharT> view_type;
+
+    static std::size_t match(view_type view);
+};
+
+} // namespace syntax
+----

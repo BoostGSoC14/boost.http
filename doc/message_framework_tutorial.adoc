@@ -287,7 +287,3 @@ http::server_socket_adaptor<http::buffered_socket>
     socket(acceptor.get_io_service());
 handler(socket);
 ----
-
-==== Next steps
-
-Jump into <<design_choices,design choices>>.

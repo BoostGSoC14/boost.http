@@ -1,0 +1,15 @@
+[[parsing_tutorial3]]
+=== Parsing HTTP upgrade
+
+Given you already know the basics, parsing HTTP upgrade is trivial. Because the
+HTTP parser doesn't take ownership of the buffer and you pretty much know up
+until which point the stream was parsed as HTTP.
+
+All you gotta do is consume all the HTTP data (i.e. watch for
+`code::end_of_message`) and parse the rest of the buffer as the new
+protocol. Here is the Tufão code to update an HTTP client to WebSocket:
+
+[source,cpp]
+----
+include::tufao2.cpp[]
+----

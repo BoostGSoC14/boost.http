@@ -1,0 +1,30 @@
+[[syntax_liberal_crlf]]
+==== `syntax::liberal_crlf`
+
+[source,cpp]
+----
+#include <boost/http/syntax/crlf.hpp>
+----
+
+[source,cpp]
+----
+namespace syntax {
+
+template<class CharT>
+struct liberal_crlf {
+    typedef basic_string_ref<CharT> view_type;
+
+    BOOST_SCOPED_ENUM_DECLARE_BEGIN(result)
+    {
+        crlf,
+        lf,
+        insufficient_data,
+        invalid_data,
+    }
+    BOOST_SCOPED_ENUM_DECLARE_END(result)
+
+    static result match(view_type view);
+};
+
+} // namespace syntax
+----

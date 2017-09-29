@@ -1,0 +1,20 @@
+[[token_body_chunk]]
+==== `token::body_chunk`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct body_chunk
+{
+    typedef asio::const_buffer type;
+    static const token::code::value code = token::code::body_chunk;
+};
+
+} // namespace token
+----

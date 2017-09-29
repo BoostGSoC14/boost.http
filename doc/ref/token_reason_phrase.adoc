@@ -1,0 +1,20 @@
+[[token_reason_phrase]]
+==== `token::reason_phrase`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct reason_phrase
+{
+    typedef boost::string_ref type;
+    static const token::code::value code = token::code::reason_phrase;
+};
+
+} // namespace token
+----

@@ -1,0 +1,6 @@
+[[syntax_status_code_header]]
+==== `<boost/http/syntax/status_code.hpp>`
+
+Import the following symbols:
+
+* <<syntax_status_code,`syntax::status_code`>>

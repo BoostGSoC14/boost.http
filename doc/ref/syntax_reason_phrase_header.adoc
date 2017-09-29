@@ -1,0 +1,6 @@
+[[syntax_reason_phrase_header]]
+==== `<boost/http/syntax/reason_phrase.hpp>`
+
+Import the following symbols:
+
+* <<syntax_reason_phrase,`syntax::reason_phrase`>>

@@ -1,0 +1,18 @@
+[[token_header]]
+==== `<boost/http/token.hpp>`
+
+Import the following symbols:
+
+* <<token_code_value,`token::code::value`>>
+* <<token_skip,`token::skip`>>
+* <<token_field_name,`token::field_name`>>
+* <<token_field_value,`token::field_value`>>
+* <<token_body_chunk,`token::body_chunk`>>
+* <<token_end_of_headers,`token::end_of_headers`>>
+* <<token_end_of_body,`token::end_of_body`>>
+* <<token_end_of_message,`token::end_of_message`>>
+* <<token_method,`token::method`>>
+* <<token_request_target,`token::request_target`>>
+* <<token_version,`token::version`>>
+* <<token_status_code,`token::status_code`>>
+* <<token_reason_phrase,`token::reason_phrase`>>

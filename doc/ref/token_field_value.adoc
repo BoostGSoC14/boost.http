@@ -1,0 +1,20 @@
+[[token_field_value]]
+==== `token::field_value`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct field_value
+{
+    typedef boost::string_ref type;
+    static const token::code::value code = token::code::field_value;
+};
+
+} // namespace token
+----

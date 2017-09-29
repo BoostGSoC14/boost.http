@@ -1,0 +1,6 @@
+[[syntax_field_value_header]]
+==== `<boost/http/syntax/field_value.hpp>`
+
+Import the following symbols:
+
+* <<syntax_left_trimmed_field_value,`syntax::left_trimmed_field_value`>>

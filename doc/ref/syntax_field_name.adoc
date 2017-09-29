@@ -1,0 +1,21 @@
+[[syntax_field_name]]
+==== `syntax::field_name`
+
+[source,cpp]
+----
+#include <boost/http/syntax/field_name.hpp>
+----
+
+[source,cpp]
+----
+namespace syntax {
+
+template<class CharT>
+struct field_name {
+    typedef basic_string_ref<CharT> view_type;
+
+    static std::size_t match(view_type view);
+};
+
+} // namespace syntax
+----

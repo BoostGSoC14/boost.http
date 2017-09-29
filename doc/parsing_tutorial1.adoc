@@ -1,0 +1,197 @@
+[[parsing_tutorial1]]
+=== Parsing (beginner)
+
+In this tutorial, you'll learn how to use this library to parse HTTP streams
+easily.
+
+NOTE: We assume the reader has basic understanding of C++ and Boost.Asio.
+
+We start with the code that should resemble the structure of the program you're
+about to code. And this structure is as follows:
+
+[source,cpp]
+----
+include::parsing_tutorial1.cpp[]
+----
+
+You're building a piece of code that consumes HTTP from somewhere — the in — and
+spits it out in the form of C++ structured data to somewhere else — the out.
+
+The _in_ of your program is connected to the above piece of code through the
+`on_socket_callback` member function. The _out_ of your program is connected to
+the previous piece of code through the `ready` overrideable member-function.
+
+By now I shouldn't be worried about your understanding of how you'll connect the
+network I/O with the _in_ of the program. The connection point is obvious
+by now. However, I'll briefly explain the _out_ connection point and then we can
+proceed to delve into the _inout_-inbetween (Danas) part of the program.
+
+Once the `ready` member function is called, the data for your request will be
+available in the `method`, `request_target` and the other _public_
+variables. From now on, I'll focus my attention to the sole implementation of
+`my_socket_consumer::on_socket_callback`.
+
+.The awaited prize
+
+[source,cpp]
+----
+include::parsing_tutorial1b.cpp[]
+----
+
+Try to keep in mind the three variables that will really orchestrate the flow:
+`request_reader`, `buffer` and `last_header`.
+
+The whole work is about managing the buffer and managing the tokens.
+
+The token access is very easy. As the parser is incremental, there is only one
+token at a time. I don't need to explain Boost.Http control-flow because the
+control flow will be coded by you (a library, not a framework). You only have to
+use `code()` to check the current token and `value<T>()` to extract its value.
+Use `next()` to advance a token.
+
+[WARNING]
+--
+There is only one caveat. The parser doesn't buffer data and will decode the
+token into a value (the `value<T>()` member function) directly from the buffer
+data.
+
+This means you cannot extract the current value once you drop current buffer
+data. As a nice side effect, you spare CPU time for the tokens you do not need
+to decode (match'n'decoding as separate steps).
+--
+
+The parser doesn't buffer data, which means when we use the `set_buffer` member
+function, `request_reader` only maintains a **view** to the passed buffer, which
+we'll refer to as the virtual buffer from now on.
+
+In the virtual buffer, there is head/current and remaining/tail.
+`request_reader` doesn't store a pointer/address/index to the real buffer. Once
+a token is consumed, his bytes (head) are discarded from the virtual
+buffer. When you mutate the real buffer, the virtual buffer is invalidated and
+you must inform the parser using `set_buffer`. However, the bytes discarded from
+the virtual buffer shouldn't appear again. You must keep track of the number of
+discarded bytes to prepare the buffer to the next call to `set_buffer`. The
+previous code doesn't handle that.
+
+The new tool that you should be presented now is `token_size()`. `token_size()`
+will return the size in bytes of current/head.
+
+WARNING: There is no guarantee `token_size()` returns the same size as returned
+by `string_length(request_reader.value<T>())`. You **need** to use
+`token_size()` to compute the number of discarded bytes.
+
+[source,cpp]
+----
+include::parsing_tutorial1c.cpp[]
+----
+
+`nparsed` was easy. However, the `while(request_reader.code() !=
+code::end_of_message)` doesn't seem right. It's very error-prone to assume the
+full HTTP message will be ready in a single call to `on_socket_callback`. Error
+handling must be introduced in the code.
+
+[source,cpp]
+----
+include::parsing_tutorial1d.cpp[]
+----
+
+Just because it's easy and we're already at it, let's handle the other errors as
+well:
+
+[source,cpp]
+----
+include::parsing_tutorial1e.cpp[]
+----
+
+And buffer management is complete. However, the code only demonstrated how to
+extract simple tokens. Field name and field value are simple tokens, but they
+are usually tied together into a complex structure.
+
+[source,cpp]
+----
+include::parsing_tutorial1f.cpp[]
+----
+
+`last_header` did the trick. Easy, but maybe we want to separate headers and
+trailers (the HTTP headers that are sent _after_ the message body). This task
+can be best accomplished by the use of structural/notification tokens.
+
+[source,cpp]
+----
+include::parsing_tutorial1g.cpp[]
+----
+
+Some of the delimiters/structural tokens' properties are:
+
+* No `value<T>()` associated. `value<T>()` extraction is a property exclusive of
+  the _data_ tokens.
+* It might be 0-sized.
+* They are always emitted (e.g. `code::end_of_body` will be emitted before
+  `code::end_of_message` even if no `code::body_chunk` is present).
+
+[WARNING]
+--
+The code seems natural, but there is an implicit knowledge from an experienced
+user there. The only tokens that are allowed to be 0-sized are delimiter tokens
+(well... there are the errors too, but each error is special in its own way).
+
+The used control flow will always call `request_reader.next()` when
+`on_socket_callback` is called. But if 0-sized tokens are possible, then we must
+exhaust the current tokens before `on_socket_callback` returns. Otherwise we'll
+skip/miss some token from the stream as `request_reader.next()` always consume
+the current token.
+
+The gotcha to achieve the correct behaviour in such situation is the fact that
+only data tokens are emitted after `code::end_of_message` (our stop condition),
+so we're safe.
+--
+
+We were using the `code::end_of_message` delimiter token since the initial
+version of the code, so they aren't completely alien. However, we were ignoring
+one very important HTTP parsing feature for this time. It's the last missing bit
+before your understaning to use this library is complete. Our current code lacks
+the ability to handle HTTP pipelining.
+
+HTTP pipelining is the feature that allow HTTP clients to send HTTP requests “in
+batch”. In other words, they may send several requests at once over the same
+connection before the server create a response to them. If the previous code
+faces this situation, it'll stop parsing on the first request and possibly wait
+forever until the `on_socket_callback` is called again with more data (yeap,
+networking code can be hard with so many little details).
+
+[source,cpp]
+----
+include::parsing_tutorial1h.cpp[]
+----
+
+There are HTTP libraries that could adopt a “synchronous” approach where the
+user must immediately give a HTTP response once the `ready()` callback is called
+so the parsing code can parse the whole buffer until the end and we could just
+put the `ready()` call into the `code::end_of_message` case.
+
+There are HTTP libraries that follow ASIO active style and we expect the user to
+call something like `async_read_request` before it can read the next request. In
+this case, the solution for HTTP pipelining would be different.
+
+There are libraries that don't follow ASIO style, but don't force the user to
+send HTTP responses immediately on the `ready()` callback. In such cases,
+synchronization/coordination of the response generation by the user and parse
+resuming by the library is necessary.
+
+This point can be rather diverse and the code for this tutorial only shows a
+rather quick'n'dirty solution. Any different solution to keep the parsing train
+at full-speed is left as an exercise to the reader.
+
+The interesting point about the code here is to clear the state of the
+_to-be-parsed_ message before each request-response pair. In the previous code,
+this was done binding the “method token arrived” event — the first token in a
+HTTP request — with such state cleanup.
+
+By now, you're ready to use this library in your projects. You may want to check
+Boost.Http own usage of the parser or the Tufão library as real-world and
+complete examples of this parser.
+
+.See also
+
+* <<request_response_diff,What are the differences between `reader::request` and
+    `reader::response`?>>
