@@ -314,7 +314,7 @@ struct on_async_response_transmit_file
         : socket(socket)
         , message(omessage)
         , handler(handler)
-        , stream(file)
+        , stream(file, std::ios::binary)
         , remaining(remaining)
     {
         stream.exceptions(filesystem::ifstream::badbit
@@ -396,7 +396,7 @@ struct on_async_response_transmit_file_multi
         , message(omessage)
         , content_type(std::move(content_type))
         , handler(handler)
-        , stream(file)
+        , stream(file, std::ios::binary)
         , range_set(remaining)
         , file_size(std::to_string(file_size))
     {
@@ -1200,7 +1200,7 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
 
                     omessage.body().resize(range.second);
 
-                    filesystem::ifstream stream(file);
+                    filesystem::ifstream stream(file, std::ios::binary);
                     stream.exceptions(filesystem::ifstream::badbit
                                       | filesystem::ifstream::failbit
                                       | filesystem::ifstream::eofbit);
@@ -1261,7 +1261,7 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                         final_boundary("\r\n--" BOOST_HTTP_FILE_SERVER_BOUNDARY
                                        "--\r\n");
 
-                    filesystem::ifstream stream(file);
+                    filesystem::ifstream stream(file, std::ios::binary);
                     stream.exceptions(filesystem::ifstream::badbit
                                       | filesystem::ifstream::failbit
                                       | filesystem::ifstream::eofbit);
@@ -1379,7 +1379,7 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
 
             omessage.body().resize(size);
 
-            filesystem::ifstream stream(file);
+            filesystem::ifstream stream(file, std::ios::binary);
             stream.exceptions(filesystem::ifstream::badbit
                               | filesystem::ifstream::failbit
                               | filesystem::ifstream::eofbit);
