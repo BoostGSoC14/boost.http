@@ -87,7 +87,9 @@ public:
                 self->socket.async_write_response(reply, yield);
             }
         } catch (system::system_error &e) {
-            if (e.code() != system::error_code{asio::error::eof}) {
+            if (e.code() != system::error_code{asio::error::connection_reset}
+                && e.code() != system::error_code{asio::error::broken_pipe}
+                && e.code() != system::error_code{asio::error::eof}) {
                 cerr << '[' << self->counter << "] Aborting on exception: "
                      << e.what() << endl;
                 std::exit(1);
