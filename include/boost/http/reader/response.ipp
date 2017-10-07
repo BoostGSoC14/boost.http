@@ -177,6 +177,11 @@ inline void response::set_buffer(asio::const_buffer ibuffer)
     idx = 0;
 }
 
+inline response::size_type response::parsed_count() const
+{
+    return idx;
+}
+
 inline void response::next()
 {
     if (state == ERRORED)

@@ -77,6 +77,8 @@ public:
      */
     void set_buffer(asio::const_buffer inbuffer);
 
+    size_type parsed_count() const;
+
 private:
     enum State {
         ERRORED,
