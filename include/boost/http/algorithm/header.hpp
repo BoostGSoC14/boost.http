@@ -152,7 +152,7 @@ bool rfc1123(const StringRef &value, posix_time::ptime &datetime)
                               from_submatch_to_month<month_type>(matches[2]),
                               from_decimal_submatch<day_type>(matches[1])),
                          time_duration(hour, min, sec));
-    } catch(std::out_of_range&) {
+    } catch (const std::out_of_range&) {
         return false;
     }
 
@@ -199,7 +199,7 @@ bool rfc1036(const StringRef &value, posix_time::ptime &datetime)
                               from_submatch_to_month<month_type>(matches[2]),
                               from_decimal_submatch<day_type>(matches[1])),
                          time_duration(hour, min, sec));
-    } catch(std::out_of_range&) {
+    } catch (const std::out_of_range&) {
         return false;
     }
 
@@ -250,7 +250,7 @@ bool asctime(const StringRef &value, posix_time::ptime &datetime)
                                   return from_decimal_submatch<day_type>(m);
                               }()),
                          time_duration(hour, min, sec));
-    } catch(std::out_of_range&) {
+    } catch (const std::out_of_range&) {
         return false;
     }
 

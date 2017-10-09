@@ -228,7 +228,7 @@ bool is_valid_range(const String &value, std::uintmax_t file_size,
 
                         if (range.second > file_size - 1)
                             range.second = file_size - 1;
-                    } catch(std::overflow_error&) {
+                    } catch (const std::overflow_error&) {
                         range.second = file_size - 1;
                     }
                 } else {
@@ -247,7 +247,7 @@ bool is_valid_range(const String &value, std::uintmax_t file_size,
                     if (range.second > file_size)
                         range.second = file_size;
                     range.first = file_size - range.second;
-                } catch(std::overflow_error&) {
+                } catch (const std::overflow_error&) {
                     range.first = 0;
                 }
                 range.second = file_size - 1;
@@ -255,7 +255,7 @@ bool is_valid_range(const String &value, std::uintmax_t file_size,
             }
 
             return false;
-        } catch(std::overflow_error&) {
+        } catch (const std::overflow_error&) {
             /* the current byte-range-spec/suffix-byte-range-spec isn't
                satisfiable, but it's still possible that remaining specs will
                build a byte-range-set valid and satisfiable.
@@ -353,7 +353,7 @@ struct on_async_response_transmit_file
             socket.async_write(message, [self](const system::error_code &ec) {
                     self->process(ec);
                 });
-        } catch(std::ios_base::failure&) {
+        } catch (const std::ios_base::failure&) {
             handler(file_server_errc::irrecoverable_io_error);
         }
     }
@@ -785,7 +785,7 @@ struct on_async_response_transmit_file_multi
                 }
                 }
             }
-        } catch(std::ios_base::failure&) {
+        } catch (const std::ios_base::failure&) {
             handler(file_server_errc::irrecoverable_io_error);
         }
     }
@@ -1318,7 +1318,7 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                         try {
                             auto newsiz = detail::safe_add(index, range.second);
                             omessage.body().resize(newsiz);
-                        } catch(std::overflow_error&) {
+                        } catch (const std::overflow_error&) {
                             socket.get_io_service().post([handler]() mutable {
                                     handler(system::error_code{file_server_errc
                                                 ::io_error});
@@ -1391,7 +1391,7 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
             omessage.reason_phrase() = "OK";
             socket.async_write_response(omessage, handler);
         }
-    } catch (std::ios_base::failure&) {
+    } catch (const std::ios_base::failure&) {
         socket.get_io_service().post([handler]() mutable {
                 handler(system::error_code{file_server_errc::io_error});
             });
@@ -1498,12 +1498,12 @@ async_response_transmit_dir(ServerSocket &socket,
 
         async_response_transmit_file(socket, imessage, omessage, canonical_file,
                                      is_head, handler);
-    } catch(filesystem::filesystem_error &e) {
+    } catch (const filesystem::filesystem_error &e) {
         auto err = e.code();
         socket.get_io_service().post([handler,err]() mutable {
                 handler(err);
             });
-    } catch(system::system_error &e) {
+    } catch (const system::system_error &e) {
         auto err = e.code();
         socket.get_io_service().post([handler,err]() mutable {
                 handler(err);
