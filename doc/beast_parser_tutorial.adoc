@@ -1,0 +1,529 @@
+=== Implementing Boost.Beast parser interface
+
+In this tutorial, we'll show you how to implement Boost.Beast parser interface
+using Boost.Http parser.
+
+NOTE: No prior experience with Boost.Beast is required.
+
+Boost.Beast parser borrows much of its design from Ryan Dahl's HTTP parser — the
+NodeJS parser. This is a design that I do know and used more than once in
+different projects. However, this is not the only design I know of. I see much
+of this design as an evolution of the language limitations that you find in the
+C language.
+
+https://vinipsmaker.wordpress.com/2016/08/05/boost-http-has-a-new-parser/[I've
+previously written a few complaints about the Ryan Dahl's HTTP
+parser]. Boost.Beast evolves from this design and takes a few different
+decisions. We'll see if, and which, limitations the Boost.Beast parser still
+carries thanks to this inheritance.
+
+==== Learning how to use the parser
+
+The parser is represented by a `basic_parser<isRequest, Derived>` class. The
+parser is callback-based just like Ryan Dahl's HTTP parser and it uses CRTP to
+avoid the overhead of virtual function calls.
+
+[NOTE]
+.DESIGN IMPLICATIONS
+====
+And here we can notice the first difference between Boost.Beast and Boost.Http
+parsers.
+
+If you design an algorithm to work on the parser object, this algorithm must be
+a template (and it carries the same drawbacks of a header-only library):
+
+[source,cpp]
+----
+template<Derived>
+void do_stuff(boost::beast::http::basic_parser<true, Derived> o);
+----
+
+But if you use Boost.Http parser, this requirement vanishes:
+
+[source,cpp]
+----
+void do_stuff(boost::http::reader::request o);
+----
+====
+
+To feed the parser with data, you call `basic_parser::put`:
+
+[source,cpp]
+----
+template<
+    class ConstBufferSequence>
+std::size_t
+put(
+    ConstBufferSequence const& buffers,
+    error_code& ec);
+----
+
+The parser will match *and* decode the tokens in the stream.
+
+[NOTE]
+.DESIGN IMPLICATIONS
+====
+Match and decoding are always applied together. What does this mean? Not much,
+given decoding HTTP/1.1 tokens is cheap and most of the time it reduces to
+return a `string_view` of the associated buffer region.
+
+However, the implications of the fundamental model chosen (pull or push) give
+rise to larger divergences at this point already.
+
+In the Boost.Beast parser, the token is passed to the function callback
+registered. In the Boost.Http parser, the token is hold by the parser object
+itself.
+
+It might not seem much difference at the first glance, but consider the problem
+of composability. If I want to write an algorithm to take a
+`boost::http::reader::request` object to read a `field_name` token and possibly
+skip it together with the associated `field_value` (maybe that field isn't of
+your interest), you only need to wrap the parser object if you're using the
+Boost.Http solution footnote:[If I continue to develop the Boost.Http's message
+framework, that's the solution that will be adopted to this particular
+problem.]. As for the Boost.Beast parser, you're left with a long and hackishy
+inheritance chain that I don't even want to imagine right now if you were to
+compose the algorithms.
+
+Just as a concrete illustration of what I meant by the Boost.Http solution:
+
+[source,cpp]
+----
+template<class T /* = http::reader::request */>
+void socket_consumer<T>::parse(asio::buffer buf) { /* ... */ }
+
+http::token::code::value my_parser_wrapper::code() const
+{
+    return code_;
+}
+
+void my_parser_wrapper::next()
+{
+    // Here I should use a case-insensitive comparison function.
+    // For simplicity, this step is omitted.
+
+    wrapped_parser.next();
+    code_ = wrapped_parser.code();
+    if (code_ == code::field_name
+        && (wrapped_parser.value<token::field_name>()
+            == "connection")) {
+        code_ = code::skip;
+        skip_next_value = true;
+    } else if (code_ == code::field_value
+               && skip_next_value) {
+        code_ = code::skip;
+        skip_next_value = false;
+    }
+}
+----
+
+How would the solution look like using the Boost.Beast parser? Let's draft
+something:
+
+[source,cpp]
+----
+template<class Derived>
+class my_parser_wrapper
+    : public basic_parser<true, my_parser_wrapper<Derived>>
+{
+public:
+    void
+    on_field_impl(field f, string_view name, string_view value, error_code& ec)
+    {
+        // Here I should use a case-insensitive comparison function.
+        // For simplicity, this step is omitted.
+
+        if (name == "connection") {
+            return;
+        }
+
+        static_cast<Derived&>(*this).on_field_impl(f, name, value, ec);
+    }
+
+    void on_header_impl(error_code& ec)
+    {
+        static_cast<Derived&>(*this).on_header_impl(ec);
+    }
+
+    // ...
+};
+
+template<template <typename> class parser>
+class custom_parser
+    : public parser<custom_parser>
+{
+    // Here we have our original handler.
+    // It'd be our `my_socket_consumer` from the Boost.Http example.
+};
+
+custom_parser<my_parser_wrapper>;
+----
+
+However, this solution is fully flawed. As `my_parser_wrapper` inherits directly
+from `basic_parser`, we cannot inject some `my_parser_wrapper2` which applies
+another transformation in the chain.
+
+I can't emphasize enough that the problem is *not* about adding a
+“skip-this-set-of-HTTP-headers” function. The problem is about a fundamental
+building block which can solve more of the user needs. I could keep thinking
+about the different problems that could happen, but if you do not give a *try*
+to enter in the _general_ problem and insist on a _myopic vision_, you'll
+*never* grasp my message (just as an addicted to inductive reasoning will never
+understand someone who is using deductive reasoning). If all you have is a
+hammer, everything looks like a nail. We shall see more design implications
+later on as we continue this chapter.
+====
+
+As the tokens are found, the user callbacks are called. The function returns the
+number of parsed bytes.
+
+[NOTE]
+.DESIGN IMPLICATIONS
+====
+And as each sentence goes on, it seems that I need to explain more design
+implications.
+
+What if you want to __reject__ messages as soon as one specific token is found?
+The point here is about avoiding unnecessary computation of parsing elements of
+a message that would be rejected anyway.
+
+
+For Boost.Http parser, the control flow is yours to take and...
+
+[quote, Aleister Crowley]
+____
+*Do what thou wilt* shall be the whole of the Law.
+____
+
+A concrete example if you may:
+
+[source,cpp]
+----
+// ...
+
+case code::field_value:
+    if (last_header_was_x && is_good(reader.value<token::field_value>())) {
+        // stop the world (e.g. `return` or `throw`)
+    }
+
+// ...
+----
+
+As for Boost.Beast parser. There *is* an answer, but not with your current
+limited knowledge of the API. Let's continue to present Boost.Beast API and come
+back at this “stop the world” problem later.
+====
+
+The behaviour usually found in push parsers is to parse the stream until the end
+of the feeded buffers and then return. This is the NodeJS's parser approach from
+which Boost.Beast takes much inspiration. However, Boost.Beast takes a slightly
+different approach to this problem so it's possible to parse only one token at a
+time. The Boost.Beast solution is the `eager` function:
+
+[source,cpp]
+----
+void
+eager(
+    bool v);
+----
+
+[quote, Vinnie Falco, Boost.Beast documentation]
+____
+Normally the parser returns after successfully parsing a structured element
+(header, chunk header, or chunk body) even if there are octets remaining in the
+input. This is necessary when attempting to parse the header first, or when the
+caller wants to inspect information which may be invalidated by subsequent
+parsing, such as a chunk extension. The eager option controls whether the parser
+keeps going after parsing structured element if there are octets remaining in
+the buffer and no error occurs. This option is automatically set or cleared
+during certain stream operations to improve performance with no change in
+functionality.
+
+The default setting is `false`.
+____
+
+[NOTE]
+.DESIGN IMPLICATIONS
+====
+And now, back at the “stop the world” problem...
+
+Simply put, Boost.Beast solution is just a hackishy way to implement a pull
+parser — the parser approach _consciously_ chosen by Boost.Http parser.
+
+Alternatively, you can just set the `error_code& ec` on the callback
+implementation to stop parsing, but this wouldn't solve all the use cases (the
+reason why `eager` is provided).
+====
+
+Continuing this inductive reasoning of “hey! a problem appeared, let's write yet
+another function, `function_xyz`, to solve use case 777”, a number of other
+functions are provided. One of them is `header_limit`:
+
+[source,cpp]
+----
+void
+header_limit(
+    std::uint32_t v);
+----
+
+[quote, Vinnie Falco, Boost.Beast documentation]
+____
+This function sets the maximum allowed size of the header including all field
+name, value, and delimiter characters and also including the CRLF sequences in
+the serialized input. If the end of the header is not found within the limit of
+the header size, the error `http::header_limit` is returned by
+`http::basic_parser::put`.
+
+Setting the limit after any header octets have been parsed results in undefined
+behavior.
+____
+
+Another function, `body_limit`, is provided in the same spirit of
+`header_limit`. What if I have a use case to limit `request-target` size? Then
+Boost.Beast author will add `function_xyz2` to use case 778.
+
+[NOTE]
+.DESIGN IMPLICATIONS
+====
+What is the Boost.Http solution to this problem 🤔? This is broken into two
+possible cases.
+
+1. The whole token is in the buffer: In such case you just need to check
+   `token_size`.
+2. The buffer has been exhausted and no token is there: Here, just check
+   `expected_token`.
+
+It'll work for *any* token (i.e. you don't need one extra function for each
+possible token which would just complicate the implementation and inflate the
+object with a large `Settings` object of some sort).
+====
+
+With all this info, the Boost.Beast parser is mostly covered and we can delve
+into the implementation of such interface.
+
+[NOTE]
+.DESIGN IMPLICATIONS
+====
+Now... let's look at something different. Suppose the following scenario:
+
+You have an embedded project and the headers must not be stored (as it'd imply
+heap memory of complex data structures). You process options with an in situ
+algorithm out from the headers. In Boost.Http parser, I'm imagining something in
+these lines:
+
+[source,cpp]
+----
+enum last_header_code {
+    OUT_OF_INTEREST_SET,
+    FOO,
+    BAR,
+    FOOBAR
+};
+
+// ...
+
+case code::field_name:
+    {
+        auto v = reader.value<token::field_name>();
+        if (iequals(v, "foo")) {
+            last_header = FOO;
+        } else if (iequals(v, "bar")) {
+            last_header = BAR;
+        } else if (iequals(v, "foobar")) {
+            last_header = FOOBAR;
+        } else {
+            last_header = OUT_OF_INTEREST_SET;
+        }
+        break;
+    }
+case code::field_value:
+    if (last_header == FOO) {
+        foo = process_foo(reader.value<token::field_value>());
+    } else if (last_header == BAR) {
+        bar = process_bar(reader.value<token::field_value>());
+    } else if (last_header == FOOBAR) {
+        foobar = process_foobar(reader.value<token::field_value>());
+    }
+    break;
+
+// ...
+----
+
+Boost.Beast solution is not hard to imagine too:
+
+[source,cpp]
+----
+// ...
+
+void on_field_impl(field, string_view name, string_view value, error_code& ec)
+{
+    if (iequals(name, "foo")) {
+        foo = process_foo(value);
+    } else if (iequals(name, "bar")) {
+        bar = process_bar(value);
+    } else if (iequals(name, "foobar")) {
+        foobar = process_foobar(value);
+    }
+}
+
+// ...
+----
+
+So... what does each design _implies_? As Boost.Beast parser always parse field
+name + field value _together_, if both fields sum up more than the buffer size,
+you're out of luck. Both tokens must fit in the buffer together.
+
+Just as an exercise, let's pursue the inductive reasoning applied to this
+problem. We _could_ split the Boost.Beast's `on_field_impl` callback into two:
+
+[source]
+----
+void
+on_field_name_impl(
+    field f,
+    string_view name,
+    error_code& ec);
+
+void
+on_field_value_impl(
+    string_view value,
+    error_code& ec);
+----
+
+But then we create another problem:
+
+[quote, Vinnie Falco, Boost.Beast documentation]
+____
+[...] it is the responsibility of the derived class to copy any information it
+needs before returning from the callback [...]
+____
+
+If you don't see a problem already, let me unveil it for you. Now, most of the
+uses of the parser, which want to store the HTTP headers in some sort of
+`std::multimap` structure will have to perform one extra allocation:
+
+[source,cpp]
+----
+void on_field_name_impl(field, string_view name, error_code& ec)
+{
+    last_header = to_string(name);
+}
+----
+
+Under the push parser model, these two cases are irreconcilable. Boost.Beast
+opts to solve the most common problem and this was a good design choice (let's
+give credit where credit is due).
+
+However, Boost.Http parser is a good choice in _any_ of these two cases. It only
+feeds one token at a time. And as Boost.Http message framework demonstrate,
+https://github.com/BoostGSoC14/boost.http/blob/c7b3e11884420b55568222d237e9c429ec24b811/include/boost/http/socket-inl.hpp#L630[we
+can use the first bytes of the buffer to store the HTTP field name].
+
+And just to present a more readable alternative, you could play with copies of
+the reader object made in the stack of the
+`my_socket_consumer::on_socket_callback` function. This way, you have a point in
+time and you can make the parser “go back”. The copies are cheap because the
+reader object is just an integer-based state machine with a few indexes. The
+_idea_ behind this solution is to mirror current Boost.Beast behaviour — field
+name and field value are always kept together in the buffer.
+
+*Remember*... principles. I can attack other specific cases. As an exercise, try
+to find a few yourself.
+====
+
+==== Implementing the Boost.Beast interface
+
+[NOTE]
+====
+As we previously seen, there are several functions in Boost.Beast parser that
+are just boilerplate inherited (e.g. `eager`) thanks to the choice of the wrong
+fundamental model (i.e. pull vs push).
+
+We'll skip some of this boilerplate as it is not of our interest. Our purpose
+with this tutorial was to show design implications derived from the choices of
+the _fundamental_ models.
+====
+
+[source,cpp]
+----
+template<bool isRequest, class Derived>
+class basic_parser;
+
+// This template specialization is wrong, but is kept for simplification
+// purposes.
+template<bool isRequest, class Derived>
+class basic_parser<true, Derived>
+{
+public:
+    template<
+        class ConstBufferSequence>
+    std::size_t
+    put(
+        ConstBufferSequence const& buffers,
+        error_code& ec)
+    {
+        // WARNING: the real implementation will have more trouble because of
+        // the `ConstBufferSequence` concept, but for the reason of simplicity,
+        // we don't show the real code here.
+        reader.set_buffer(buffers);
+
+        error_code ec;
+
+        do {
+            reader.next();
+            switch (reader.code()) {
+            case code::skip:
+                break;
+            case code::method:
+                method = reader.value<token::method>;
+                break;
+            case code::request_target:
+                target = reader.value<token::request_target>;
+                break;
+            case code::version:
+                static_cast<Derived&>(*this)
+                    .on_request_impl(/*the enum code*/, method, target,
+                                     reader.value<token::version>(), ec);
+                if (ec) {
+                    // TODO: extra code to enter in error state
+                    return reader.parsed_count();
+                }
+                break;
+
+            // ...
+
+            case code::end_of_headers:
+                static_cast<Derived&>(*this).on_header_impl(ec);
+                if (ec) {
+                    // TODO: extra code to enter in error state
+                    return reader.parsed_count();
+                }
+                break;
+
+            // ...
+            }
+        } while (reader.code() != code::error_insufficient_data);
+
+        return reader.parsed_count();
+    }
+
+private:
+    boost::http::reader::request reader;
+
+    // It's possible and easy to create an implementation that doesn't allocate
+    // memory. Just keep a copy of `reader` within the `put` function body and
+    // you can go back. As `reader` is just an integer-based state machine with
+    // a few indexes, the copy is cheap. I'm sorry I don't have the time to code
+    // the demonstration right now.
+    std::string method;
+    std::string target;
+};
+----
+
+A final note I want to add is that I plan more improvements to the parser. Just
+as Boost.Beast parser is an evolution of the wrong model chosen for the problem,
+my parser still has room to _evolve_. But from my judgment, this parser already
+is better than Boost.Beast parser can ever be (i.e. the problems I presented
+here are unfixable in Boost.Beast design... not to mention that Boost.Beast
+parser has almost the double amount of member-functions to solve _the same_
+problem footnote:[Consult Occam's razor.]).

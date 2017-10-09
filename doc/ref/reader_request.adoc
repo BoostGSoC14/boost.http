@@ -202,6 +202,27 @@ buffer.clear();
 ----
 --
 
+`size_type parsed_count() const`::
+
+  Returns the number of bytes parsed *since `set_buffer` was last called*.
++
+[TIP]
+--
+You can use it to go away with the `nparsed` variable shown in the
+<<parsing_tutorial1,principles on parsing tutorial>>. I'm sorry about the “_you
+must keep track of the number of discarded bytes_” lie I told you before, but as
+https://channel9.msdn.com/Shows/Going+Deep/Cpp-and-Beyond-2012-Scott-Meyers-Universal-References-in-Cpp11[one
+great explainer once told]:
+
+[quote, Scott Meyers, C++ and Beyond 2012: Universal References in C++11]
+____
+As I look upon you... it occurs to me that you may not have the necessary level
+of maturity to handle the truth.
+____
+
+That lie was useful to explain some core concepts behind this library.
+--
+
 ===== See also
 
 * <<request_response_diff,What are the differences between `reader::request` and
