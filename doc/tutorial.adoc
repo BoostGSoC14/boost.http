@@ -5,3 +5,5 @@ include::parsing_tutorial1.adoc[]
 include::parsing_tutorial2.adoc[]
 
 include::parsing_tutorial3.adoc[]
+
+include::beast_parser_tutorial.adoc[]
