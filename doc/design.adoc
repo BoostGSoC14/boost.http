@@ -104,7 +104,10 @@ into one before forwarding or reject the message as a whole).
 
 Why not make a parser using Boost.Spirit?::
 
-  TODO.
+  Boost.Spirit needs backtracking to implement the OR operator. Boost.Spirit
+  can't build a state machine which would allow you to continue parsing from the
+  suspended point/byte. Thanks to these characteristics, it can't be used in our
+  HTTP parser. Also, we don't see much benefit in pursuing this effort.
 
 What is the recommended buffer size?::
 

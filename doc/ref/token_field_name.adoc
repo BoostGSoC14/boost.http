@@ -18,3 +18,15 @@ struct field_name
 
 } // namespace token
 ----
+
+[NOTE]
+====
+It's guaranteed that this token storage in the buffer (as extracted from
+`token_size()` and offset) represents the field name exactly (i.e. if you want,
+you can just use offset + size and ignore `value<token::field_name>()`). This
+guarantee is used in the Boost.Http message framework.
+
+However, other implementations might not provide this guarantee (e.g. a draft of
+this interface proposed to standardization). I still need to think more about
+what to do here.
+====

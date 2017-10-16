@@ -135,11 +135,12 @@ The code seems natural, but there is an implicit knowledge from an experienced
 user there. The only tokens that are allowed to be 0-sized are delimiter tokens
 (well... there are the errors too, but each error is special in its own way).
 
-The used control flow will always call `request_reader.next()` when
-`on_socket_callback` is called. But if 0-sized tokens are possible, then we must
-exhaust the current tokens before `on_socket_callback` returns. Otherwise we'll
-skip/miss some token from the stream as `request_reader.next()` always consume
-the current token.
+The coded control flow will always call `request_reader.next()` when
+`on_socket_callback` is called (i.e. before we inspect current token in the
+switch-statement). But if 0-sized tokens are possible, then we must exhaust the
+current tokens before `on_socket_callback` returns. Otherwise we'll skip/miss
+some token from the stream as `request_reader.next()` always consume the current
+token.
 
 The gotcha to achieve the correct behaviour in such situation is the fact that
 only data tokens are emitted after `code::end_of_message` (our stop condition),
