@@ -94,6 +94,22 @@ asio::const_buffer request::value<token::body_chunk>() const
     return asio::buffer(ibuffer + idx, token_size_);
 }
 
+template<>
+request::view_type request::value<token::trailer_name>() const
+{
+    assert(code_ == token::trailer_name::code);
+    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
+                     token_size_);
+}
+
+template<>
+request::view_type request::value<token::trailer_value>() const
+{
+    assert(code_ == token::trailer_value::code);
+    view_type raw(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
+    return detail::decode_field_value(raw);
+}
+
 inline token::code::value request::expected_token() const
 {
     switch (state) {
@@ -122,14 +138,16 @@ inline token::code::value request::expected_token() const
     case EXPECT_VERSION:
         return token::code::version;
     case EXPECT_FIELD_NAME:
-    case EXPECT_TRAILER_NAME:
         return token::code::field_name;
     case EXPECT_FIELD_VALUE:
-    case EXPECT_TRAILER_VALUE:
         return token::code::field_value;
     case EXPECT_BODY:
     case EXPECT_CHUNK_DATA:
         return token::code::body_chunk;
+    case EXPECT_TRAILER_NAME:
+        return token::code::trailer_name;
+    case EXPECT_TRAILER_VALUE:
+        return token::code::trailer_value;
     case EXPECT_END_OF_BODY:
         return token::code::end_of_body;
     case EXPECT_END_OF_MESSAGE:
@@ -737,7 +755,7 @@ inline void request::next()
                 return;
 
             state = EXPECT_TRAILER_COLON;
-            code_ = token::code::field_name;
+            code_ = token::code::trailer_name;
             token_size_ = nmatched;
             return;
         }
@@ -790,7 +808,7 @@ inline void request::next()
                 return;
 
             state = EXPECT_CRLF_AFTER_TRAILER_VALUE;
-            code_ = token::code::field_value;
+            code_ = token::code::trailer_value;
             token_size_ = nmatched;
             return;
         }

@@ -14,6 +14,8 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 ** <<token_body_chunk,`token::body_chunk`>>
 ** <<token_end_of_headers,`token::end_of_headers`>>
 ** <<token_end_of_body,`token::end_of_body`>>
+** <<token_trailer_name,`token::trailer_name`>>
+** <<token_trailer_value,`token::trailer_value`>>
 ** <<token_end_of_message,`token::end_of_message`>>
 ** <<token_method,`token::method`>>
 ** <<token_request_target,`token::request_target`>>
@@ -77,6 +79,10 @@ include::ref/token_body_chunk.adoc[]
 include::ref/token_end_of_headers.adoc[]
 
 include::ref/token_end_of_body.adoc[]
+
+include::ref/token_trailer_name.adoc[]
+
+include::ref/token_trailer_value.adoc[]
 
 include::ref/token_end_of_message.adoc[]
 

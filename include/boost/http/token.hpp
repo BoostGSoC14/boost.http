@@ -42,6 +42,8 @@ struct code
         end_of_headers,
         body_chunk,
         end_of_body,
+        trailer_name,
+        trailer_value,
         end_of_message
     };
 };
@@ -71,6 +73,18 @@ struct body_chunk
 {
     typedef asio::const_buffer type;
     static const token::code::value code = token::code::body_chunk;
+};
+
+struct trailer_name
+{
+    typedef boost::string_ref type;
+    static const token::code::value code = token::code::trailer_name;
+};
+
+struct trailer_value
+{
+    typedef boost::string_ref type;
+    static const token::code::value code = token::code::trailer_value;
 };
 
 struct end_of_headers

@@ -537,7 +537,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::end_of_body);
     REQUIRE(parser.token_size() == 2);
-    REQUIRE(parser.expected_token() == http::token::code::field_name);
+    REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
     parser.next();
 
@@ -794,26 +794,26 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::end_of_body);
     REQUIRE(parser.token_size() == 2);
-    REQUIRE(parser.expected_token() == http::token::code::field_name);
+    REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
     parser.next();
 
-    REQUIRE(parser.code() == http::token::code::field_name);
+    REQUIRE(parser.code() == http::token::code::trailer_name);
     REQUIRE(parser.token_size() == 11);
-    REQUIRE(parser.value<http::token::field_name>() == "Content-MD5");
+    REQUIRE(parser.value<http::token::trailer_name>() == "Content-MD5");
     REQUIRE(parser.expected_token() == http::token::code::skip);
 
     parser.next();
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 10);
-    REQUIRE(parser.expected_token() == http::token::code::field_value);
+    REQUIRE(parser.expected_token() == http::token::code::trailer_value);
 
     parser.next();
 
-    REQUIRE(parser.code() == http::token::code::field_value);
+    REQUIRE(parser.code() == http::token::code::trailer_value);
     REQUIRE(parser.token_size() == 45);
-    REQUIRE(parser.value<http::token::field_value>()
+    REQUIRE(parser.value<http::token::trailer_value>()
             == "25b83662323c397c9944a8a7b3fef7ab");
     REQUIRE(parser.expected_token() == http::token::code::skip);
 
@@ -821,7 +821,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 2);
-    REQUIRE(parser.expected_token() == http::token::code::field_name);
+    REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
     parser.next();
 
@@ -938,33 +938,33 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::end_of_body);
     REQUIRE(parser.token_size() == 2);
-    REQUIRE(parser.expected_token() == http::token::code::field_name);
+    REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
     parser.next();
 
-    REQUIRE(parser.code() == http::token::code::field_name);
+    REQUIRE(parser.code() == http::token::code::trailer_name);
     REQUIRE(parser.token_size() == 10);
-    REQUIRE(parser.value<http::token::field_name>() == "X-Ihateyou");
+    REQUIRE(parser.value<http::token::trailer_name>() == "X-Ihateyou");
     REQUIRE(parser.expected_token() == http::token::code::skip);
 
     parser.next();
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 2);
-    REQUIRE(parser.expected_token() == http::token::code::field_value);
+    REQUIRE(parser.expected_token() == http::token::code::trailer_value);
 
     parser.next();
 
-    REQUIRE(parser.code() == http::token::code::field_value);
+    REQUIRE(parser.code() == http::token::code::trailer_value);
     REQUIRE(parser.token_size() == 0);
-    REQUIRE(parser.value<http::token::field_value>() == "");
+    REQUIRE(parser.value<http::token::trailer_value>() == "");
     REQUIRE(parser.expected_token() == http::token::code::skip);
 
     parser.next();
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 2);
-    REQUIRE(parser.expected_token() == http::token::code::field_name);
+    REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
     parser.next();
 

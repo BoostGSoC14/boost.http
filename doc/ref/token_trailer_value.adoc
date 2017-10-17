@@ -1,0 +1,20 @@
+[[token_trailer_value]]
+==== `token::trailer_value`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct trailer_value
+{
+    typedef boost::string_ref type;
+    static const token::code::value code = token::code::trailer_value;
+};
+
+} // namespace token
+----

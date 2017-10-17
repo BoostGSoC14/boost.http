@@ -757,7 +757,7 @@ TEST_CASE("Test varying body types", "[parser,good]")
 
     REQUIRE(parser.code() == http::token::code::end_of_body);
     REQUIRE(parser.token_size() == 2);
-    REQUIRE(parser.expected_token() == http::token::code::field_name);
+    REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
     parser.next();
 

@@ -240,7 +240,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
@@ -1039,7 +1039,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
@@ -1206,7 +1206,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
@@ -1373,7 +1373,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
@@ -1540,13 +1540,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.code() == http::token::code::trailer_name);
         REQUIRE(parser.token_size() == 7);
-        REQUIRE(parser.value<http::token::field_name>() == "X-Pants");
+        REQUIRE(parser.value<http::token::trailer_name>() == "X-Pants");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -1714,26 +1714,26 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.code() == http::token::code::trailer_name);
         REQUIRE(parser.token_size() == 7);
-        REQUIRE(parser.value<http::token::field_name>() == "X-Pants");
+        REQUIRE(parser.value<http::token::trailer_name>() == "X-Pants");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::field_value);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_value);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.code() == http::token::code::trailer_value);
         REQUIRE(parser.token_size() == 0);
-        REQUIRE(parser.value<http::token::field_value>() == "");
+        REQUIRE(parser.value<http::token::trailer_value>() == "");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -1901,26 +1901,26 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.code() == http::token::code::trailer_name);
         REQUIRE(parser.token_size() == 7);
-        REQUIRE(parser.value<http::token::field_name>() == "X-Pants");
+        REQUIRE(parser.value<http::token::trailer_name>() == "X-Pants");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::field_value);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_value);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.code() == http::token::code::trailer_value);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.value<http::token::field_value>() == "On");
+        REQUIRE(parser.value<http::token::trailer_value>() == "On");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -2088,26 +2088,26 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.code() == http::token::code::trailer_name);
         REQUIRE(parser.token_size() == 7);
-        REQUIRE(parser.value<http::token::field_name>() == "X-Pants");
+        REQUIRE(parser.value<http::token::trailer_name>() == "X-Pants");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::field_value);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_value);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.code() == http::token::code::trailer_value);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.value<http::token::field_value>() == "On");
+        REQUIRE(parser.value<http::token::trailer_value>() == "On");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -2276,33 +2276,33 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::end_of_body);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::field_name);
+        REQUIRE(parser.code() == http::token::code::trailer_name);
         REQUIRE(parser.token_size() == 7);
-        REQUIRE(parser.value<http::token::field_name>() == "X-Pants");
+        REQUIRE(parser.value<http::token::trailer_name>() == "X-Pants");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_value);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_value);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::field_value);
+        REQUIRE(parser.code() == http::token::code::trailer_value);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.value<http::token::field_value>() == "On");
+        REQUIRE(parser.value<http::token::trailer_value>() == "On");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 2);
-        REQUIRE(parser.expected_token() == http::token::code::field_name);
+        REQUIRE(parser.expected_token() == http::token::code::trailer_name);
 
         parser.next();
 
