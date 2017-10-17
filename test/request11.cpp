@@ -246,10 +246,10 @@ std::ostream& operator<<(std::ostream &os, const value &v)
                 os << "version(" << v.value << ")";
             },
             [&os](const status_code &v) {
-                // TODO
+                os << "status_code(" << v.value << ")";
             },
             [&os](const reason_phrase &v) {
-                // TODO
+                os << "reason_phrase(" << v.value << ")";
             });
     boost::apply_visitor(visitor, v);
     return os;
