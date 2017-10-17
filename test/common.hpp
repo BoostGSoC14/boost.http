@@ -34,6 +34,10 @@ namespace Catch {
             return "field_value";
         case boost::http::token::code::body_chunk:
             return "body_chunk";
+        case boost::http::token::code::trailer_name:
+            return "trailer_name";
+        case boost::http::token::code::trailer_value:
+            return "trailer_value";
         case boost::http::token::code::end_of_headers:
             return "end_of_headers";
         case boost::http::token::code::end_of_body:

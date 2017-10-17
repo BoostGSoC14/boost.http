@@ -639,6 +639,7 @@ void basic_socket<Socket>
 
     std::size_t nparsed = expecting_field ? field_name_size : 0;
     std::size_t field_name_begin = 0;
+    bool use_trailers;
     int flags = 0;
 
     /* Buffer management is simplified by making `error_insufficient_data` the
@@ -759,7 +760,6 @@ void basic_socket<Socket>
         case token::code::skip:
             break;
         case token::code::method:
-            use_trailers = false;
             {
                 auto value = parser.value<token::method>();
                 connect_request = value == "CONNECT";
@@ -780,13 +780,13 @@ void basic_socket<Socket>
             }
             break;
         case token::code::status_code:
-            use_trailers = false;
             BOOST_HTTP_DETAIL_UNREACHABLE("unimplemented not exposed feature");
             break;
         case token::code::reason_phrase:
             BOOST_HTTP_DETAIL_UNREACHABLE("unimplemented not exposed feature");
             break;
         case token::code::field_name:
+        case token::code::trailer_name:
             {
                 auto buf_view = asio::buffer_cast<char*>(buffer);
                 field_name_begin = nparsed;
@@ -801,6 +801,10 @@ void basic_socket<Socket>
             }
             break;
         case token::code::field_value:
+            use_trailers = false;
+            if (false)
+        case token::code::trailer_value:
+                use_trailers = true;
             {
                 typedef typename Message::headers_type::key_type NameT;
                 typedef typename Message::headers_type::mapped_type ValueT;
@@ -867,7 +871,6 @@ void basic_socket<Socket>
             break;
         case token::code::end_of_body:
             istate = http::read_state::body_ready;
-            use_trailers = true;
             break;
         case token::code::end_of_message:
             istate = http::read_state::empty;

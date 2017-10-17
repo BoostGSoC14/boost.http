@@ -122,6 +122,27 @@ struct body_chunk
     std::vector<boost::uint8_t> value;
 };
 
+struct trailer_name
+{
+    bool operator==(const trailer_name &o) const
+    {
+        return value == o.value;
+    }
+
+    std::string value;
+};
+
+struct trailer_value
+{
+    bool operator==(const trailer_value &o) const
+    {
+        return size == o.size && value == o.value;
+    }
+
+    std::string value;
+    std::size_t size;
+};
+
 struct end_of_headers
 {
     bool operator==(const end_of_headers &o) const
@@ -199,6 +220,8 @@ typedef variant<
     field_name,
     field_value,
     body_chunk,
+    trailer_name,
+    trailer_value,
     end_of_headers,
     end_of_body,
     method,
@@ -230,6 +253,13 @@ std::ostream& operator<<(std::ostream &os, const value &v)
             [&os](const body_chunk &v) {
                 os << "body_chunk(size = " << v.value.size() << ")";
             },
+            [&os](const trailer_name &v) {
+                os << "trailer_name(\"" << v.value << "\")";
+            },
+            [&os](const trailer_value &v) {
+                os << "trailer_value(value = \"" << v.value << "\", size = "
+                << v.size << ")";
+            },
             [&os](const end_of_headers &v) {
                 os << "end_of_headers(size = " << v.size << ")";
             },
@@ -246,10 +276,10 @@ std::ostream& operator<<(std::ostream &os, const value &v)
                 os << "version(" << v.value << ")";
             },
             [&os](const status_code &v) {
-                // TODO
+                os << "status_code(" << v.value << ")";
             },
             [&os](const reason_phrase &v) {
-                // TODO
+                os << "reason_phrase(" << v.value << ")";
             });
     boost::apply_visitor(visitor, v);
     return os;
@@ -320,6 +350,40 @@ my_token::value make_body_chunk(const char (&value)[N])
     for (std::size_t i = 0 ; i != N - 1 ; ++i) {
         t.value[i] = (boost::uint8_t)(value[i]);
     }
+    return t;
+}
+
+my_token::value make_trailer_name(boost::string_ref value)
+{
+    my_token::trailer_name t;
+    t.value = std::string(&value.front(), value.size());
+    return t;
+}
+
+my_token::value make_trailer_value(boost::string_ref value, std::size_t size)
+{
+    my_token::trailer_value t;
+    t.value = std::string(&value.front(), value.size());
+    t.size = size;
+    return t;
+}
+
+template<std::size_t N>
+my_token::value make_trailer_value(const char (&value)[N], std::size_t size)
+{
+    assert(N - 1 <= size);
+    my_token::trailer_value t;
+    t.value = std::string(value, N - 1);
+    t.size = size;
+    return t;
+}
+
+template<std::size_t N>
+my_token::value make_trailer_value(const char (&value)[N])
+{
+    my_token::trailer_value t;
+    t.value = std::string(value, N - 1);
+    t.size = N - 1;
     return t;
 }
 
@@ -474,6 +538,19 @@ void my_tester(const char (&input)[N],
                     } else {
                         output.push_back(make_body_chunk(value));
                     }
+                }
+                break;
+            case http::token::code::trailer_name:
+                {
+                    auto value = parser.value<http::token::trailer_name>();
+                    output.push_back(make_trailer_name(value));
+                }
+                break;
+            case http::token::code::trailer_value:
+                {
+                    auto value = parser.value<http::token::trailer_value>();
+                    output.push_back(make_trailer_value(value,
+                                                        parser.token_size()));
                 }
                 break;
             case http::token::code::end_of_headers:
@@ -667,9 +744,9 @@ TEST_CASE("Lots of messages described declaratively and tested with varying"
                   make_body_chunk(" in\r\n\r\nchunks."),
                   make_skip(3),
                   make_end_of_body(2),
-                  make_field_name("X-Group"),
+                  make_trailer_name("X-Group"),
                   make_skip(2),
-                  make_field_value("hack'n'cast"),
+                  make_trailer_value("hack'n'cast"),
                   make_skip(2),
                   make_end_of_message(2)
               });
@@ -810,9 +887,9 @@ TEST_CASE("A big buffer of messages described declaratively and tested with"
                   make_body_chunk(" in\r\n\r\nchunks."),
                   make_skip(3),
                   make_end_of_body(2),
-                  make_field_name("X-Group"),
+                  make_trailer_name("X-Group"),
                   make_skip(2),
-                  make_field_value("hack'n'cast"),
+                  make_trailer_value("hack'n'cast"),
                   make_skip(2),
                   make_end_of_message(2)
               });

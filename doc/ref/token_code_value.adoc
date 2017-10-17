@@ -34,6 +34,8 @@ struct code
         end_of_headers,
         body_chunk,
         end_of_body,
+        trailer_name,
+        trailer_value,
         end_of_message
     };
 };
