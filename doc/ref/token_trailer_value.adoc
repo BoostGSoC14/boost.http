@@ -18,3 +18,10 @@ struct trailer_value
 
 } // namespace token
 ----
+
+[NOTE]
+====
+This token is “implicitly convertible” to `field_value`, so to speak. In other
+words, you can treat it as `field_value` at value extraction time (i.e. the
+`reader::{request,response}::value<T>()` function).
+====

@@ -21,6 +21,13 @@ struct trailer_name
 
 [NOTE]
 ====
+This token is “implicitly convertible” to `field_name`, so to speak. In other
+words, you can treat it as `field_name` at value extraction time (i.e. the
+`reader::{request,response}::value<T>()` function).
+====
+
+[NOTE]
+====
 It's guaranteed that this token storage in the buffer (as extracted from
 `token_size()` and offset) represents the trailer name exactly (i.e. if you
 want, you can just use offset + size and ignore

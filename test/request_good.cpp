@@ -801,6 +801,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
     REQUIRE(parser.code() == http::token::code::trailer_name);
     REQUIRE(parser.token_size() == 11);
     REQUIRE(parser.value<http::token::trailer_name>() == "Content-MD5");
+    REQUIRE(parser.value<http::token::field_name>() == "Content-MD5");
     REQUIRE(parser.expected_token() == http::token::code::skip);
 
     parser.next();
@@ -814,6 +815,8 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
     REQUIRE(parser.code() == http::token::code::trailer_value);
     REQUIRE(parser.token_size() == 45);
     REQUIRE(parser.value<http::token::trailer_value>()
+            == "25b83662323c397c9944a8a7b3fef7ab");
+    REQUIRE(parser.value<http::token::field_value>()
             == "25b83662323c397c9944a8a7b3fef7ab");
     REQUIRE(parser.expected_token() == http::token::code::skip);
 

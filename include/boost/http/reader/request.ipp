@@ -74,7 +74,9 @@ int request::value<token::version>() const
 template<>
 request::view_type request::value<token::field_name>() const
 {
-    assert(code_ == token::field_name::code);
+    // It accepts “implicit conversion” from `trailer_name`
+    assert(code_ == token::field_name::code
+           || code_ == token::trailer_name::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
                      token_size_);
 }
@@ -82,7 +84,9 @@ request::view_type request::value<token::field_name>() const
 template<>
 request::view_type request::value<token::field_value>() const
 {
-    assert(code_ == token::field_value::code);
+    // It accepts “implicit conversion” from `trailer_value`
+    assert(code_ == token::field_value::code
+           || code_ == token::trailer_value::code);
     view_type raw(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
     return detail::decode_field_value(raw);
 }
