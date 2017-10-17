@@ -30,9 +30,11 @@ void my_socket_consumer::on_socket_callback(asio::buffer data)
             version = request_reader.value<token::version>();
             break;
         case code::field_name:
+        case code::trailer_name:
             last_header = request_reader.value<token::field_name>();
             break;
         case code::field_value:
+        case code::trailer_value:
             (use_trailers ? trailers : headers)
                 .emplace(last_header,
                          request_reader.value<token::field_value>());

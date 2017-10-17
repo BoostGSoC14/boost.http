@@ -114,12 +114,33 @@ include::parsing_tutorial1f.cpp[]
 
 `last_header` did the trick. Easy, but maybe we want to separate headers and
 trailers (the HTTP headers that are sent _after_ the message body). This task
-can be best accomplished by the use of structural/notification tokens.
+can be accomplished by the use of structural/notification tokens.
 
 [source,cpp]
 ----
 include::parsing_tutorial1g.cpp[]
 ----
+
+[NOTE]
+--
+Maybe you had a gut feeling and thought that the previous code was too
+strange. If `trailer_name` is a separate token, why don't we use
+`request_reader.value<token::trailer_name>()` (same to `trailer_value`) and go
+away with notification tokens?
+
+Yes, I unnecessarily complicated the code here to introduce you the concept of
+structural tokens. They are very important and usually you'll end up using
+them. Maybe this tutorial needs some revamping after the library evolved a few
+times.
+
+Also notice that here you can use either
+`request_reader.value<token::field_name>()` or
+`request_reader.value<token::trailer_name>()` to extract this token value. It is
+as if `trailer_name` is “implicitly convertible” to `field_name`, so to speak.
+This feature makes the life of users who don't need to differentiate headers and
+trailers much easier (with no drawback to the users who do need to differentiate
+them).
+--
 
 Some of the delimiters/structural tokens' properties are:
 
