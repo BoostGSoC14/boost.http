@@ -24,6 +24,7 @@ void my_socket_consumer::on_socket_callback(asio::buffer data)
             version = request_reader.value<token::version>();
             break;
         case code::field_name:
+        case code::trailer_name:
             last_header = request_reader.value<token::field_name>();
         }
 
