@@ -14,20 +14,23 @@ enum class write_state
 [plantuml,write_state]
 ----
 @startuml
-state empty
-state continue_issued
+state " " as empty {
+  state "empty" as iempty
+  state continue_issued
+
+  [*] --> iempty
+
+  iempty --> continue_issued : write_response_continue
+}
 state metadata_issued
 state finished
 
 [*] --> empty
 finished --> [*]
 
-empty --> continue_issued : write_response_continue
 empty --> finished : write_response
 empty --> metadata_issued : write_response_metadata
 
-continue_issued --> metadata_issued : write_response_metadata
-continue_issued --> finished : write_response
 
 metadata_issued --> metadata_issued : write
 metadata_issued --> finished : write_trailers,write_end_of_message
