@@ -26,6 +26,7 @@ empty --> message_ready : read_request
 empty --> body_ready : read_request
 empty --> finished : read_request
 
+message_ready --> message_ready : read_some
 message_ready --> body_ready : read_some
 message_ready --> finished : read_some
 
