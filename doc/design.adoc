@@ -192,34 +192,49 @@ level flexible abstractions, such as the file server you can already find.
 @startuml
 partition "request handling" {
   start
-  :is_open();
-  -> true;
-  :async_read_request();
-  if (request_continue_required()) then (true)
-    :async_write_response_continue();
-  else (false)
+  if (""is_open()"") then (""false"")
+    stop
   endif
-  while (read_state() == read_state::empty)
-    if (read_state()) then (read_state::message_ready)
-      :async_read_some();
-    else (read_state::body_ready)
-      :async_read_trailers();
+  floating note left
+    The fork below
+    represents an user
+    choice (any action
+    can be taken).
+
+    However, some choices
+    have preconditions.
+    Check the text on the
+    associated arrow.
+  end note
+  -> ""true"";
+  :""async_read_request()"";
+  if (""request_continue_required()"") then (""true"")
+    :""async_write_response_continue()"";
+  else (""false"")
+  endif
+  while (""read_state() == read_state::empty"")
+    if (""read_state()"") then (""read_state::message_ready"")
+      :""async_read_some()"";
+    else (""read_state::body_ready"")
+      :""async_read_trailers()"";
     endif
   endwhile
-  -> true;
-  if (write_response_native_stream()) then (true || false)
-    :async_write_response_metadata();
-    while ()
-      :async_write();
+  -> ""true"";
+  fork
+    -> ""write_response_native_stream() == true"";
+    :""async_write_response_metadata()"";
+    while (//have response-body-chunk to send?//)
+      -> //yes//;
+      :""async_write()"";
     endwhile
-    if ()
-      :async_write_end_of_message();
-    else ()
-      :async_write_trailers();
+    if (//have trailers to send?//) then(//no//)
+      :""async_write_end_of_message()"";
+    else (//yes//)
+      :""async_write_trailers()"";
     endif
-  else (false)
-    :async_write_response();
-  endif
+  fork again
+    :""async_write_response()"";
+  end fork
   stop
 }
 @enduml
