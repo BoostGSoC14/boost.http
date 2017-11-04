@@ -11,7 +11,7 @@
 enum class write_state
 ----
 
-[plantuml,write_state]
+[plantuml,write_response_state,title="Outgoing response"]
 ----
 @startuml
 state " " as empty {
@@ -31,23 +31,36 @@ finished --> [*]
 empty --> finished : write_response
 empty --> metadata_issued : write_response_metadata
 
-
 metadata_issued --> metadata_issued : write
 metadata_issued --> finished : write_trailers,write_end_of_message
+@enduml
+----
+
+[plantuml,write_request_state,title="Outgoing request"]
+----
+@startuml
+state empty
+state continue_issued
+state metadata_issued
+state finished
+
+note right of continue_issued : unused
+note right of finished : unused
+
+[*] --> empty
+
+empty --> empty : write_request
+empty --> metadata_issued : write_request_metadata
+
+metadata_issued --> metadata_issued : write
+metadata_issued --> empty : write_trailers,write_end_of_message
 @enduml
 ----
 
 Represents the current state in the HTTP outgoing response or HTTP outgoing
 request.
 
-It has extra values that won't be used in “outgoing-request” mode.  Explanation
-focuses in “outgoing-response” mode.
-
-////
-TODO: Update the picture from the original proposal (vector for the win):
-
-The picture response_state.png can help you understand this file.
-////
+It has extra values that won't be used in “outgoing-request” mode.
 
 ===== Member constants
 
@@ -55,7 +68,7 @@ The picture response_state.png can help you understand this file.
 
   This is the initial state.
 +
-It means that the response object wasn't used yet.
+It means that the request/response object wasn't used yet.
 +
 At this state, you can only issue the metadata or issue a continue action, if
 continue is supported/used in this HTTP session. Even if continue was requested,
@@ -69,7 +82,7 @@ body.
 +
 No more continue actions can be issued from this state.
 +
-Only makes sense in server mode, when issuing an outgoing response.
+NOTE: Only makes sense in server mode, when issuing an outgoing response.
 
 `metadata_issued`::
 

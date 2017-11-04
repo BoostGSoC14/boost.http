@@ -1,0 +1,32 @@
+[[is_client_socket]]
+==== `is_client_socket`
+
+[source,cpp]
+----
+#include <boost/http/traits.hpp>
+----
+
+If `T` is an object fulfilling the <<client_socket_concept,`ClientSocket`
+concept>>, this template inherits `std::true_type`. For any other type, this
+template inherits `std::false_type`.
+
+This template may be specialized for a user-defined type to indicate that the
+type is eligible for operations involving <<client_socket_concept,`ClientSocket`
+objects>>.
+
+Initially, it was considered to create a trait that would automatically detect
+if `T` is fullfilling the <<client_socket_concept,`ClientSocket` concept>>, but
+the idea was abandoned, because the <<client_socket_concept,`ClientSocket`
+concept>> includes behaviour that can only be detected at runtime.
+
+===== Template parameters
+
+`T`::
+
+  The type to query.
+
+===== See also
+
+* <<client_socket_concept,`ClientSocket` concept>>.
+* <<basic_socket,`basic_socket`>>.
+* <<socket,`socket`>>.

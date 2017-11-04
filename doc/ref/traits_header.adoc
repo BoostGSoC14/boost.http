@@ -8,3 +8,4 @@ Import the following symbols:
 * <<is_response_message,`is_response_message`>>
 * <<is_socket,`is_socket`>>
 * <<is_server_socket,`is_server_socket`>>
+* <<is_client_socket,`is_client_socket`>>

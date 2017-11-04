@@ -1,0 +1,196 @@
+[[client_socket_concept]]
+==== `ClientSocket`
+
+Provides operations for HTTP clients.
+
+===== Refinement of
+
+* <<socket_concept,`Socket`>>
+
+===== Definitions
+
+Types fulfilling the `ClientSocket` concept and also possessing the _strict_ property::
+
+  Instances from this type will *not* insert illegal characters
+  footnote:[Defined in the <<message_concept,`Message` concept's “definitions”
+  section>>.] in the HTTP fields.
+
+===== Notation
+
+`Request`::
+
+  A type fulfilling the requirements for the <<request_concept,`Request`
+  concept>>.
+
+`Response`::
+
+  A type fulfilling the requirements for the <<response_concept,`Response`
+  concept>>.
+
+`im`::
+
+  Object of type `Response`.
+
+`om`::
+
+  Object of type `const Request`.
+
+`CompletionToken`::
+
+  A type fulfilling the concept of a completion token, as defined in
+  https://isocpp.org/files/papers/n4045.pdf[N4045: Library Foundations for
+  Asynchronous Operations, Revision 2].
+
+`AsyncResultType`::
+
++
+[source,cpp]
+----
+boost::asio::async_result<
+     boost::asio::handler_type<
+         CompletionToken, void(boost::system::error_code)>::type>::type
+----
+
+`token`::
+
+  An object of the type `CompletionToken`.
+
+`X`::
+
+  A type that is a model of `ClientSocket`.
+
+`a`::
+
+  Object of type `X`.
+
+`ca`::
+
+  Object of type `const X`.
+
+===== Requirements
+
+[options="header"]
+|===
+|Expression|Return type|Precondition|Semantics|Postcondition
+
+|`std::is_base_of<std::true_type, http::is_client_socket<X>>`
+|`std::true_type`| | |
+
+|`X::request_type`|
+|`ClientSocket` only supports operations involving a single type of request
+ message.
+|Must be a type fulfilling the requirements for the <<request_concept,`Request`
+ concept>>.
+|
+
+|`X::response_type`|
+|`ClientSocket` only supports operations involving a single type of response
+ message.
+|Must be a type fulfilling the requirements for the
+ <<response_concept,`Response` concept>>.
+|
+
+|`a.async_write_request(om, token)`|`AsyncResultType`
+|`a.write_state() == write_state::empty`
+|Initiate an asynchronous operation to write the request message (atomic
+ message). Handler is called with an appropriate argument when the operation
+ completes.
+
+ `om` MUST *NOT* be modified while the operation is in progress.
+|By the time the handler is called, the `om` message is considered delivered, if
+ no error happened.
+
+|`a.async_write_request(om, token)`|`AsyncResultType`
+|`a.write_state() != write_state::empty`
+|No actions are done and the handler from the completion token is called with
+ `boost::system::error_code {http_errc::out_of_order}`.
+|
+
+|`a .async_write_request_metadata(om, token)`
+|`AsyncResultType`
+|`a.write_state() == write_state::empty`
+|Initiate an asynchronous operation to write the request metadata (chunked
+ message). Handler is called with an appropriate argument when the operation
+ completes.
+
+ `om` MUST *NOT* be modified while the operation is in progress.
+a|
+
+* `a.write_state() == write_state ::metadata_issued`
+* By the time the handler is called, the request metadata
+  (i.e. `om.method()`, `om.target()` and `cm.headers()`) is considered
+  delivered, if no error happened.
+
+|`a .async_write_request_metadata(om, token)`
+|`AsyncResultType`
+|`a.write_state() != write_state::empty`
+|No actions are done and the handler from the completion token is called with
+ `boost::system::error_code {http_errc::out_of_order}`.
+|
+
+|`a.async_read_response(im, token)`|`AsyncResultType`
+|`a.read_state() == read_state::empty`
+|Initiate an asynchronous operation to read enough of the message to fill the
+ response metadata (i.e. status line plus the header section). Handler is
+ called when the operation completes with an appropriate parameter.
+
+ `im` is left in a unspecified state while the operation is in progress.
+|By the time the handler is called, `im.status_code()` value represents the read
+ status code, `im.reason_phrase()` represents the read reason phrase and all
+ headers for the current response are inserted into `im.headers()`, if no error
+ happened.
+
+|`a.async_read_response(im, token)`|`AsyncResultType`
+|`a.read_state() != read_state::empty`
+|No actions are done and the handler from the completion token is called with
+ `boost::system::error_code {http_errc::out_of_order}`.
+|
+
+|===
+
+. Failing to comply with the “MUST” and “MUST *NOT*” conditions described
+  previously invokes undefined behaviour.
+. Any HTTP field name received through the wire is normalized (i.e. uppercase
+  characters are converted to lowercase) before they're inserted into objects of
+  type `Response::headers_type`.
+. Upon receiving a message (i.e. `async_read_response`, `async_read_some` or
+  `async_read_trailers`), if message receipt was successful, but connection is
+  gracefully closed in the HTTP-equivalent layer (e.g. `"connection: close"`
+  header) and no longer usable, the handler MUST be called with <<http_errc,
+  `http_errc::stream_finished`>>.
++
+This behaviour is intended for the communication between the user of this
+library and the `ClientSocket` and can differ from the communication between the
+`ClientSocket` and the underlying channel.
+. The user communicates the intent to wait for a “100 (Continue) response” by
+  inserting the `"expect: 100-continue"` header (and more than one element with
+  the HTTP field name `"expect"` MUST NOT be present in the sent request
+  metadata).
++
+This behaviour is intended for the communication between the user of this
+library and the `ClientSocket` and can differ from the communication between the
+`ClientSocket` and the underlying channel. For instance, if the `ClientSocket`
+doesn't intend to implement such semantics, it can omit this header from the
+message sent to the underlying channel and fill a “100 (Continue) response” in
+the next call the user does to `read_response` whether this response was
+received from the underlying channel or not (i.e. fill a virtual response).
+. Two consecutive “100 (Continue) response” MUST NOT be delivered (API-wise
+  domain) to the user.
+. If the `ClientSocket` isn't willing to provide support for protocol upgrade,
+  then no `"upgrade"` headers should be sent (in other words, all `"upgrade"`
+  headers MUST be skipped before delivering the message from the user of this
+  library — or a behaviour that is equivalent in the underlying channel).
++
+This behaviour is intended for the communication between the user of this
+library and the `ClientSocket` and can differ from the communication between the
+`ClientSocket` and the underlying channel.
+. The `ClientSocket` object MUST *NOT* insert HTTP headers with empty keys
+  (i.e. `""`) in message, request or response objects provided by the user.
+. The `Socket` operations `async_write_trailers` and
+  `async_write_end_of_message` are modified so that `write_state::empty` is used
+  as a target write state instead `write_state::finished`.
+
+===== Models
+
+* <<basic_socket,`basic_socket`>>
+* <<basic_buffered_socket,`basic_buffered_socket`>>

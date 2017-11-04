@@ -48,6 +48,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * <<is_response_message,`is_response_message`>>
 * <<is_socket,`is_socket`>>
 * <<is_server_socket,`is_server_socket`>>
+* <<is_client_socket,`is_client_socket`>>
 * <<basic_router, `basic_router`>>
 * <<regex_router, `regex_router`>>
 * Content parsers
@@ -98,6 +99,7 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * <<response_concept,`Response`>>
 * <<socket_concept,`Socket`>>
 * <<server_socket_concept,`ServerSocket`>>
+* <<client_socket_concept,`ClientSocket`>>
 
 ==== Headers
 
@@ -222,6 +224,8 @@ include::ref/socket_concept.adoc[]
 
 include::ref/server_socket_concept.adoc[]
 
+include::ref/client_socket_concept.adoc[]
+
 include::ref/algorithm_header.adoc[]
 
 include::ref/header_header.adoc[]
@@ -273,6 +277,8 @@ include::ref/is_response_message.adoc[]
 include::ref/is_socket.adoc[]
 
 include::ref/is_server_socket.adoc[]
+
+include::ref/is_client_socket.adoc[]
 
 include::ref/basic_router.adoc[]
 

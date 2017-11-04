@@ -11,7 +11,7 @@
 enum class read_state
 ----
 
-[plantuml,read_state]
+[plantuml,read_request_state,title="Incoming request"]
 ----
 @startuml
 state empty
@@ -31,6 +31,30 @@ message_ready --> body_ready : read_some
 message_ready --> finished : read_some
 
 body_ready --> finished : read_trailers
+@enduml
+----
+
+[plantuml,read_response_state,title="Incoming response"]
+----
+@startuml
+state empty
+state message_ready
+state body_ready
+state finished
+
+note right of finished : unused
+
+[*] --> empty
+
+empty --> message_ready : read_response
+empty --> body_ready : read_response
+empty --> empty : read_response
+
+message_ready --> message_ready : read_some
+message_ready --> body_ready : read_some
+message_ready --> empty : read_some
+
+body_ready --> empty : read_trailers
 @enduml
 ----
 

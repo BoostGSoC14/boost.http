@@ -27,12 +27,14 @@ struct is_message
 template<class T>
 struct is_server_socket: public std::false_type {};
 
-/* Will be refined later. It'll be something like:
+template<class T>
+struct is_client_socket: public std::false_type {};
 
-   is_server_socket<T> || is_client_socket<T> */
 template<class T>
 struct is_socket
-    : public std::integral_constant<bool, is_server_socket<T>::value>
+    : public std::integral_constant<bool,
+                                    is_server_socket<T>::value
+                                    || is_client_socket<T>::value>
 {};
 
 } // namespace http
