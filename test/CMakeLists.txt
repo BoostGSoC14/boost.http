@@ -64,6 +64,9 @@ macro(add_test_target target version)
     endif()
   endif()
 
+  target_compile_definitions("${target}"
+    PRIVATE BOOST_COROUTINES_NO_DEPRECATION_WARNING)
+
   target_include_directories("${target}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include" ${Boost_INCLUDE_DIR})
 
