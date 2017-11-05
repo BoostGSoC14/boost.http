@@ -8,6 +8,7 @@ find_package(Boost 1.55 COMPONENTS
   date_time
   filesystem
   system
+  unit_test_framework
   context
   coroutine
   regex
@@ -74,6 +75,7 @@ macro(add_test_target target version)
     ${Boost_DATE_TIME_LIBRARY}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
+    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${Boost_COROUTINE_LIBRARY}
     ${Boost_CONTEXT_LIBRARY}
     ${Boost_REGEX_LIBRARY})

@@ -1,4 +1,5 @@
-#include "unit_test.hpp"
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
 
 #include <boost/http/request_response_wrapper.hpp>
 #include <boost/http/request.hpp>

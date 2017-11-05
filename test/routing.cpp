@@ -1,4 +1,5 @@
-#include "unit_test.hpp"
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
 
 #include <boost/http/basic_router.hpp>
 #include <boost/http/regex_router.hpp>
@@ -146,4 +147,3 @@ BOOST_AUTO_TEST_CASE(regex_route_test)
     BOOST_CHECK(router("", 0) == false); // no initial "/"
     BOOST_CHECK(route_flags == 0);
 }
-
