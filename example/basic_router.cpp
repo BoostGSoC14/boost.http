@@ -35,7 +35,8 @@ public:
                     self->socket.async_write_response_continue(yield);
                 }
 
-                while (self->socket.read_state() != http::read_state::empty) {
+                while (self->socket.read_state()
+                       != http::read_state::finished) {
                     cout << '[' << self->counter
                          << "] Message not fully received" << endl;
                     switch (self->socket.read_state()) {

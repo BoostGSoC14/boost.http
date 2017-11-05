@@ -198,6 +198,31 @@ a|
 
 |===
 
+The following `Socket` operations are refined with extra
+semantics/postconditions:
+
+[options="header"]
+|===
+|Expression|Precondition|Extra semantics|Extra postcondition
+
+|`a.async_read_trailers(m, token)`
+|`a.read_state() == read_state::body_ready`
+|
+|By the time the handler is called, if no error happened, `a.read_state() ==
+ http::read_state::finished`.
+
+|`a.async_write_trailers(cm, token)`
+|`a.write_state() == write_state ::metadata_issued`
+|
+|`a.write_state() == write_state::finished`
+
+|`a.async_write_end_of_message (token)`
+|`a.write_state() == write_state ::metadata_issued`
+|
+|`a.write_state() == write_state::finished`
+
+|===
+
 . Failing to comply with the “MUST” and “MUST *NOT*” conditions described
   previously invokes undefined behaviour.
 . Any HTTP field name received through the wire is normalized (i.e. uppercase

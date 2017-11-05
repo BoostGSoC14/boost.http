@@ -145,10 +145,8 @@ boost::asio::async_result<
 
  `m.trailers()` is left in an unspecified state while the operation is in
  progress.
-a|By the time the handler is called, if no error happened:
-
-* `a.read_state() == http::read_state::empty`
-* The read trailers (if any) are inserted into `m.trailers()`.
+|By the time the handler is called, if no error happened, the read trailers (if
+ any) are inserted into `m.trailers()`.
 
 |`a.async_read_trailers(m, token)`|`AsyncResultType`
 |`a.read_state() != read_state::body_ready`
@@ -179,11 +177,8 @@ a|By the time the handler is called, if no error happened:
  appropriate parameter.
 
  `cm.trailers()` MUST *NOT* be modified while the operation is in progress.
-a|
-
-* `a.write_state() == write_state::finished`
-* By the time the operation completes, the `cm.trailers()` data is considered
-  delivered, if no error happened.
+|By the time the operation completes, the `cm.trailers()` data is considered
+ delivered, if no error happened.
 
 |`a.async_write_trailers(cm, token)`|`AsyncResultType`
 |`a.write_state() != write_state ::metadata_issued`
@@ -196,11 +191,8 @@ a|
 |Initiate an asynchronous operation to signalize the sent message is complete
  (chunked message). Handler is called when the operation completes with an
  appropriate parameter.
-a|
-
-* `a.write_state() == write_state::finished`
-* By the time the operation completes, the message is considered complete, if no
-  error happened.
+|By the time the operation completes, the message is considered complete, if no
+ error happened.
 
 |`a.async_write_end_of_message (token)`|`AsyncResultType`
 |`a.write_state() != write_state ::metadata_issued`

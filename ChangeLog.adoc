@@ -1,0 +1,9 @@
+= ChangeLog
+
+You can check any breaking changes here.
+
+== v0.5
+
+* Ensure `ServerSocket`'s `read_state` is `read_state::finished` once a request
+  is read. Previously this was `read_state::empty`. Go change your loop to wait
+  while `socket.read_state() != read_state::finished`.

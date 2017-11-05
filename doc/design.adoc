@@ -212,7 +212,7 @@ partition "request handling" {
     :""async_write_response_continue()"";
   else (""false"")
   endif
-  while (""read_state() == read_state::empty"")
+  while (""read_state() == read_state::finished"")
     if (""read_state()"") then (""read_state::message_ready"")
       :""async_read_some()"";
     else (""read_state::body_ready"")

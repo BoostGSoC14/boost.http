@@ -187,7 +187,8 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 }
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "GET");
@@ -239,7 +240,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 BOOST_REQUIRE((socket.read_state()
                                == http::read_state::message_ready)
                               || (socket.read_state()
-                                  == http::read_state::empty));
+                                  == http::read_state::finished));
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "POST");
@@ -252,9 +253,10 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                     BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                while (socket.read_state() != http::read_state::empty)
+                while (socket.read_state() != http::read_state::finished)
                     socket.async_read_some(request, yield);
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
 
                 {
                     vector<uint8_t> v{'p', 'i', 'n', 'g'};
@@ -289,7 +291,8 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(!socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "GET");
@@ -382,7 +385,8 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(socket.write_response_native_stream());
 
                 BOOST_ASSERT(http::request_continue_required(request));
@@ -436,7 +440,8 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_ASSERT(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "GET");
@@ -448,7 +453,6 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                     BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_CHECK(request.body().size() == 0);
                 BOOST_CHECK(request.trailers() == http::headers{});
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
@@ -482,7 +486,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 BOOST_REQUIRE((socket.read_state()
                                == http::read_state::message_ready)
                               || (socket.read_state()
-                                  == http::read_state::empty));
+                                  == http::read_state::finished));
                 BOOST_CHECK(socket.write_response_native_stream());
 
                 BOOST_CHECK(http::request_continue_required(request));
@@ -499,9 +503,10 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                     BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                while (socket.read_state() != http::read_state::empty)
+                while (socket.read_state() != http::read_state::finished)
                     socket.async_read_some(request, yield);
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
 
                 {
                     vector<uint8_t> v{'p', 'i', 'n', 'g'};
@@ -539,7 +544,8 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(!socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "GET");
@@ -670,7 +676,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                               || (socket.read_state()
                                   == http::read_state::body_ready)
                               || (socket.read_state()
-                                  == http::read_state::empty));
+                                  == http::read_state::finished));
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "POST");
@@ -685,7 +691,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                while (socket.read_state() != http::read_state::empty) {
+                while (socket.read_state() != http::read_state::finished) {
                     switch (socket.read_state()) {
                     case http::read_state::empty:
                     case http::read_state::finished:
@@ -700,7 +706,8 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         break;
                     }
                 }
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
 
                 {
                     vector<uint8_t> v{'W', 'i', 'k', 'i', 'p', 'e', 'd', 'i',
@@ -759,7 +766,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                               || (socket.read_state()
                                   == http::read_state::body_ready)
                               || (socket.read_state()
-                                  == http::read_state::empty));
+                                  == http::read_state::finished));
                 BOOST_CHECK(socket.write_response_native_stream());
 
                 BOOST_CHECK(http::request_continue_required(request));
@@ -778,7 +785,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                while (socket.read_state() != http::read_state::empty) {
+                while (socket.read_state() != http::read_state::finished) {
                     switch (socket.read_state()) {
                     case http::read_state::empty:
                     case http::read_state::finished:
@@ -793,7 +800,8 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         break;
                     }
                 }
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
 
                 {
                     vector<uint8_t> v{'W', 'i', 'k', 'i', 'p', 'e', 'd', 'i',
@@ -853,7 +861,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                               || (socket.read_state()
                                   == http::read_state::body_ready)
                               || (socket.read_state()
-                                  == http::read_state::empty));
+                                  == http::read_state::finished));
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "POST");
@@ -869,7 +877,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                     BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                while (socket.read_state() != http::read_state::empty) {
+                while (socket.read_state() != http::read_state::finished) {
                     switch (socket.read_state()) {
                     case http::read_state::empty:
                     case http::read_state::finished:
@@ -884,7 +892,8 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         break;
                     }
                 }
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
 
                 {
                     vector<uint8_t> v{'v', 'i', 'o', 'l', 'e', 't', 's', ' ',
@@ -957,7 +966,8 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "GET");
@@ -1007,7 +1017,8 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "GET");
@@ -1057,7 +1068,8 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(!socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(request.method() == "GET");
@@ -1132,7 +1144,8 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(http::request_upgrade_desired(request));
@@ -1178,7 +1191,8 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(socket.write_response_native_stream());
 
                 BOOST_CHECK(http::request_continue_required(request));
@@ -1230,7 +1244,8 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 socket.async_read_request(request, yield);
 
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
                 BOOST_CHECK(!socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(!http::request_upgrade_desired(request));
@@ -1298,7 +1313,7 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                 BOOST_REQUIRE((socket.read_state()
                                == http::read_state::message_ready)
                               || (socket.read_state()
-                                  == http::read_state::empty));
+                                  == http::read_state::finished));
                 BOOST_CHECK(socket.write_response_native_stream());
                 BOOST_CHECK(!http::request_continue_required(request));
                 BOOST_CHECK(http::request_upgrade_desired(request));
@@ -1314,9 +1329,10 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
                     BOOST_CHECK(request.headers() == expected_headers);
                 }
 
-                while (socket.read_state() != http::read_state::empty)
+                while (socket.read_state() != http::read_state::finished)
                     socket.async_read_some(request, yield);
-                BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+                BOOST_REQUIRE(socket.read_state()
+                              == http::read_state::finished);
 
                 {
                     vector<uint8_t> v{'!', 'g', 'i', 't'};

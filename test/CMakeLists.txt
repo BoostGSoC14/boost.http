@@ -49,6 +49,7 @@ set(tests11
   "request11"
   "routing"
   "request_response_wrapper"
+  "socket_state"
 )
 
 macro(add_test_target target version)

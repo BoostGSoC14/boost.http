@@ -172,6 +172,7 @@ basic_socket<Socket>
                        http_errc::out_of_order);
         return result.get();
     }
+    istate = http::read_state::empty;
 
     auto crlf = string_literal_buffer("\r\n");
     auto sep = string_literal_buffer(": ");
@@ -467,6 +468,7 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
                        http_errc::out_of_order);
         return result.get();
     }
+    istate = http::read_state::empty;
 
     auto last_chunk = string_literal_buffer("0\r\n");
     auto crlf = string_literal_buffer("\r\n");
@@ -529,6 +531,7 @@ basic_socket<Socket>
                        http_errc::out_of_order);
         return result.get();
     }
+    istate = http::read_state::empty;
 
     auto last_chunk = string_literal_buffer("0\r\n\r\n");
 
@@ -873,7 +876,7 @@ void basic_socket<Socket>
             istate = http::read_state::body_ready;
             break;
         case token::code::end_of_message:
-            istate = http::read_state::empty;
+            istate = http::read_state::finished;
             flags |= END;
             parser.set_buffer(asio::buffer(buffer + nparsed,
                                            parser.token_size()));
