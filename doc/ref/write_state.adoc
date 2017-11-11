@@ -11,6 +11,11 @@
 enum class write_state
 ----
 
+Represents the current state in the HTTP outgoing response or HTTP outgoing
+request.
+
+===== Member constants (outgoing response)
+
 [plantuml,write_response_state,title="Outgoing response"]
 ----
 @startuml
@@ -36,6 +41,44 @@ metadata_issued --> finished : write_trailers,write_end_of_message
 @enduml
 ----
 
+`empty`::
+
+  This is the initial state.
++
+It means that the response object hasn't been sent yet.
++
+At this state, you can only issue the metadata or issue a continue action, if
+continue is supported/used in this HTTP session. Even if continue was requested,
+issue a continue action is optional and only required if you need the request's
+body.
+
+`continue_issued`::
+
+  This state is reached from the `empty` state, once you issue a continue
+  action.
++
+No more continue actions can be issued from this state.
+
+`metadata_issued`::
+
+  This state can be reached either from `empty` or `continue_issued`.
++
+It happens when the metadata (start line + header section) is issued (through
+`write_response_metadata`).
++
+From this state, you can only issue the body, the trailers or the end of the
+message.
+
+`finished`::
+
+  The message is considered complete once this state is reached.
++
+You can no longer issue anything once this state is reached. The underlying
+channel will change the outgoing_state to `empty` once some unspecified event
+occurs. This event is usually a new request.
+
+===== Member constants (outgoing request)
+
 [plantuml,write_request_state,title="Outgoing request"]
 ----
 @startuml
@@ -57,51 +100,32 @@ metadata_issued --> empty : write_trailers,write_end_of_message
 @enduml
 ----
 
-Represents the current state in the HTTP outgoing response or HTTP outgoing
-request.
-
-It has extra values that won't be used in “outgoing-request” mode.
-
-===== Member constants
-
 `empty`::
 
   This is the initial state.
 +
-It means that the request/response object wasn't used yet.
+It means that the request object hasn't been sent yet.
 +
-At this state, you can only issue the metadata or issue a continue action, if
-continue is supported/used in this HTTP session. Even if continue was requested,
-issue a continue action is optional and only required if you need the request's
-body.
+At this state, you can only issue the metadata.
 
-`continue_issued`::
-
-  This state is reached from the `empty` state, once you issue a continue
-  action.
+`continue_issued` (*UNUSED*)::
 +
-No more continue actions can be issued from this state.
-+
-NOTE: Only makes sense in server mode, when issuing an outgoing response.
+NOTE: Only makes sense in server mode, when sending an outgoing response.
 
 `metadata_issued`::
 
-  This state can be reached either from `empty` or `continue_issued`.
+  This state can be reached from `empty`.
 +
-It happens when the metadata (start line + header section) is reached (through
-`write_metadata`).
+It happens when the metadata (start line + header section) is issued (through
+`write_request_metadata`).
 +
 From this state, you can only issue the body, the trailers or the end of the
 message.
 
-`finished`::
-
-  The message is considered complete once this state is reached.
+`finished` (*UNUSED*)::
 +
-You can no longer issue anything once this state is reached. The underlying
-channel will change the outgoing_state once some unspecified event occurs. This
-event is usually a new request in server mode or the response fully received in
-client mode.
+NOTE: Only makes sense in server mode, when sending an outgoing response. In
+client mode, `empty` target state is used instead.
 
 ===== See also
 
