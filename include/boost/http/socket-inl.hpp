@@ -670,7 +670,7 @@ void basic_socket<Socket>
                                             "\r\n"
                                             "Invalid data\n");
                 asio::async_write(channel, asio::buffer(error_message),
-                                  [this,handler](system::error_code
+                                  [handler](system::error_code
                                                  /*ignored_ec*/,
                                                  std::size_t
                                                  /*bytes_transferred*/)
@@ -690,7 +690,7 @@ void basic_socket<Socket>
                                             "\r\n"
                                             "Host missing\n");
                 asio::async_write(channel, asio::buffer(error_message),
-                                  [this,handler](system::error_code
+                                  [handler](system::error_code
                                                  /*ignored_ec*/,
                                                  std::size_t
                                                  /*bytes_transferred*/)
@@ -711,7 +711,7 @@ void basic_socket<Socket>
                                             "\r\n"
                                             "Invalid content-length\n");
                 asio::async_write(channel, asio::buffer(error_message),
-                                  [this,handler](system::error_code
+                                  [handler](system::error_code
                                                  /*ignored_ec*/,
                                                  std::size_t
                                                  /*bytes_transferred*/)
@@ -731,7 +731,7 @@ void basic_socket<Socket>
                                             "\r\n"
                                             "Invalid transfer-encoding\n");
                 asio::async_write(channel, asio::buffer(error_message),
-                                  [this,handler](system::error_code
+                                  [handler](system::error_code
                                                  /*ignored_ec*/,
                                                  std::size_t
                                                  /*bytes_transferred*/)
@@ -751,7 +751,7 @@ void basic_socket<Socket>
                                             "\r\n"
                                             "Can't process chunk size\n");
                 asio::async_write(channel, asio::buffer(error_message),
-                                  [this,handler](system::error_code
+                                  [handler](system::error_code
                                                  /*ignored_ec*/,
                                                  std::size_t
                                                  /*bytes_transferred*/)

@@ -141,105 +141,105 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = " ";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "\t";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "          ";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "\t\t\t\t\t\t\t\t\t\t\t";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",,,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = " ,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ", ";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",    ";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = " , ";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,   ";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,,   ";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,,   ,     ,,,    ";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",   ,  test, test2 ,test4 ,,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_ref /*value*/) {
                                   ++counter;
                                   return true;
         });
@@ -426,105 +426,105 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = " ";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "\t";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "          ";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "\t\t\t\t\t\t\t\t\t\t\t";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ",";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ",,";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ",,,";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = " ,";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "   ,";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ", ";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ",    ";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = " , ";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "   ,   ";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "   ,,   ";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "   ,,   ,     ,,,    ";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
@@ -695,105 +695,105 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = " ";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "\t";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "          ";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "\t\t\t\t\t\t\t\t\t\t\t";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",,";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",,,";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = " ,";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ", ";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",    ";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = " , ";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,   ";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,,   ";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,,   ,     ,,,    ";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [](string_ref /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
@@ -842,7 +842,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",   ,  test, test2 ,test4 ,,";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_ref /*value*/) {
                                   ++counter;
                                   return false;
         });
