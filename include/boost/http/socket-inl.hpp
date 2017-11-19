@@ -629,29 +629,19 @@ void basic_socket<Socket>
     }
 
     used_size += bytes_transferred;
-    if (expecting_field) {
-        /* We complicate field management to avoid allocations. The field name
-           MUST occupy the initial bytes on the buffer. The bytes that
-           immediately follow should be the field value (i.e. remove any `skip`
-           that appears between name and value). */
-        parser.set_buffer(asio::buffer(buffer + field_name_size,
-                                       used_size - field_name_size));
-    } else {
-        parser.set_buffer(asio::buffer(buffer, used_size));
-    }
+    parser.set_buffer(asio::buffer(buffer, used_size));
 
-    std::size_t nparsed = expecting_field ? field_name_size : 0;
-    std::size_t field_name_begin = 0;
-    bool use_trailers;
+    bool loop = true;
     int flags = 0;
 
-    /* Buffer management is simplified by making `error_insufficient_data` the
-       only way to break out of this loop (on non-error paths). */
-    do {
-        parser.next();
+    while (loop) {
+        if (parser.code() != token::code::field_name
+            && parser.code() != token::code::trailer_name) {
+            parser.next();
+        }
         switch (parser.code()) {
         case token::code::error_insufficient_data:
-            // break of for loop completely
+            loop = false;
             continue;
         case token::code::error_set_method:
             BOOST_HTTP_DETAIL_UNREACHABLE("client API not implemented yet");
@@ -791,31 +781,46 @@ void basic_socket<Socket>
         case token::code::field_name:
         case token::code::trailer_name:
             {
-                auto buf_view = asio::buffer_cast<char*>(buffer);
-                field_name_begin = nparsed;
-                field_name_size = parser.token_size();
-
-                for (std::size_t i = 0 ; i != field_name_size ; ++i) {
-                    auto &ch = buf_view[field_name_begin + i];
-                    ch = std::tolower(ch);
-                }
-
-                expecting_field = true;
-            }
-            break;
-        case token::code::field_value:
-            use_trailers = false;
-            if (false)
-        case token::code::trailer_value:
-                use_trailers = true;
-            {
                 typedef typename Message::headers_type::key_type NameT;
                 typedef typename Message::headers_type::mapped_type ValueT;
 
-                auto buf_view = asio::buffer_cast<char*>(buffer);
-                auto name = string_ref(buf_view + field_name_begin,
-                                       field_name_size);
-                auto value = parser.value<token::field_value>();
+                bool use_trailers = parser.code() == token::code::trailer_name;
+
+                // Header name
+                {
+                    auto buf_view = asio::buffer_cast<char*>(buffer);
+                    std::size_t field_name_begin = parser.parsed_count();
+                    std::size_t field_name_size = parser.token_size();
+
+                    for (std::size_t i = 0 ; i != field_name_size ; ++i) {
+                        auto &ch = buf_view[field_name_begin + i];
+                        ch = std::tolower(ch);
+                    }
+                }
+
+                // Header value
+                reader::request parser_copy(parser);
+                parser_copy.next();
+
+                if (parser_copy.code() == token::code::skip)
+                    parser_copy.next();
+
+                switch (parser_copy.code()) {
+                case token::code::field_value:
+                case token::code::trailer_value:
+                    // do nothing
+                    break;
+                case token::code::error_insufficient_data:
+                    loop = false;
+                    continue;
+                default:
+                    // Some error. Re-use `parser.code()` error handling.
+                    parser.next();
+                    continue;
+                }
+
+                auto name = parser.value<token::field_name>();
+                auto value = parser_copy.value<token::field_value>();
 
                 if (modern_http || (name != "expect" && name != "upgrade")) {
                     if (name == "connection") {
@@ -844,8 +849,12 @@ void basic_socket<Socket>
                                  ValueT(value.data(), value.size()));
                 }
 
-                expecting_field = false;
+                parser = parser_copy;
             }
+            break;
+        case token::code::field_value:
+        case token::code::trailer_value:
+            BOOST_HTTP_DETAIL_UNREACHABLE("handled within `field_name` case");
             break;
         case token::code::end_of_headers:
             istate = http::read_state::message_ready;
@@ -878,27 +887,25 @@ void basic_socket<Socket>
         case token::code::end_of_message:
             istate = http::read_state::finished;
             flags |= END;
+            loop = false;
+            continue;
+        }
+    }
+
+    {
+        auto buf_view = asio::buffer_cast<char*>(buffer);
+        auto nparsed = parser.parsed_count();
+        if (parser.code() == token::code::end_of_message) {
+            const auto token_size = parser.token_size();
             parser.set_buffer(asio::buffer(buffer + nparsed,
                                            parser.token_size()));
-            break;
+            parser.next();
+            assert(parser.code() == token::code::error_insufficient_data);
+            nparsed += token_size;
         }
-
-        nparsed += parser.token_size();
-    } while (parser.code() != token::code::error_insufficient_data);
-
-    if (!expecting_field) {
-        auto buf_view = asio::buffer_cast<char*>(buffer);
         std::copy_n(buf_view + nparsed, used_size - nparsed, buf_view);
         used_size -= nparsed;
-    } else if(nparsed != 0) {
-        auto buf_view = asio::buffer_cast<char*>(buffer);
-        std::copy_n(buf_view + field_name_begin, field_name_size, buf_view);
-        std::copy_n(buf_view + nparsed, used_size - nparsed,
-                    buf_view + field_name_size);
-        used_size -= nparsed;
-        used_size += field_name_size;
     }
-    nparsed = 0;
 
     if (target == READY && flags & READY) {
         handler(system::error_code{});
@@ -932,7 +939,6 @@ void basic_socket<Socket>::clear_buffer()
     writer_helper.state = http::write_state::empty;
     used_size = 0;
     parser.reset();
-    expecting_field = false;
 }
 
 template<class Socket>

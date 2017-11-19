@@ -169,10 +169,6 @@ private:
 
     reader::request parser;
 
-    /* `field_name` value is stored in `[buffer[0], field_name_size)`.
-       `expecting_field` means don't touch the buffer or madness will come. */
-    std::size_t field_name_size;
-    bool expecting_field = false;
     bool modern_http; // at least HTTP/1.1
     enum {
         KEEP_ALIVE_UNKNOWN,
