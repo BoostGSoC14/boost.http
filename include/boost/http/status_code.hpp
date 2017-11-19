@@ -94,6 +94,6 @@ String to_string(status_code sc);
 } // namespace http
 } // namespace boost
 
-#include "status_code-inl.hpp"
+#include "status_code.ipp"
 
 #endif // BOOST_HTTP_STATUS_CODE_HPP

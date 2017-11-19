@@ -89,6 +89,6 @@ struct is_socket<basic_polymorphic_socket_base<Message>>: public std::true_type
 } // namespace http
 } // namespace boost
 
-#include "polymorphic_socket_base-inl.hpp"
+#include "polymorphic_socket_base.ipp"
 
 #endif // BOOST_HTTP_POLYMORPHIC_SOCKET_BASE_HPP

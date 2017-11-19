@@ -80,6 +80,6 @@ struct is_server_socket<basic_polymorphic_server_socket<Request, Response,
 } // namespace http
 } // namespace boost
 
-#include "polymorphic_server_socket-inl.hpp"
+#include "polymorphic_server_socket.ipp"
 
 #endif // BOOST_HTTP_POLYMORPHIC_SERVER_SOCKET_HPP

@@ -190,6 +190,6 @@ struct is_server_socket<basic_socket<Socket>>: public std::true_type {};
 } // namespace http
 } // namespace boost
 
-#include "socket-inl.hpp"
+#include "socket.ipp"
 
 #endif // BOOST_HTTP_SOCKET_HPP

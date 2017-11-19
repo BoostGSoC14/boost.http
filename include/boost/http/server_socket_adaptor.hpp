@@ -124,6 +124,6 @@ struct is_server_socket<server_socket_adaptor<Socket, Message>>
 } // namespace http
 } // namespace boost
 
-#include "server_socket_adaptor-inl.hpp"
+#include "server_socket_adaptor.ipp"
 
 #endif // BOOST_HTTP_SERVER_SOCKET_ADAPTOR_HPP
