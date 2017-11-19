@@ -82,7 +82,7 @@ basic_socket<Socket>::async_read_request(Request &request,
     request.target().clear();
     clear_message(request);
     writer_helper = http::write_state::finished;
-    schedule_on_async_read_message<READY>(handler, request, &request.method(),
+    schedule_on_async_read_request<READY>(handler, request, &request.method(),
                                           &request.target());
 
     return result.get();
@@ -111,7 +111,7 @@ basic_socket<Socket>::async_read_some(Message &message, CompletionToken &&token)
         return result.get();
     }
 
-    schedule_on_async_read_message<DATA>(handler, message);
+    schedule_on_async_read_request<DATA>(handler, message);
 
     return result.get();
 }
@@ -140,7 +140,7 @@ basic_socket<Socket>::async_read_trailers(Message &message,
         return result.get();
     }
 
-    schedule_on_async_read_message<END>(handler, message);
+    schedule_on_async_read_request<END>(handler, message);
 
     return result.get();
 }
@@ -594,20 +594,20 @@ void basic_socket<Socket>::open()
 template<class Socket>
 template<int target, class Message, class Handler, class String>
 void basic_socket<Socket>
-::schedule_on_async_read_message(Handler &handler, Message &message,
+::schedule_on_async_read_request(Handler &handler, Message &message,
                                  String *method, String *path)
 {
     if (used_size) {
         // Have cached some bytes from a previous read
-        on_async_read_message<target>(std::move(handler), method, path, message,
-                                         system::error_code{}, 0);
+        on_async_read_request<target>(std::move(handler), method, path, message,
+                                      system::error_code{}, 0);
     } else {
         // TODO (C++14): move in lambda capture list
         channel.async_read_some(asio::buffer(buffer + used_size),
                                 [this,handler,method,path,&message]
                                 (const system::error_code &ec,
                                  std::size_t bytes_transferred) mutable {
-            on_async_read_message<target>(std::move(handler), method, path,
+            on_async_read_request<target>(std::move(handler), method, path,
                                           message, ec, bytes_transferred);
         });
     }
@@ -616,7 +616,7 @@ void basic_socket<Socket>
 template<class Socket>
 template<int target, class Message, class Handler, class String>
 void basic_socket<Socket>
-::on_async_read_message(Handler handler, String *method, String *path,
+::on_async_read_request(Handler handler, String *method, String *path,
                         Message &message, const system::error_code &ec,
                         std::size_t bytes_transferred)
 {
@@ -919,7 +919,7 @@ void basic_socket<Socket>
                                 [this,handler,method,path,&message]
                                 (const system::error_code &ec,
                                  std::size_t bytes_transferred) mutable {
-            on_async_read_message<target>(std::move(handler), method, path,
+            on_async_read_request<target>(std::move(handler), method, path,
                                           message, ec, bytes_transferred);
         });
     }

@@ -136,13 +136,13 @@ private:
 
     template<int target, class Message, class Handler,
              class String = std::string>
-    void schedule_on_async_read_message(Handler &handler, Message &message,
+    void schedule_on_async_read_request(Handler &handler, Message &message,
                                         String *method = NULL,
                                         String *path = NULL);
 
     template<int target, class Message, class Handler,
              class String = std::string>
-    void on_async_read_message(Handler handler, String *method, String *path,
+    void on_async_read_request(Handler handler, String *method, String *path,
                                Message &message, const system::error_code &ec,
                                std::size_t bytes_transferred);
 
