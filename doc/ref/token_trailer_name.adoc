@@ -25,16 +25,3 @@ This token is “implicitly convertible” to `field_name`, so to speak. In othe
 words, you can treat it as `field_name` at value extraction time (i.e. the
 `reader::{request,response}::value<T>()` function).
 ====
-
-[NOTE]
-====
-It's guaranteed that this token storage in the buffer (as extracted from
-`token_size()` and offset) represents the trailer name exactly (i.e. if you
-want, you can just use offset + size and ignore
-`value<token::trailer_name>()`). This guarantee is used in the Boost.Http
-message framework.
-
-However, other implementations might not provide this guarantee (e.g. a draft of
-this interface proposed to standardization). I still need to think more about
-what to do here.
-====
