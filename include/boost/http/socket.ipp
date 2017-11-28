@@ -634,11 +634,10 @@ void basic_socket<Socket>
     bool loop = true;
     int flags = 0;
 
+    if (parser.code() == token::code::error_insufficient_data)
+        parser.next();
+
     while (loop) {
-        if (parser.code() != token::code::field_name
-            && parser.code() != token::code::trailer_name) {
-            parser.next();
-        }
         switch (parser.code()) {
         case token::code::error_insufficient_data:
             loop = false;
@@ -890,6 +889,7 @@ void basic_socket<Socket>
             loop = false;
             continue;
         }
+        parser.next();
     }
 
     {
