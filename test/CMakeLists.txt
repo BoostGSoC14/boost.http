@@ -36,6 +36,7 @@ set(tests
   "common"
   "utils"
   "request_response_common"
+  "parser_dont_violate_odr"
 )
 
 set(tests11

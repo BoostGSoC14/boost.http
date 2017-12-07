@@ -2,22 +2,6 @@ namespace boost {
 namespace http {
 namespace reader {
 
-namespace detail {
-
-inline bool is_request_target_char(unsigned char c)
-{
-    switch (c) {
-    case '?': case '/': case '-': case '.': case '_': case '~': case '%':
-    case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
-    case '+': case ',': case ';': case '=': case ':': case '@':
-        return true;
-    default:
-        return isalnum(c);
-    }
-}
-
-} // namespace detail
-
 inline
 response::response()
     : eof(false)
