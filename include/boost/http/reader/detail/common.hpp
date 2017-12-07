@@ -45,6 +45,18 @@ inline string_ref decode_field_value(string_ref in)
     return in;
 }
 
+inline bool is_request_target_char(unsigned char c)
+{
+    switch (c) {
+    case '?': case '/': case '-': case '.': case '_': case '~': case '%':
+    case '!': case '$': case '&': case '\'': case '(': case ')': case '*':
+    case '+': case ',': case ';': case '=': case ':': case '@':
+        return true;
+    default:
+        return isalnum(c);
+    }
+}
+
 } // namespace detail
 } // namespace reader
 } // namespace http
