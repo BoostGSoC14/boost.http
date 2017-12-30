@@ -230,9 +230,8 @@ semantics/postconditions:
   type `Request::headers_type`.
 . If the user pass a `"connection: close"` header on the message object passed
   as argument to the `async_write_response` or `async_write_response_metadata`
-  member-functions and no errors arose during the delivery of the message, the
-  `ServerSocket` MUST call the handler with <<http_errc,
-  `http_errc::stream_finished`>>.
+  member-functions, the `ServerSocket` MUST change the state to closed (i.e.
+  `is_open()` will return `false`).
 +
 This behaviour is intended for the communication between the user of this
 library and the `ServerSocket` and can differ from the communication between the
@@ -281,6 +280,13 @@ The `ServerSocket` MUST adopt a behaviour that is compatible with the behaviour
 defined in the section 3.3.2 of the RFC 7230.
 . The `ServerSocket` object MUST *NOT* insert HTTP headers with empty keys
   (i.e. `""`) in message, request or response objects provided by the user.
+. Informational responses (i.e. 1xx class of status code) indicates an interim
+  response and do not change `read_state` or `write_state`. Also, these
+  responses carry no body, so all body is ignored (and if the user tries to send
+  such responses using chunks/`async_write_response_metadata`, error
+  `http_errc::native_stream_unsupported` will be reported).
+. Some models of `ServerSocket` might discard informational responses (i.e. 1xx
+  class of status code) that you try to send.
 
 ===== Models
 
