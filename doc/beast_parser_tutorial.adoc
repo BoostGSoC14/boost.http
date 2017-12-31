@@ -34,7 +34,7 @@ a template (and it carries the same drawbacks of a header-only library):
 
 [source,cpp]
 ----
-template<Derived>
+template<class Derived>
 void do_stuff(boost::beast::http::basic_parser<true, Derived> o);
 ----
 
@@ -469,8 +469,7 @@ public:
 
         error_code ec;
 
-        do {
-            reader.next();
+        while (reader.code() != code::error_insufficient_data) {
             switch (reader.code()) {
             case code::skip:
                 break;
@@ -502,7 +501,8 @@ public:
 
             // ...
             }
-        } while (reader.code() != code::error_insufficient_data);
+            reader.next();
+        }
 
         return reader.parsed_count();
     }

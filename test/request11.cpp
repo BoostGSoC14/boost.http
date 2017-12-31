@@ -470,7 +470,6 @@ void my_tester(const char (&input)[N],
         while (true) {
             auto buffer_view = asio::buffer(buffer + nparsed, chunk_size);
             parser.set_buffer(buffer_view);
-            parser.next();
 
             switch (parser.code()) {
             case http::token::code::end_of_message:
@@ -593,19 +592,6 @@ void my_tester(const char (&input)[N],
             // consumes current buffer and stops at insufficient data
             parser.set_buffer(asio::buffer(buffer_view, parser.token_size()));
             parser.next();
-            if (parser.code() != http::token::code::error_insufficient_data) {
-                switch (parser.code()) {
-                case http::token::code::end_of_body:
-                    output.push_back(make_end_of_body(0));
-                    break;
-                case http::token::code::end_of_message:
-                    output.push_back(make_end_of_message(0));
-                    break;
-                default:
-                    FAIL("token \"" << Catch::toString(parser.code())
-                         <<  "\" cannot be 0-sized in current implementation.");
-                }
-            }
 
             chunk_size = init_chunk_size;
         }

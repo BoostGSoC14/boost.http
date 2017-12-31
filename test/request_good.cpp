@@ -76,8 +76,6 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
                                 "X-Ihateyou: \r\n"
                                 "\r\n"));
 
-    parser.next();
-
     REQUIRE(parser.code() == http::token::code::method);
     REQUIRE(parser.token_size() == 3);
     REQUIRE(parser.value<http::token::method>() == "GET");
@@ -991,8 +989,6 @@ TEST_CASE("Parse a single message with no body", "[parser,good]")
                                 "Content-length: 0\r\n"
                                 "host:thelastringbearer.org\r\n"
                                 "\r\n"));
-
-    parser.next();
 
     REQUIRE(parser.code() == http::token::code::method);
     REQUIRE(parser.token_size() == 4);

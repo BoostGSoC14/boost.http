@@ -47,9 +47,9 @@ follow:
 
 . Set the buffer used by the reader.
 . Consume tokens.
-.. Call `next()`.
 .. Check `code()` return.
 .. Possibly call `value<T>()` to extract token value.
+.. Call `next()`.
 . Remove parsed data from the buffer.
 .. You'll need to keep state of parsed vs unparsed data by calling
    `token_size()`.

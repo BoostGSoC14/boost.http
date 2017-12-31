@@ -28,8 +28,7 @@ public:
         buffer.push_back(data);
         request_reader.set_buffer(buffer);
 
-        do {
-            request_reader.next();
+        while (request_reader.code() != code::end_of_message) {
             switch (request_reader.code()) {
             case code::skip:
                 // do nothing
@@ -47,7 +46,9 @@ public:
             case code::trailer_name:
                 last_header = request_reader.value<token::field_name>();
             }
-        } while(request_reader.code() != code::end_of_message);
+            request_reader.next();
+        }
+        request_reader.next();
 
         ready();
     }

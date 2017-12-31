@@ -8,11 +8,9 @@ void my_socket_consumer::on_socket_callback(asio::buffer data)
 
     std::size_t nparsed = 0;
 
-    do {
-        request_reader.next();
+    while (request_reader.code() != code::error_insufficient_data
+           && request_reader.code() != code::end_of_message) {
         switch (request_reader.code()) {
-        case code::error_insufficient_data:
-            continue;
         case code::error_set_method: //< NEW
         case code::error_use_another_connection: //< NEW
             // Can only happen in response parsing code.
@@ -42,9 +40,14 @@ void my_socket_consumer::on_socket_callback(asio::buffer data)
         }
 
         nparsed += request_reader.token_size();
-    } while(request_reader.code() != code::error_insufficient_data
-            && request_reader.code() != code::end_of_message);
+        request_reader.next();
+    }
+    nparsed += request_reader.token_size();
+    request_reader.next();
     buffer.erase(0, nparsed);
+
+    if (request_reader.code() == code::error_insufficient_data)
+        return;
 
     ready();
 }
