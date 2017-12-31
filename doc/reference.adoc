@@ -148,6 +148,13 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
   default provided value (i.e. the non-overriden version) is unspecified
   (e.g. can change among versions and platforms).
 
+`BOOST_HTTP_UPGRADE_HEAD_DISABLE_CHECK`::
+
+  Define this macro if you want to disable the check in
+  `basic_socket::upgrade_head`. The check is there to ensure that you only uses
+  this function in HTTP client mode. It'll throw an exception to notify the
+  violation.
+
 === Detailed
 
 include::ref/headers.adoc[]

@@ -60,6 +60,8 @@ public:
     {}
 
     using Parent::next_layer;
+    using Parent::upgrade_head;
+    using Parent::lock_client_to_http10;
 
 private:
     typedef detail::buffered_socket_wrapping_buffer<N> BufferParent;

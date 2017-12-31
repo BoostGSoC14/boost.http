@@ -52,9 +52,15 @@ public:
             input_buffer.front() = std::move(v);
         }
 
-        io_service.post([handler, bytes_transfered]() mutable {
-                handler(system::error_code(), bytes_transfered);
-            });
+        if (bytes_transfered == 0 && close_on_empty_input) {
+            io_service.post([handler, bytes_transfered]() mutable {
+                    handler(system::error_code(asio::error::eof), 0);
+                });
+        } else {
+            io_service.post([handler, bytes_transfered]() mutable {
+                    handler(system::error_code(), bytes_transfered);
+                });
+        }
 
         return result.get();
     }
@@ -100,6 +106,8 @@ public:
 
     std::vector<std::vector<char>> input_buffer;
     std::vector<char> output_buffer;
+
+    bool close_on_empty_input = false;
 
 private:
     boost::asio::io_service &io_service;

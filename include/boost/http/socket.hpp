@@ -8,14 +8,20 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <cstring>
 
+#include <memory>
 #include <algorithm>
 #include <sstream>
 #include <array>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
+#include <boost/none.hpp>
+#include <boost/variant.hpp>
 #include <boost/utility/string_ref.hpp>
+#include <boost/container/small_vector.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
@@ -23,11 +29,13 @@
 #include <boost/asio/write.hpp>
 
 #include <boost/http/reader/request.hpp>
+#include <boost/http/reader/response.hpp>
 #include <boost/http/traits.hpp>
 #include <boost/http/read_state.hpp>
 #include <boost/http/write_state.hpp>
 #include <boost/http/http_errc.hpp>
 #include <boost/http/detail/writer_helper.hpp>
+#include <boost/http/detail/count_decdigits.hpp>
 #include <boost/http/detail/constchar_helper.hpp>
 #include <boost/http/algorithm/header.hpp>
 
@@ -58,6 +66,12 @@ public:
         typename asio::handler_type<CompletionToken,
                                     void(system::error_code)>::type>::type
     async_read_request(Request &request, CompletionToken &&token);
+
+    template<class Response, class CompletionToken>
+    typename asio::async_result<
+        typename asio::handler_type<CompletionToken,
+                                    void(system::error_code)>::type>::type
+    async_read_response(Response &response, CompletionToken &&token);
 
     template<class Message, class CompletionToken>
     typename asio::async_result<
@@ -94,6 +108,19 @@ public:
     async_write_response_metadata(const Response &response,
                                   CompletionToken &&token);
 
+    template<class Request, class CompletionToken>
+    typename asio::async_result<
+        typename asio::handler_type<CompletionToken,
+                                    void(system::error_code)>::type>::type
+    async_write_request(const Request &request, CompletionToken &&token);
+
+    template<class Request, class CompletionToken>
+    typename asio::async_result<
+        typename asio::handler_type<CompletionToken,
+                                    void(system::error_code)>::type>::type
+    async_write_request_metadata(const Request &request,
+                                 CompletionToken &&token);
+
     template<class Message, class CompletionToken>
     typename asio::async_result<
         typename asio::handler_type<CompletionToken,
@@ -127,6 +154,10 @@ public:
 
     void open();
 
+    asio::const_buffer upgrade_head() const;
+
+    void lock_client_to_http10();
+
 private:
     enum Target {
         READY = 1,
@@ -134,16 +165,18 @@ private:
         END   = 1 << 2,
     };
 
-    template<int target, class Message, class Handler,
-             class String = std::string>
-    void schedule_on_async_read_request(Handler &handler, Message &message,
-                                        String *method = NULL,
-                                        String *path = NULL);
+    enum SentMethod {
+        HEAD,
+        CONNECT,
+        OTHER_METHOD
+    };
 
-    template<int target, class Message, class Handler,
-             class String = std::string>
-    void on_async_read_request(Handler handler, String *method, String *path,
-                               Message &message, const system::error_code &ec,
+    template<class Message, class Handler>
+    void schedule_on_async_read_message(Handler &handler, Message &message);
+
+    template<bool server_mode, class Parser, class Message, class Handler>
+    void on_async_read_message(Handler handler, Message &message,
+                               const system::error_code &ec,
                                std::size_t bytes_transferred);
 
     void clear_buffer();
@@ -163,13 +196,13 @@ private:
     bool is_open_ = true;
     http::read_state istate;
 
-    // TODO: maybe replace by buffersequence to allow scatter-gather operations
     asio::mutable_buffer buffer;
     std::size_t used_size = 0;
 
-    reader::request parser;
+    boost::variant<none_t, reader::request, reader::response> parser = none;
+    boost::container::small_vector<SentMethod, 1> sent_requests;
 
-    bool modern_http; // at least HTTP/1.1
+    bool modern_http = true; // is HTTP/1.1?
     enum {
         KEEP_ALIVE_UNKNOWN,
         KEEP_ALIVE_CLOSE_READ,

@@ -72,6 +72,18 @@ basic_socket<Socket>::async_read_request(Request &request,
 
     asio::async_result<Handler> result(handler);
 
+    switch (parser.which()) {
+    case 0: // none
+        parser = reader::request{};
+        modern_http = true; // ignore `lock_client_to_http10`
+        break;
+    case 1: // reader::request
+        break;
+    case 2: // reader::response
+        invoke_handler(handler, http_errc::wrong_direction);
+        return result.get();
+    }
+
     if (istate != http::read_state::empty) {
         invoke_handler(std::forward<decltype(handler)>(handler),
                        http_errc::out_of_order);
@@ -82,8 +94,49 @@ basic_socket<Socket>::async_read_request(Request &request,
     request.target().clear();
     clear_message(request);
     writer_helper = http::write_state::finished;
-    schedule_on_async_read_request<READY>(handler, request, &request.method(),
-                                          &request.target());
+    schedule_on_async_read_message(handler, request);
+
+    return result.get();
+}
+
+template<class Socket>
+template<class Response, class CompletionToken>
+typename asio::async_result<
+    typename asio::handler_type<CompletionToken,
+                                void(system::error_code)>::type>::type
+basic_socket<Socket>::async_read_response(Response &response,
+                                          CompletionToken &&token)
+{
+    static_assert(is_response_message<Response>::value,
+                  "Response must fulfill the Response concept");
+
+    typedef typename asio::handler_type<
+        CompletionToken, void(system::error_code)>::type Handler;
+
+    Handler handler(std::forward<CompletionToken>(token));
+
+    asio::async_result<Handler> result(handler);
+
+    switch (parser.which()) {
+    case 0: // none
+        parser = reader::response{};
+        break;
+    case 1: // reader::request
+        invoke_handler(handler, http_errc::wrong_direction);
+        return result.get();
+    case 2: // reader::response
+        break;
+    }
+
+    if (istate != http::read_state::empty) {
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
+        return result.get();
+    }
+
+    response.reason_phrase().clear();
+    clear_message(response);
+    schedule_on_async_read_message(handler, response);
 
     return result.get();
 }
@@ -111,7 +164,7 @@ basic_socket<Socket>::async_read_some(Message &message, CompletionToken &&token)
         return result.get();
     }
 
-    schedule_on_async_read_request<DATA>(handler, message);
+    schedule_on_async_read_message(handler, message);
 
     return result.get();
 }
@@ -140,7 +193,7 @@ basic_socket<Socket>::async_read_trailers(Message &message,
         return result.get();
     }
 
-    schedule_on_async_read_request<END>(handler, message);
+    schedule_on_async_read_message(handler, message);
 
     return result.get();
 }
@@ -389,6 +442,300 @@ basic_socket<Socket>
 }
 
 template<class Socket>
+template<class Request, class CompletionToken>
+typename asio::async_result<
+    typename asio::handler_type<CompletionToken,
+                                void(system::error_code)>::type>::type
+basic_socket<Socket>
+::async_write_request(const Request &request, CompletionToken &&token)
+{
+    static_assert(is_request_message<Request>::value,
+                  "Request must fulfill the Request concept");
+
+    using detail::string_literal_buffer;
+    typedef typename asio::handler_type<
+        CompletionToken, void(system::error_code)>::type Handler;
+
+    Handler handler(std::forward<CompletionToken>(token));
+    asio::async_result<Handler> result(handler);
+
+    switch (parser.which()) {
+    case 0: // none
+        parser = reader::response{};
+        break;
+    case 1: // reader::request
+        invoke_handler(handler, http_errc::wrong_direction);
+        return result.get();
+    case 2: // reader::response
+        break;
+    }
+
+    if (write_state() != http::write_state::empty) {
+        invoke_handler(handler, http_errc::out_of_order);
+        return result.get();
+    }
+
+    const auto &method = request.method();
+    const auto &target = request.target();
+    const auto &headers = request.headers();
+
+    {
+        SentMethod sent_method;
+        if (method == "HEAD") {
+            sent_method = HEAD;
+        } else if (method == "CONNECT") {
+            sent_method = CONNECT;
+        } else {
+            sent_method = OTHER_METHOD;
+        }
+        sent_requests.push_back(sent_method);
+    }
+
+    std::size_t size =
+        // Request line
+        method.size() + 1 + target.size() + string_ref(" HTTP/1.x\r\n").size()
+        // Headers are computed later
+        + 0
+        // Final CRLF
+        + 2
+        // Body
+        + request.body().size();
+    std::size_t content_length_ndigits = 0;
+
+    // Headers
+    for (const auto &e: headers) {
+        // Each header is 4 buffer pieces: key + sep + value + CRLF
+        // sep (": ") + CRLF is always 4 bytes.
+        size += 4 + e.first.size() + e.second.size();
+    }
+
+    // "content-length" header
+    if (request.body().size()) {
+        content_length_ndigits
+            = detail::count_decdigits(request.body().size());
+        size += string_ref("content-length: \r\n").size()
+            + content_length_ndigits;
+    }
+
+    char *buf = NULL;
+    std::size_t idx = 0;
+    try {
+        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
+    } catch (const std::bad_alloc&) {
+        sent_requests.pop_back();
+        throw;
+    } catch (...) {
+        assert(false);
+    }
+
+    std::memcpy(buf + idx, method.data(), method.size());
+    idx += method.size();
+
+    buf[idx++] = ' ';
+
+    std::memcpy(buf + idx, target.data(), target.size());
+    idx += target.size();
+
+    {
+        string_ref x;
+
+        if (modern_http)
+            x = " HTTP/1.1\r\n";
+        else
+            x = " HTTP/1.0\r\n";
+
+        std::memcpy(buf + idx, x.data(), x.size());
+        idx += x.size();
+    }
+
+    if (request.body().size()) {
+        string_ref x("content-length: ");
+        std::memcpy(buf + idx, x.data(), x.size());
+        idx += x.size();
+
+        auto body_size = request.body().size();
+        for (auto i = content_length_ndigits ; i != 0 ; --i) {
+            buf[idx + i - 1] = (body_size % 10) + '0';
+            body_size /= 10;
+        }
+        idx += content_length_ndigits;
+
+        std::memcpy(buf + idx, "\r\n", 2);
+        idx += 2;
+    }
+
+    for (const auto &e: headers) {
+        std::memcpy(buf + idx, e.first.data(), e.first.size());
+        idx += e.first.size();
+
+        std::memcpy(buf + idx, ": ", 2);
+        idx += 2;
+
+        std::memcpy(buf + idx, e.second.data(), e.second.size());
+        idx += e.second.size();
+
+        std::memcpy(buf + idx, "\r\n", 2);
+        idx += 2;
+    }
+
+    std::memcpy(buf + idx, "\r\n", 2);
+    idx += 2;
+
+    if (request.body().size()) {
+        std::copy(request.body().begin(), request.body().end(), buf + idx);
+        idx += request.body().size();
+    }
+    assert(size == idx);
+
+    asio::async_write(channel, asio::buffer(buf, size),
+                      [handler,buf,size,this]
+                      (const system::error_code &ec, std::size_t) mutable {
+                          asio_handler_deallocate(buf, size, &handler);
+                          handler(ec);
+                      });
+
+    return result.get();
+}
+
+template<class Socket>
+template<class Request, class CompletionToken>
+typename asio::async_result<
+    typename asio::handler_type<CompletionToken,
+                                void(system::error_code)>::type>::type
+basic_socket<Socket>
+::async_write_request_metadata(const Request &request, CompletionToken &&token)
+{
+    static_assert(is_request_message<Request>::value,
+                  "Request must fulfill the Request concept");
+
+    using detail::string_literal_buffer;
+    typedef typename asio::handler_type<
+        CompletionToken, void(system::error_code)>::type Handler;
+
+    Handler handler(std::forward<CompletionToken>(token));
+
+    asio::async_result<Handler> result(handler);
+
+    switch (parser.which()) {
+    case 0: // none
+        parser = reader::response{};
+        break;
+    case 1: // reader::request
+        invoke_handler(handler, http_errc::wrong_direction);
+        return result.get();
+    case 2: // reader::response
+        break;
+    }
+
+    if (write_state() != http::write_state::empty) {
+        invoke_handler(handler, http_errc::out_of_order);
+        return result.get();
+    }
+
+    if (writer_helper.state != write_state::empty) {
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::out_of_order);
+        return result.get();
+    }
+
+    if (!modern_http) {
+        invoke_handler(std::forward<decltype(handler)>(handler),
+                       http_errc::native_stream_unsupported);
+        return result.get();
+    }
+
+    writer_helper.state = write_state::metadata_issued;
+
+    const auto &method = request.method();
+    const auto &target = request.target();
+    const auto &headers = request.headers();
+
+    {
+        SentMethod sent_method;
+        if (method == "HEAD") {
+            sent_method = HEAD;
+        } else if (method == "CONNECT") {
+            sent_method = CONNECT;
+        } else {
+            sent_method = OTHER_METHOD;
+        }
+        sent_requests.push_back(sent_method);
+    }
+
+    std::size_t size =
+        // Request line
+        method.size() + 1 + target.size() + string_ref(" HTTP/1.1\r\n").size()
+        // "transfer-encoding" header
+        + string_ref("transfer-encoding: chunked\r\n").size()
+        // Headers are computed later
+        + 0
+        // Final CRLF
+        + 2;
+    std::size_t content_length_ndigits = 0;
+
+    // Headers
+    for (const auto &e: headers) {
+        // Each header is 4 buffer pieces: key + sep + value + CRLF
+        // sep (": ") + CRLF is always 4 bytes.
+        size += 4 + e.first.size() + e.second.size();
+    }
+
+    char *buf = NULL;
+    std::size_t idx = 0;
+    try {
+        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
+    } catch (const std::bad_alloc&) {
+        sent_requests.pop_back();
+        writer_helper.state = write_state::empty;
+        throw;
+    } catch (...) {
+        assert(false);
+    }
+
+    std::memcpy(buf + idx, method.data(), method.size());
+    idx += method.size();
+
+    buf[idx++] = ' ';
+
+    std::memcpy(buf + idx, target.data(), target.size());
+    idx += target.size();
+
+    {
+        string_ref x = " HTTP/1.1\r\n" "transfer-encoding: chunked\r\n";
+        std::memcpy(buf + idx, x.data(), x.size());
+        idx += x.size();
+    }
+
+    for (const auto &e: headers) {
+        std::memcpy(buf + idx, e.first.data(), e.first.size());
+        idx += e.first.size();
+
+        std::memcpy(buf + idx, ": ", 2);
+        idx += 2;
+
+        std::memcpy(buf + idx, e.second.data(), e.second.size());
+        idx += e.second.size();
+
+        std::memcpy(buf + idx, "\r\n", 2);
+        idx += 2;
+    }
+
+    std::memcpy(buf + idx, "\r\n", 2);
+    idx += 2;
+
+    assert(size == idx);
+
+    asio::async_write(channel, asio::buffer(buf, size),
+                      [handler,buf,size,this]
+                      (const system::error_code &ec, std::size_t) mutable {
+                          asio_handler_deallocate(buf, size, &handler);
+                          handler(ec);
+                      });
+
+    return result.get();
+}
+
+template<class Socket>
 template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
@@ -468,7 +815,19 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
                        http_errc::out_of_order);
         return result.get();
     }
-    istate = http::read_state::empty;
+
+    switch (parser.which()) {
+    case 0: // none
+        assert(false);
+        break;
+    case 1: // reader::request
+        istate = http::read_state::empty;
+        break;
+    case 2: // reader::response
+        writer_helper.state = write_state::empty;
+        break;
+    }
+
 
     auto last_chunk = string_literal_buffer("0\r\n");
     auto crlf = string_literal_buffer("\r\n");
@@ -531,7 +890,18 @@ basic_socket<Socket>
                        http_errc::out_of_order);
         return result.get();
     }
-    istate = http::read_state::empty;
+
+    switch (parser.which()) {
+    case 0: // none
+        assert(false);
+        break;
+    case 1: // reader::request
+        istate = http::read_state::empty;
+        break;
+    case 2: // reader::response
+        writer_helper.state = write_state::empty;
+        break;
+    }
 
     auto last_chunk = string_literal_buffer("0\r\n\r\n");
 
@@ -592,47 +962,199 @@ void basic_socket<Socket>::open()
 }
 
 template<class Socket>
-template<int target, class Message, class Handler, class String>
-void basic_socket<Socket>
-::schedule_on_async_read_request(Handler &handler, Message &message,
-                                 String *method, String *path)
+asio::const_buffer basic_socket<Socket>::upgrade_head() const
 {
-    if (used_size) {
-        // Have cached some bytes from a previous read
-        on_async_read_request<target>(std::move(handler), method, path, message,
-                                      system::error_code{}, 0);
-    } else {
-        // TODO (C++14): move in lambda capture list
-        channel.async_read_some(asio::buffer(buffer + used_size),
-                                [this,handler,method,path,&message]
-                                (const system::error_code &ec,
-                                 std::size_t bytes_transferred) mutable {
-            on_async_read_request<target>(std::move(handler), method, path,
-                                          message, ec, bytes_transferred);
-        });
-    }
+#ifndef BOOST_HTTP_UPGRADE_HEAD_DISABLE_CHECK
+    // reader::response
+    if (parser.which() != 2)
+        throw std::logic_error("`upgrade_head` only makes sense in HTTP client"
+                               " mode");
+#endif // BOOST_HTTP_UPGRADE_HEAD_DISABLE_CHECK
+
+    return asio::buffer(buffer, used_size);
 }
 
 template<class Socket>
-template<int target, class Message, class Handler, class String>
+void basic_socket<Socket>::lock_client_to_http10()
+{
+    // reader::request
+    if (parser.which() == 1) {
+        // server-mode, nothing to do
+        return;
+    }
+
+    modern_http = false;
+}
+
+template<class Socket>
+template<class Message, class Handler>
 void basic_socket<Socket>
-::on_async_read_request(Handler handler, String *method, String *path,
-                        Message &message, const system::error_code &ec,
+::schedule_on_async_read_message(Handler &handler, Message &message)
+{
+    bool server_mode;
+    if (is_request_message<Message>::value
+        && !is_response_message<Message>::value) {
+        server_mode = true;
+    } else if (is_response_message<Message>::value
+               && !is_request_message<Message>::value) {
+        server_mode = false;
+    } else {
+        switch (parser.which()) {
+        case 0: // none
+            assert(false);
+            break;
+        case 1: // reader::request
+            server_mode = true;
+            break;
+        case 2: // reader::response
+            server_mode = false;
+            break;
+        }
+    }
+
+    if (used_size) {
+        // Have cached some bytes from a previous read
+        if (server_mode) {
+            on_async_read_message<true, reader::request>(std::move(handler),
+                                                         message,
+                                                         system::error_code{},
+                                                         0);
+        } else {
+            on_async_read_message<false, reader::response>(std::move(handler),
+                                                           message,
+                                                           system::error_code{},
+                                                           0);
+        }
+    } else {
+        if (server_mode) {
+            // TODO (C++14): move in lambda capture list
+            channel.async_read_some(asio::buffer(buffer + used_size),
+                                    [this,handler,&message]
+                                    (const system::error_code &ec,
+                                     std::size_t bytes_transferred) mutable {
+                on_async_read_message<true, reader::request>
+                    (std::move(handler), message, ec, bytes_transferred);
+            });
+        } else {
+            // TODO (C++14): move in lambda capture list
+            channel.async_read_some(asio::buffer(buffer + used_size),
+                                    [this,handler,&message]
+                                    (const system::error_code &ec,
+                                     std::size_t bytes_transferred) mutable {
+                on_async_read_message<false, reader::response>
+                    (std::move(handler), message, ec, bytes_transferred);
+            });
+        }
+    }
+}
+
+namespace detail {
+
+template<bool server_mode, class Message, class Parser>
+typename std::enable_if<!is_request_message<Message>::value || !server_mode,
+                        boost::string_ref>::type
+fill_method(Message &request, const Parser &parser)
+{
+    return ""; //< no-op
+}
+
+template<bool server_mode, class Request, class Parser>
+typename std::enable_if<is_request_message<Request>::value && server_mode,
+                        boost::string_ref>::type
+fill_method(Request &request, const Parser &parser)
+{
+    auto value = parser.template value<token::method>();
+    request.method().assign(value.data(), value.size());
+    return value;
+}
+
+template<bool server_mode, class Message, class Parser>
+typename std::enable_if<!is_request_message<Message>::value || !server_mode>
+::type
+fill_target(Message &request, const Parser &parser)
+{} //< no-op
+
+template<bool server_mode, class Request, class Parser>
+typename std::enable_if<is_request_message<Request>::value && server_mode>::type
+fill_target(Request &request, const Parser &parser)
+{
+    auto value = parser.template value<token::request_target>();
+    request.target().assign(value.data(), value.size());
+}
+
+template<bool server_mode, class Message, class Parser>
+typename std::enable_if<!is_response_message<Message>::value || server_mode>
+::type
+fill_status_code(Message&, Parser&, boost::string_ref)
+{} //< no-op
+
+template<bool server_mode, class Response, class Parser>
+typename std::enable_if<is_response_message<Response>::value && !server_mode>
+::type
+fill_status_code(Response &response, Parser &parser,
+                 boost::string_ref sent_method)
+{
+    response.status_code() = parser.template value<token::status_code>();
+    parser.set_method(sent_method);
+}
+
+template<bool server_mode, class Message, class Parser>
+typename std::enable_if<!is_response_message<Message>::value || server_mode>
+::type
+fill_reason_phrase(Message&, const Parser&)
+{} //< no-op
+
+template<bool server_mode, class Response, class Parser>
+typename std::enable_if<is_response_message<Response>::value && !server_mode>
+::type
+fill_reason_phrase(Response &response, const Parser &parser)
+{
+    auto value = parser.template value<token::reason_phrase>();
+    response.reason_phrase().assign(value.data(), value.size());
+}
+
+template<bool server_mode, class Parser>
+typename std::enable_if<server_mode>::type
+puteof(Parser&)
+{} //< no-op
+
+template<bool server_mode, class Parser>
+typename std::enable_if<!server_mode>::type
+puteof(Parser &parser)
+{
+    parser.puteof();
+}
+
+} // namespace detail
+
+template<class Socket>
+template<bool server_mode, class Parser, class Message, class Handler>
+void basic_socket<Socket>
+::on_async_read_message(Handler handler, Message &message,
+                        const system::error_code &ec,
                         std::size_t bytes_transferred)
 {
     using detail::string_literal_buffer;
 
     if (ec) {
-        clear_buffer();
-        handler(ec);
-        return;
+        if (ec == system::error_code{asio::error::eof} && !server_mode) {
+            Parser &parser = get<Parser>(this->parser);
+            detail::puteof<server_mode>(parser);
+            is_open_ = false;
+        } else {
+            clear_buffer();
+            handler(ec);
+            return;
+        }
     }
+
+    Parser &parser = get<Parser>(this->parser);
 
     used_size += bytes_transferred;
     parser.set_buffer(asio::buffer(buffer, used_size));
 
     bool loop = true;
-    int flags = 0;
+    bool cb_ready = false;
 
     if (parser.code() == token::code::error_insufficient_data)
         parser.next();
@@ -643,10 +1165,10 @@ void basic_socket<Socket>
             loop = false;
             continue;
         case token::code::error_set_method:
-            BOOST_HTTP_DETAIL_UNREACHABLE("client API not implemented yet");
+            assert(false);
             break;
         case token::code::error_use_another_connection:
-            BOOST_HTTP_DETAIL_UNREACHABLE("client API not implemented yet");
+            assert(false);
             break;
         case token::code::error_invalid_data:
             {
@@ -658,14 +1180,18 @@ void basic_socket<Socket>
                                             "Connection: close\r\n"
                                             "\r\n"
                                             "Invalid data\n");
-                asio::async_write(channel, asio::buffer(error_message),
-                                  [handler](system::error_code
-                                                 /*ignored_ec*/,
-                                                 std::size_t
-                                                 /*bytes_transferred*/)
-                                  mutable {
-                                      handler(http_errc::parsing_error);
-                                  });
+                if (server_mode) {
+                    asio::async_write(channel, asio::buffer(error_message),
+                                      [handler](system::error_code
+                                                     /*ignored_ec*/,
+                                                     std::size_t
+                                                     /*bytes_transferred*/)
+                                      mutable {
+                                          handler(http_errc::parsing_error);
+                                      });
+                } else {
+                    handler(http_errc::parsing_error);
+                }
                 return;
             }
         case token::code::error_no_host:
@@ -678,14 +1204,18 @@ void basic_socket<Socket>
                                             "Connection: close\r\n"
                                             "\r\n"
                                             "Host missing\n");
-                asio::async_write(channel, asio::buffer(error_message),
-                                  [handler](system::error_code
-                                                 /*ignored_ec*/,
-                                                 std::size_t
-                                                 /*bytes_transferred*/)
-                                  mutable {
-                                      handler(http_errc::parsing_error);
-                                  });
+                if (server_mode) {
+                    asio::async_write(channel, asio::buffer(error_message),
+                                      [handler](system::error_code
+                                                     /*ignored_ec*/,
+                                                     std::size_t
+                                                     /*bytes_transferred*/)
+                                      mutable {
+                                          handler(http_errc::parsing_error);
+                                      });
+                } else {
+                    handler(http_errc::parsing_error);
+                }
                 return;
             }
         case token::code::error_invalid_content_length:
@@ -699,14 +1229,18 @@ void basic_socket<Socket>
                                             "Connection: close\r\n"
                                             "\r\n"
                                             "Invalid content-length\n");
-                asio::async_write(channel, asio::buffer(error_message),
-                                  [handler](system::error_code
-                                                 /*ignored_ec*/,
-                                                 std::size_t
-                                                 /*bytes_transferred*/)
-                                  mutable {
-                                      handler(http_errc::parsing_error);
-                                  });
+                if (server_mode) {
+                    asio::async_write(channel, asio::buffer(error_message),
+                                      [handler](system::error_code
+                                                     /*ignored_ec*/,
+                                                     std::size_t
+                                                     /*bytes_transferred*/)
+                                      mutable {
+                                          handler(http_errc::parsing_error);
+                                      });
+                } else {
+                    handler(http_errc::parsing_error);
+                }
                 return;
             }
         case token::code::error_invalid_transfer_encoding:
@@ -719,14 +1253,18 @@ void basic_socket<Socket>
                                             "Connection: close\r\n"
                                             "\r\n"
                                             "Invalid transfer-encoding\n");
-                asio::async_write(channel, asio::buffer(error_message),
-                                  [handler](system::error_code
-                                                 /*ignored_ec*/,
-                                                 std::size_t
-                                                 /*bytes_transferred*/)
-                                  mutable {
-                                      handler(http_errc::parsing_error);
-                                  });
+                if (server_mode) {
+                    asio::async_write(channel, asio::buffer(error_message),
+                                      [handler](system::error_code
+                                                     /*ignored_ec*/,
+                                                     std::size_t
+                                                     /*bytes_transferred*/)
+                                      mutable {
+                                          handler(http_errc::parsing_error);
+                                      });
+                } else {
+                    handler(http_errc::parsing_error);
+                }
                 return;
             }
         case token::code::error_chunk_size_overflow:
@@ -739,43 +1277,65 @@ void basic_socket<Socket>
                                             "Connection: close\r\n"
                                             "\r\n"
                                             "Can't process chunk size\n");
-                asio::async_write(channel, asio::buffer(error_message),
-                                  [handler](system::error_code
-                                                 /*ignored_ec*/,
-                                                 std::size_t
-                                                 /*bytes_transferred*/)
-                                  mutable {
-                                      handler(http_errc::parsing_error);
-                                  });
+                if (server_mode) {
+                    asio::async_write(channel, asio::buffer(error_message),
+                                      [handler](system::error_code
+                                                     /*ignored_ec*/,
+                                                     std::size_t
+                                                     /*bytes_transferred*/)
+                                      mutable {
+                                          handler(http_errc::parsing_error);
+                                      });
+                } else {
+                    handler(http_errc::parsing_error);
+                }
                 return;
             }
         case token::code::skip:
             break;
         case token::code::method:
             {
-                auto value = parser.value<token::method>();
+                auto value = detail::fill_method<server_mode>(message, parser);
                 connect_request = value == "CONNECT";
-                *method = String(value.data(), value.size());
             }
             break;
         case token::code::request_target:
-            {
-                auto value = parser.value<token::request_target>();
-                *path = String(value.data(), value.size());
-            }
+            detail::fill_target<server_mode>(message, parser);
             break;
         case token::code::version:
             {
-                auto value = parser.value<token::version>();
-                modern_http = value > 0;
+                auto value = parser.template value<token::version>();
+                if (value == 0)
+                    modern_http = false;
                 keep_alive = KEEP_ALIVE_UNKNOWN;
             }
             break;
         case token::code::status_code:
-            BOOST_HTTP_DETAIL_UNREACHABLE("unimplemented not exposed feature");
+            {
+                boost::string_ref sent_method;
+                if (sent_requests.size() == 0) {
+                    clear_buffer();
+                    handler(http_errc::parsing_error);
+                    return;
+                }
+
+                switch (sent_requests.front()) {
+                case HEAD:
+                    sent_method = "HEAD";
+                    break;
+                case CONNECT:
+                    sent_method = "CONNECT";
+                    break;
+                case OTHER_METHOD:
+                    sent_method = "GET";
+                }
+                sent_requests.erase(sent_requests.begin());
+                detail::fill_status_code<server_mode>(message, parser,
+                                                      sent_method);
+            }
             break;
         case token::code::reason_phrase:
-            BOOST_HTTP_DETAIL_UNREACHABLE("unimplemented not exposed feature");
+            detail::fill_reason_phrase<server_mode>(message, parser);
             break;
         case token::code::field_name:
         case token::code::trailer_name:
@@ -798,7 +1358,7 @@ void basic_socket<Socket>
                 }
 
                 // Header value
-                reader::request parser_copy(parser);
+                Parser parser_copy(parser);
                 parser_copy.next();
 
                 if (parser_copy.code() == token::code::skip)
@@ -818,8 +1378,8 @@ void basic_socket<Socket>
                     continue;
                 }
 
-                auto name = parser.value<token::field_name>();
-                auto value = parser_copy.value<token::field_value>();
+                auto name = parser.template value<token::field_name>();
+                auto value = parser_copy.template value<token::field_value>();
 
                 if (modern_http || (name != "expect" && name != "upgrade")) {
                     if (name == "connection") {
@@ -857,8 +1417,10 @@ void basic_socket<Socket>
             break;
         case token::code::end_of_headers:
             istate = http::read_state::message_ready;
-            flags |= READY;
-            writer_helper = http::write_state::empty;
+            cb_ready = true;
+            if (server_mode) {
+                writer_helper = http::write_state::empty;
+            }
 
             {
                 auto er = message.headers().equal_range("expect");
@@ -873,19 +1435,25 @@ void basic_socket<Socket>
             break;
         case token::code::body_chunk:
             {
-                auto value = parser.value<token::body_chunk>();
+                auto value = parser.template value<token::body_chunk>();
                 auto begin = asio::buffer_cast<const std::uint8_t*>(value);
                 auto size = asio::buffer_size(value);
                 message.body().insert(message.body().end(), begin, begin + size);
-                flags |= DATA;
+                cb_ready = true;
             }
             break;
         case token::code::end_of_body:
             istate = http::read_state::body_ready;
             break;
         case token::code::end_of_message:
-            istate = http::read_state::finished;
-            flags |= END;
+            if (server_mode) {
+                istate = http::read_state::finished;
+            } else {
+                istate = http::read_state::empty;
+                if (!modern_http || keep_alive == KEEP_ALIVE_CLOSE_READ)
+                    is_open_ = false;
+            }
+            cb_ready = true;
             loop = false;
             continue;
         }
@@ -900,18 +1468,15 @@ void basic_socket<Socket>
             parser.set_buffer(asio::buffer(buffer + nparsed,
                                            parser.token_size()));
             parser.next();
-            assert(parser.code() == token::code::error_insufficient_data);
+            assert(parser.code() == token::code::error_use_another_connection
+                   || parser.code() == token::code::error_insufficient_data);
             nparsed += token_size;
         }
         std::copy_n(buf_view + nparsed, used_size - nparsed, buf_view);
         used_size -= nparsed;
     }
 
-    if (target == READY && flags & READY) {
-        handler(system::error_code{});
-    } else if (target == DATA && flags & (DATA|END)) {
-        handler(system::error_code{});
-    } else if (target == END && flags & END) {
+    if (cb_ready) {
         handler(system::error_code{});
     } else {
         if (used_size == asio::buffer_size(buffer)) {
@@ -923,11 +1488,12 @@ void basic_socket<Socket>
 
         // TODO (C++14): move in lambda capture list
         channel.async_read_some(asio::buffer(buffer + used_size),
-                                [this,handler,method,path,&message]
+                                [this,handler,&message]
                                 (const system::error_code &ec,
                                  std::size_t bytes_transferred) mutable {
-            on_async_read_request<target>(std::move(handler), method, path,
-                                          message, ec, bytes_transferred);
+            on_async_read_message<server_mode, Parser>(std::move(handler),
+                                                       message, ec,
+                                                       bytes_transferred);
         });
     }
 }
@@ -938,7 +1504,9 @@ void basic_socket<Socket>::clear_buffer()
     istate = http::read_state::empty;
     writer_helper.state = http::write_state::empty;
     used_size = 0;
-    parser.reset();
+    parser = none;
+    sent_requests.clear();
+    modern_http = true;
 }
 
 template<class Socket>

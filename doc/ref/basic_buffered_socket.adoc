@@ -81,6 +81,15 @@ layer.
 
   Returns a reference to the underlying stream.
 
+`boost::asio::const_buffer upgrade_head() const`::
+
+  Return the buffer representing the first few bytes of the upgraded stream (may
+  be empty).
+
+`void lock_client_to_http10()`::
+
+  Lock HTTP to `HTTP/1.0` version if socket is used as a client socket.
+
 ====== `Socket` concept
 
 See the <<socket_concept,`Socket` concept>>.
