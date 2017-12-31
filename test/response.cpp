@@ -34,8 +34,6 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole responses",
                                 "Transfer-Encoding: chunked\r\n"
                                 "\r\n"));
 
-    parser.next();
-
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 7);
     REQUIRE(parser.expected_token() == http::token::code::version);
@@ -359,8 +357,6 @@ TEST_CASE("Parse a single message with no body", "[parser,good]")
                                 "Content-Length: 0\r\n"
                                 "\r\n"));
 
-    parser.next();
-
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 7);
     REQUIRE(parser.expected_token() == http::token::code::version);
@@ -506,8 +502,6 @@ TEST_CASE("Test varying body types", "[parser,good]")
                                 "HTTP/1.1 200 OK\r\n"
                                 "\r\n"
                                 "Raphinha legal"));
-
-    parser.next();
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 7);

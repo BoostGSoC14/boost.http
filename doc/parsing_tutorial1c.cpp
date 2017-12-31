@@ -8,8 +8,7 @@ void my_socket_consumer::on_socket_callback(asio::buffer data)
 
     std::size_t nparsed = 0; //< NEW
 
-    do {
-        request_reader.next();
+    while (request_reader.code() != code::end_of_message) {
         switch (request_reader.code()) {
         case code::skip:
             // do nothing
@@ -29,7 +28,10 @@ void my_socket_consumer::on_socket_callback(asio::buffer data)
         }
 
         nparsed += request_reader.token_size(); //< NEW
-    } while(request_reader.code() != code::end_of_message);
+        request_reader.next();
+    }
+    nparsed += request_reader.token_size(); //< NEW
+    request_reader.next();
     buffer.erase(0, nparsed); //< NEW
 
     ready();

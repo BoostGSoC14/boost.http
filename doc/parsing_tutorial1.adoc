@@ -95,6 +95,10 @@ handling must be introduced in the code.
 include::parsing_tutorial1d.cpp[]
 ----
 
+NOTE: Don't worry about `token_size(code::error_insufficient_data)` being added
+to `nparsed`. This (error) "token" is defined to be 0-size (it fits perfectly
+with the other rules).
+
 Just because it's easy and we're already at it, let's handle the other errors as
 well:
 
@@ -150,33 +154,15 @@ Some of the delimiters/structural tokens' properties are:
 * They are always emitted (e.g. `code::end_of_body` will be emitted before
   `code::end_of_message` even if no `code::body_chunk` is present).
 
-[WARNING]
---
-The code seems natural, but there is an implicit knowledge from an experienced
-user there. The only tokens that are allowed to be 0-sized are delimiter tokens
-(well... there are the errors too, but each error is special in its own way).
-
-The coded control flow will always call `request_reader.next()` when
-`on_socket_callback` is called (i.e. before we inspect current token in the
-switch-statement). But if 0-sized tokens are possible, then we must exhaust the
-current tokens before `on_socket_callback` returns. Otherwise we'll skip/miss
-some token from the stream as `request_reader.next()` always consume the current
-token.
-
-The gotcha to achieve the correct behaviour in such situation is the fact that
-only data tokens are emitted after `code::end_of_message` (our stop condition),
-so we're safe.
---
-
 We were using the `code::end_of_message` delimiter token since the initial
 version of the code, so they aren't completely alien. However, we were ignoring
 one very important HTTP parsing feature for this time. It's the last missing bit
-before your understaning to use this library is complete. Our current code lacks
+before your understanding to use this library is complete. Our current code lacks
 the ability to handle HTTP pipelining.
 
-HTTP pipelining is the feature that allow HTTP clients to send HTTP requests “in
-batch”. In other words, they may send several requests at once over the same
-connection before the server create a response to them. If the previous code
+HTTP pipelining is the feature that allows HTTP clients to send HTTP requests
+“in batch”. In other words, they may send several requests at once over the same
+connection before the server creates a response to them. If the previous code
 faces this situation, it'll stop parsing on the first request and possibly wait
 forever until the `on_socket_callback` is called again with more data (yeap,
 networking code can be hard with so many little details).

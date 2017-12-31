@@ -39,7 +39,6 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
     REQUIRE(parser.expected_token() == http::token::code::method);
 
     parser.set_buffer(asio::buffer(buf));
-    parser.next();
 
     REQUIRE(parser.code() == http::token::code::method);
     REQUIRE(parser.token_size() == 3);

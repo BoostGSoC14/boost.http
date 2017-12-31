@@ -181,6 +181,9 @@ inline void response::set_buffer(asio::const_buffer ibuffer)
 {
     this->ibuffer = ibuffer;
     idx = 0;
+
+    if (code_ == token::code::error_insufficient_data)
+        next();
 }
 
 inline response::size_type response::parsed_count() const
