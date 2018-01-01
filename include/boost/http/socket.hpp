@@ -168,12 +168,6 @@ private:
     typedef typename Settings::req_parser req_parser;
     typedef typename Settings::res_parser res_parser;
 
-    enum Target {
-        READY = 1,
-        DATA  = 1 << 1,
-        END   = 1 << 2,
-    };
-
     enum SentMethod {
         HEAD,
         CONNECT,
