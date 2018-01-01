@@ -1156,9 +1156,6 @@ void basic_socket<Socket>
     bool loop = true;
     bool cb_ready = false;
 
-    if (parser.code() == token::code::error_insufficient_data)
-        parser.next();
-
     while (loop) {
         switch (parser.code()) {
         case token::code::error_insufficient_data:
