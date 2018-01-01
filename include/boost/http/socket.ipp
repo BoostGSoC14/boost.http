@@ -1352,29 +1352,14 @@ void basic_socket<Socket, Settings>
                     }
                 }
 
-                // Header value
-                Parser parser_copy(parser);
-                parser_copy.next();
-
-                if (parser_copy.code() == token::code::skip)
-                    parser_copy.next();
-
-                switch (parser_copy.code()) {
-                case token::code::field_value:
-                case token::code::trailer_value:
-                    // do nothing
-                    break;
-                case token::code::error_insufficient_data:
-                    loop = false;
-                    continue;
-                default:
-                    // Some error. Re-use `parser.code()` error handling.
-                    parser.next();
-                    continue;
-                }
-
                 auto name = parser.template value<token::field_name>();
-                auto value = parser_copy.template value<token::field_value>();
+
+                // Header value
+                parser.next();
+                if (parser.code() == token::code::skip)
+                    parser.next();
+
+                auto value = parser.template value<token::field_value>();
 
                 if (modern_http || (name != "expect" && name != "upgrade")) {
                     if (name == "connection") {
@@ -1402,8 +1387,6 @@ void basic_socket<Socket, Settings>
                         .emplace(NameT(name.data(), name.size()),
                                  ValueT(value.data(), value.size()));
                 }
-
-                parser = parser_copy;
             }
             break;
         case token::code::field_value:

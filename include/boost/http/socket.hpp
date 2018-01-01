@@ -28,8 +28,6 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
-#include <boost/http/reader/request.hpp>
-#include <boost/http/reader/response.hpp>
 #include <boost/http/traits.hpp>
 #include <boost/http/read_state.hpp>
 #include <boost/http/write_state.hpp>
@@ -37,6 +35,7 @@
 #include <boost/http/detail/writer_helper.hpp>
 #include <boost/http/detail/count_decdigits.hpp>
 #include <boost/http/detail/constchar_helper.hpp>
+#include <boost/http/detail/atomic_field_parser.hpp>
 #include <boost/http/algorithm/header.hpp>
 
 namespace boost {
@@ -165,8 +164,12 @@ public:
     void lock_client_to_http10();
 
 private:
-    typedef typename Settings::req_parser req_parser;
-    typedef typename Settings::res_parser res_parser;
+    typedef
+        detail::reader_with_atomic_field<typename Settings::req_parser>
+        req_parser;
+    typedef
+        detail::reader_with_atomic_field<typename Settings::res_parser>
+        res_parser;
 
     enum Target {
         READY = 1,
