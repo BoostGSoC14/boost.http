@@ -29,6 +29,7 @@ set(examples
   "spawn-with-runtime2"
   "spawn-fileserver"
   "spawn-fileserver2"
+  "spawn-settings"
 )
 
 macro(add_example_target target)

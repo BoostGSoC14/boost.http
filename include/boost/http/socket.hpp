@@ -42,7 +42,13 @@
 namespace boost {
 namespace http {
 
-template<class Socket>
+struct default_socket_settings
+{
+    typedef reader::request req_parser;
+    typedef reader::response res_parser;
+};
+
+template<class Socket, class Settings = default_socket_settings>
 class basic_socket
 {
 public:
@@ -159,6 +165,9 @@ public:
     void lock_client_to_http10();
 
 private:
+    typedef typename Settings::req_parser req_parser;
+    typedef typename Settings::res_parser res_parser;
+
     enum Target {
         READY = 1,
         DATA  = 1 << 1,
@@ -199,7 +208,7 @@ private:
     asio::mutable_buffer buffer;
     std::size_t used_size = 0;
 
-    boost::variant<none_t, reader::request, reader::response> parser = none;
+    boost::variant<none_t, req_parser, res_parser> parser = none;
     boost::container::small_vector<SentMethod, 1> sent_requests;
 
     bool modern_http = true; // is HTTP/1.1?
@@ -217,8 +226,9 @@ private:
 
 typedef basic_socket<boost::asio::ip::tcp::socket> socket;
 
-template<class Socket>
-struct is_server_socket<basic_socket<Socket>>: public std::true_type {};
+template<class Socket, class Settings>
+struct is_server_socket<basic_socket<Socket, Settings>>: public std::true_type
+{};
 
 } // namespace http
 } // namespace boost

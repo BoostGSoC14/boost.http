@@ -22,12 +22,13 @@ struct buffered_socket_wrapping_buffer {
 };
 } // namespace detail
 
-template<class Socket, std::size_t N = BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE>
+template<class Socket, class Settings = default_socket_settings,
+         std::size_t N = BOOST_HTTP_SOCKET_DEFAULT_BUFFER_SIZE>
 class basic_buffered_socket
     : private detail::buffered_socket_wrapping_buffer<N>
-    , private ::boost::http::basic_socket<Socket>
+    , private ::boost::http::basic_socket<Socket, Settings>
 {
-    typedef ::boost::http::basic_socket<Socket> Parent;
+    typedef ::boost::http::basic_socket<Socket, Settings> Parent;
 
 public:
     static_assert(N > 0, "N must be greater than 0");
@@ -69,8 +70,9 @@ private:
 
 typedef basic_buffered_socket<boost::asio::ip::tcp::socket> buffered_socket;
 
-template<class Socket>
-struct is_server_socket<basic_buffered_socket<Socket>>: public std::true_type
+template<class Socket, class Settings, std::size_t N>
+struct is_server_socket<basic_buffered_socket<Socket, Settings, N>>
+    : public std::true_type
 {};
 
 } // namespace http

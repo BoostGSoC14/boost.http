@@ -51,6 +51,21 @@ layer.
   The underlying communication channel type. It MUST fulfill the requirements
   for ASIO's `AsyncReadStream` and ASIO's `AsyncWriteStream`.
 
+`Settings`::
+
+  Traits to define some settings. It defaults to _unspecified_.
++
+As a reference, the default traits class has the following form:
++
+[source,cpp]
+----
+struct
+{
+    typedef reader::request req_parser;
+    typedef reader::response res_parser;
+};
+----
+
 ===== Member types
 
 `typedef Socket next_layer_type`::

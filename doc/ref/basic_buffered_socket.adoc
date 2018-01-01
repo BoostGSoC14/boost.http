@@ -50,6 +50,10 @@ layer.
   The underlying communication channel type. It MUST fulfill the requirements
   for ASIO's `AsyncReadStream` and ASIO's `AsyncWriteStream`.
 
+`Settings`::
+
+  Traits passed to the underlying `Socket`. It defaults to _unspecified_.
+
 `N`::
 
   The internal buffer size. It defaults to

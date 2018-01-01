@@ -24,43 +24,43 @@ bool has_connection_close(const Headers &headers)
 
 } // namespace detail
 
-template<class Socket>
-bool basic_socket<Socket>::is_open() const
+template<class Socket, class Settings>
+bool basic_socket<Socket, Settings>::is_open() const
 {
     return channel.is_open() && is_open_;
 }
 
-template<class Socket>
-read_state basic_socket<Socket>::read_state() const
+template<class Socket, class Settings>
+read_state basic_socket<Socket, Settings>::read_state() const
 {
     return istate;
 }
 
-template<class Socket>
-write_state basic_socket<Socket>::write_state() const
+template<class Socket, class Settings>
+write_state basic_socket<Socket, Settings>::write_state() const
 {
     return writer_helper.state;
 }
 
-template<class Socket>
-bool basic_socket<Socket>::write_response_native_stream() const
+template<class Socket, class Settings>
+bool basic_socket<Socket, Settings>::write_response_native_stream() const
 {
     return modern_http;
 }
 
-template<class Socket>
-asio::io_service &basic_socket<Socket>::get_io_service()
+template<class Socket, class Settings>
+asio::io_service &basic_socket<Socket, Settings>::get_io_service()
 {
     return channel.get_io_service();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Request, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>::async_read_request(Request &request,
-                                         CompletionToken &&token)
+basic_socket<Socket, Settings>::async_read_request(Request &request,
+                                                   CompletionToken &&token)
 {
     static_assert(is_request_message<Request>::value,
                   "Request must fulfill the Request concept");
@@ -74,12 +74,12 @@ basic_socket<Socket>::async_read_request(Request &request,
 
     switch (parser.which()) {
     case 0: // none
-        parser = reader::request{};
+        parser = req_parser{};
         modern_http = true; // ignore `lock_client_to_http10`
         break;
-    case 1: // reader::request
+    case 1: // req_parser
         break;
-    case 2: // reader::response
+    case 2: // res_parser
         invoke_handler(handler, http_errc::wrong_direction);
         return result.get();
     }
@@ -99,13 +99,13 @@ basic_socket<Socket>::async_read_request(Request &request,
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Response, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>::async_read_response(Response &response,
-                                          CompletionToken &&token)
+basic_socket<Socket, Settings>::async_read_response(Response &response,
+                                                    CompletionToken &&token)
 {
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
@@ -119,12 +119,12 @@ basic_socket<Socket>::async_read_response(Response &response,
 
     switch (parser.which()) {
     case 0: // none
-        parser = reader::response{};
+        parser = res_parser{};
         break;
-    case 1: // reader::request
+    case 1: // req_parser
         invoke_handler(handler, http_errc::wrong_direction);
         return result.get();
-    case 2: // reader::response
+    case 2: // res_parser
         break;
     }
 
@@ -141,12 +141,13 @@ basic_socket<Socket>::async_read_response(Response &response,
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>::async_read_some(Message &message, CompletionToken &&token)
+basic_socket<Socket, Settings>::async_read_some(Message &message,
+                                                CompletionToken &&token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
@@ -169,13 +170,13 @@ basic_socket<Socket>::async_read_some(Message &message, CompletionToken &&token)
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>::async_read_trailers(Message &message,
-                                          CompletionToken &&token)
+basic_socket<Socket, Settings>::async_read_trailers(Message &message,
+                                                    CompletionToken &&token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
@@ -198,12 +199,12 @@ basic_socket<Socket>::async_read_trailers(Message &message,
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Response, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>
+basic_socket<Socket, Settings>
 ::async_write_response(const Response &response, CompletionToken &&token)
 {
     static_assert(is_response_message<Response>::value,
@@ -312,12 +313,12 @@ basic_socket<Socket>
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>
+basic_socket<Socket, Settings>
 ::async_write_response_continue(CompletionToken &&token)
 {
     typedef typename asio::handler_type<
@@ -344,12 +345,12 @@ basic_socket<Socket>
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Response, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>
+basic_socket<Socket, Settings>
 ::async_write_response_metadata(const Response &response,
                                 CompletionToken &&token)
 {
@@ -441,12 +442,12 @@ basic_socket<Socket>
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Request, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>
+basic_socket<Socket, Settings>
 ::async_write_request(const Request &request, CompletionToken &&token)
 {
     static_assert(is_request_message<Request>::value,
@@ -461,12 +462,12 @@ basic_socket<Socket>
 
     switch (parser.which()) {
     case 0: // none
-        parser = reader::response{};
+        parser = res_parser{};
         break;
-    case 1: // reader::request
+    case 1: // req_parser
         invoke_handler(handler, http_errc::wrong_direction);
         return result.get();
-    case 2: // reader::response
+    case 2: // res_parser
         break;
     }
 
@@ -597,12 +598,12 @@ basic_socket<Socket>
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Request, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>
+basic_socket<Socket, Settings>
 ::async_write_request_metadata(const Request &request, CompletionToken &&token)
 {
     static_assert(is_request_message<Request>::value,
@@ -618,12 +619,12 @@ basic_socket<Socket>
 
     switch (parser.which()) {
     case 0: // none
-        parser = reader::response{};
+        parser = res_parser{};
         break;
-    case 1: // reader::request
+    case 1: // req_parser
         invoke_handler(handler, http_errc::wrong_direction);
         return result.get();
-    case 2: // reader::response
+    case 2: // res_parser
         break;
     }
 
@@ -735,13 +736,13 @@ basic_socket<Socket>
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>::async_write(const Message &message,
-                                  CompletionToken &&token)
+basic_socket<Socket, Settings>::async_write(const Message &message,
+                                            CompletionToken &&token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
@@ -791,13 +792,13 @@ basic_socket<Socket>::async_write(const Message &message,
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Message, class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>::async_write_trailers(const Message &message,
-                                           CompletionToken &&token)
+basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
+                                                     CompletionToken &&token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
@@ -820,10 +821,10 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
     case 0: // none
         assert(false);
         break;
-    case 1: // reader::request
+    case 1: // req_parser
         istate = http::read_state::empty;
         break;
-    case 2: // reader::response
+    case 2: // res_parser
         writer_helper.state = write_state::empty;
         break;
     }
@@ -869,12 +870,12 @@ basic_socket<Socket>::async_write_trailers(const Message &message,
     return result.get();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class CompletionToken>
 typename asio::async_result<
     typename asio::handler_type<CompletionToken,
                                 void(system::error_code)>::type>::type
-basic_socket<Socket>
+basic_socket<Socket, Settings>
 ::async_write_end_of_message(CompletionToken &&token)
 {
     using detail::string_literal_buffer;
@@ -895,10 +896,10 @@ basic_socket<Socket>
     case 0: // none
         assert(false);
         break;
-    case 1: // reader::request
+    case 1: // req_parser
         istate = http::read_state::empty;
         break;
-    case 2: // reader::response
+    case 2: // res_parser
         writer_helper.state = write_state::empty;
         break;
     }
@@ -917,8 +918,8 @@ basic_socket<Socket>
     return result.get();
 }
 
-template<class Socket>
-basic_socket<Socket>
+template<class Socket, class Settings>
+basic_socket<Socket, Settings>
 ::basic_socket(boost::asio::io_service &io_service,
                boost::asio::mutable_buffer inbuffer) :
     channel(io_service),
@@ -930,9 +931,9 @@ basic_socket<Socket>
         throw std::invalid_argument("buffers must not be 0-sized");
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class... Args>
-basic_socket<Socket>
+basic_socket<Socket, Settings>
 ::basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args)
     : channel(std::forward<Args>(args)...)
     , istate(http::read_state::empty)
@@ -943,29 +944,29 @@ basic_socket<Socket>
         throw std::invalid_argument("buffers must not be 0-sized");
 }
 
-template<class Socket>
-Socket &basic_socket<Socket>::next_layer()
+template<class Socket, class Settings>
+Socket &basic_socket<Socket, Settings>::next_layer()
 {
     return channel;
 }
 
-template<class Socket>
-const Socket &basic_socket<Socket>::next_layer() const
+template<class Socket, class Settings>
+const Socket &basic_socket<Socket, Settings>::next_layer() const
 {
     return channel;
 }
 
-template<class Socket>
-void basic_socket<Socket>::open()
+template<class Socket, class Settings>
+void basic_socket<Socket, Settings>::open()
 {
     is_open_ = true;
 }
 
-template<class Socket>
-asio::const_buffer basic_socket<Socket>::upgrade_head() const
+template<class Socket, class Settings>
+asio::const_buffer basic_socket<Socket, Settings>::upgrade_head() const
 {
 #ifndef BOOST_HTTP_UPGRADE_HEAD_DISABLE_CHECK
-    // reader::response
+    // res_parser
     if (parser.which() != 2)
         throw std::logic_error("`upgrade_head` only makes sense in HTTP client"
                                " mode");
@@ -974,10 +975,10 @@ asio::const_buffer basic_socket<Socket>::upgrade_head() const
     return asio::buffer(buffer, used_size);
 }
 
-template<class Socket>
-void basic_socket<Socket>::lock_client_to_http10()
+template<class Socket, class Settings>
+void basic_socket<Socket, Settings>::lock_client_to_http10()
 {
-    // reader::request
+    // req_parser
     if (parser.which() == 1) {
         // server-mode, nothing to do
         return;
@@ -986,9 +987,9 @@ void basic_socket<Socket>::lock_client_to_http10()
     modern_http = false;
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Message, class Handler>
-void basic_socket<Socket>
+void basic_socket<Socket, Settings>
 ::schedule_on_async_read_message(Handler &handler, Message &message)
 {
     bool server_mode;
@@ -1003,10 +1004,10 @@ void basic_socket<Socket>
         case 0: // none
             assert(false);
             break;
-        case 1: // reader::request
+        case 1: // req_parser
             server_mode = true;
             break;
-        case 2: // reader::response
+        case 2: // res_parser
             server_mode = false;
             break;
         }
@@ -1015,15 +1016,12 @@ void basic_socket<Socket>
     if (used_size) {
         // Have cached some bytes from a previous read
         if (server_mode) {
-            on_async_read_message<true, reader::request>(std::move(handler),
-                                                         message,
-                                                         system::error_code{},
-                                                         0);
+            on_async_read_message<true, req_parser>(std::move(handler), message,
+                                                    system::error_code{}, 0);
         } else {
-            on_async_read_message<false, reader::response>(std::move(handler),
-                                                           message,
-                                                           system::error_code{},
-                                                           0);
+            on_async_read_message<false, res_parser>(std::move(handler),
+                                                     message,
+                                                     system::error_code{}, 0);
         }
     } else {
         if (server_mode) {
@@ -1032,7 +1030,7 @@ void basic_socket<Socket>
                                     [this,handler,&message]
                                     (const system::error_code &ec,
                                      std::size_t bytes_transferred) mutable {
-                on_async_read_message<true, reader::request>
+                on_async_read_message<true, req_parser>
                     (std::move(handler), message, ec, bytes_transferred);
             });
         } else {
@@ -1041,7 +1039,7 @@ void basic_socket<Socket>
                                     [this,handler,&message]
                                     (const system::error_code &ec,
                                      std::size_t bytes_transferred) mutable {
-                on_async_read_message<false, reader::response>
+                on_async_read_message<false, res_parser>
                     (std::move(handler), message, ec, bytes_transferred);
             });
         }
@@ -1127,9 +1125,9 @@ puteof(Parser &parser)
 
 } // namespace detail
 
-template<class Socket>
+template<class Socket, class Settings>
 template<bool server_mode, class Parser, class Message, class Handler>
-void basic_socket<Socket>
+void basic_socket<Socket, Settings>
 ::on_async_read_message(Handler handler, Message &message,
                         const system::error_code &ec,
                         std::size_t bytes_transferred)
@@ -1495,8 +1493,8 @@ void basic_socket<Socket>
     }
 }
 
-template<class Socket>
-void basic_socket<Socket>::clear_buffer()
+template<class Socket, class Settings>
+void basic_socket<Socket, Settings>::clear_buffer()
 {
     istate = http::read_state::empty;
     writer_helper.state = http::write_state::empty;
@@ -1506,20 +1504,20 @@ void basic_socket<Socket>::clear_buffer()
     modern_http = true;
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template<class Message>
-void basic_socket<Socket>::clear_message(Message &message)
+void basic_socket<Socket, Settings>::clear_message(Message &message)
 {
     message.headers().clear();
     message.body().clear();
     message.trailers().clear();
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template <typename Handler,
           typename ErrorCode>
-void basic_socket<Socket>::invoke_handler(Handler&& handler,
-                                          ErrorCode error)
+void basic_socket<Socket, Settings>::invoke_handler(Handler&& handler,
+                                                    ErrorCode error)
 {
     channel.get_io_service().post
         ([handler, error] () mutable
@@ -1528,9 +1526,9 @@ void basic_socket<Socket>::invoke_handler(Handler&& handler,
          });
 }
 
-template<class Socket>
+template<class Socket, class Settings>
 template <class Handler>
-void basic_socket<Socket>::invoke_handler(Handler&& handler)
+void basic_socket<Socket, Settings>::invoke_handler(Handler&& handler)
 {
     channel.get_io_service().post
         ([handler] () mutable
