@@ -118,7 +118,7 @@ include::parsing_tutorial1f.cpp[]
 
 `last_header` did the trick. Easy, but maybe we want to separate headers and
 trailers (the HTTP headers that are sent _after_ the message body). This task
-can be accomplished by the use of structural/notification tokens.
+can be accomplished by the use of structural tokens.
 
 [source,cpp]
 ----
@@ -130,7 +130,7 @@ include::parsing_tutorial1g.cpp[]
 Maybe you had a gut feeling and thought that the previous code was too
 strange. If `trailer_name` is a separate token, why don't we use
 `request_reader.value<token::trailer_name>()` (same to `trailer_value`) and go
-away with notification tokens?
+away with structural tokens?
 
 Yes, I unnecessarily complicated the code here to introduce you the concept of
 structural tokens. They are very important and usually you'll end up using
@@ -146,7 +146,7 @@ trailers much easier (with no drawback to the users who do need to differentiate
 them).
 --
 
-Some of the delimiters/structural tokens' properties are:
+Some of the structural tokens' properties are:
 
 * No `value<T>()` associated. `value<T>()` extraction is a property exclusive of
   the _data_ tokens.
@@ -154,11 +154,11 @@ Some of the delimiters/structural tokens' properties are:
 * They are always emitted (e.g. `code::end_of_body` will be emitted before
   `code::end_of_message` even if no `code::body_chunk` is present).
 
-We were using the `code::end_of_message` delimiter token since the initial
+We were using the `code::end_of_message` structural token since the initial
 version of the code, so they aren't completely alien. However, we were ignoring
 one very important HTTP parsing feature for this time. It's the last missing bit
-before your understanding to use this library is complete. Our current code lacks
-the ability to handle HTTP pipelining.
+before your understanding to use this library is complete. Our current code
+lacks the ability to handle HTTP pipelining.
 
 HTTP pipelining is the feature that allows HTTP clients to send HTTP requests
 “in batch”. In other words, they may send several requests at once over the same

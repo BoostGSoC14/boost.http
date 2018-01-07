@@ -64,6 +64,16 @@ inline token::code::value response::code() const
     return code_;
 }
 
+inline token::symbol::value response::symbol() const
+{
+    return token::symbol::convert(code_);
+}
+
+inline token::category::value response::category() const
+{
+    return token::category::convert(code_);
+}
+
 inline
 response::size_type response::token_size() const
 {

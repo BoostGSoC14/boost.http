@@ -48,6 +48,8 @@ public:
 
     // Inspect current token
     token::code::value code() const;
+    token::symbol::value symbol() const;
+    token::category::value category() const;
     size_type token_size() const;
     template<class T>
     typename T::type value() const;

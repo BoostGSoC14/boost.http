@@ -4,6 +4,8 @@
 Import the following symbols:
 
 * <<token_code_value,`token::code::value`>>
+* <<token_symbol_value,`token::symbol::value`>>
+* <<token_category_value,`token::category::value`>>
 * <<token_skip,`token::skip`>>
 * <<token_field_name,`token::field_name`>>
 * <<token_field_value,`token::field_value`>>

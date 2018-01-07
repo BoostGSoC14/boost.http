@@ -26,6 +26,16 @@ inline token::code::value request::code() const
     return code_;
 }
 
+inline token::symbol::value request::symbol() const
+{
+    return token::symbol::convert(code_);
+}
+
+inline token::category::value request::category() const
+{
+    return token::category::convert(code_);
+}
+
 inline
 request::size_type request::token_size() const
 {

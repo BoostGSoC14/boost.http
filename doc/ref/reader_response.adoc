@@ -81,6 +81,22 @@ The following values are *never* returned:
 * `token::code::request_target`.
 --
 
+`token::symbol::value symbol() const`::
+
+  Use it to inspect current token. Returns symbol.
++
+[NOTE]
+--
+The following values are *never* returned:
+
+* `token::symbol::method`.
+* `token::symbol::request_target`.
+--
+
+`token::category::value category() const`::
+
+  Use it to inspect current token. Returns category.
+
 `size_type token_size() const`::
 
   Returns the size of current token.

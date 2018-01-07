@@ -36,13 +36,13 @@ user with one token at a time and internally we keep a lightweight non-growing
 state required to decode further tokens.
 
 We use the same token definition for HTTP requests and HTTP responses. The
-tokens can be either of status (e.g. `error` or `skip`), delimiters (e.g.
+tokens can be either of status (e.g. `error` or `skip`), structural (e.g.
 `boost::http::token::code::end_of_headers`) or data (e.g.
 `boost::http::token::code::field_name`) categories. Only tokens of the data
 category have an associated value.
 
 Each token is associated with a slice (possibly 0-sized if `error` token or a
-token from the delimiters category) of the byte stream. The process goes as
+token from the structural category) of the byte stream. The process goes as
 follow:
 
 . Set the buffer used by the reader.
