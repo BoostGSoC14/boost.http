@@ -1081,19 +1081,26 @@ fill_target(Request &request, const Parser &parser)
 }
 
 template<bool server_mode, class Message, class Parser>
-typename std::enable_if<!is_response_message<Message>::value || server_mode>
+typename std::enable_if<!is_response_message<Message>::value || server_mode,
+                        std::uint_least16_t>
 ::type
 fill_status_code(Message&, Parser&, boost::string_ref)
-{} //< no-op
+{
+    // no-op
+    return 0;
+}
 
 template<bool server_mode, class Response, class Parser>
-typename std::enable_if<is_response_message<Response>::value && !server_mode>
+typename std::enable_if<is_response_message<Response>::value && !server_mode,
+                        std::uint_least16_t>
 ::type
 fill_status_code(Response &response, Parser &parser,
                  boost::string_ref sent_method)
 {
-    response.status_code() = parser.template value<token::status_code>();
+    auto value = parser.template value<token::status_code>();
+    response.status_code() = value;
     parser.set_method(sent_method);
+    return value;
 }
 
 template<bool server_mode, class Message, class Parser>
@@ -1324,9 +1331,19 @@ void basic_socket<Socket, Settings>
                 case OTHER_METHOD:
                     sent_method = "GET";
                 }
-                sent_requests.erase(sent_requests.begin());
-                detail::fill_status_code<server_mode>(message, parser,
-                                                      sent_method);
+                auto sc = detail::fill_status_code<server_mode>(message, parser,
+                                                                sent_method);
+                // non-informational response
+                if (sc / 100 != 1) {
+                    // “The 1xx (Informational) class of status code indicates
+                    // an interim response for communicating connection status
+                    // or request progress prior to completing the requested
+                    // action and sending a final response.” — RFC7231
+                    //
+                    // Therefore, informational responses do *not* mark the
+                    // transition to a different request-response pair.
+                    sent_requests.erase(sent_requests.begin());
+                }
             }
             break;
         case token::code::reason_phrase:
