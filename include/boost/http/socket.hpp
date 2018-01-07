@@ -224,6 +224,10 @@ template<class Socket, class Settings>
 struct is_server_socket<basic_socket<Socket, Settings>>: public std::true_type
 {};
 
+template<class Socket, class Settings>
+struct is_client_socket<basic_socket<Socket, Settings>>: public std::true_type
+{};
+
 } // namespace http
 } // namespace boost
 

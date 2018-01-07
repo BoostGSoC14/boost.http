@@ -7,11 +7,19 @@ using namespace boost;
 using namespace std;
 
 class dummy_server_socket {};
+class dummy_client_socket {};
 
 namespace boost {
 namespace http {
 template<>
 struct is_server_socket<dummy_server_socket>: public std::true_type {};
+} // namespace http {
+} // namespace boost {
+
+namespace boost {
+namespace http {
+template<>
+struct is_client_socket<dummy_client_socket>: public std::true_type {};
 } // namespace http {
 } // namespace boost {
 
@@ -41,6 +49,19 @@ static_assert(http::is_server_socket<http::basic_socket<int>>::value,
               "http::basic_socket<int> is not a server_socket?!");
 static_assert(http::is_server_socket<dummy_server_socket>::value,
               "dummy_server_socket is not a server_socket?!");
+static_assert(!http::is_server_socket<dummy_client_socket>::value,
+              "dummy_client_socket is a server_socket?!");
+
+static_assert(!http::is_client_socket<int>::value,
+              "int is a client_socket?!");
+static_assert(http::is_client_socket<http::socket>::value,
+              "http::socket is not a client_socket?!");
+static_assert(http::is_client_socket<http::basic_socket<int>>::value,
+              "http::basic_socket<int> is not a client_socket?!");
+static_assert(!http::is_client_socket<dummy_server_socket>::value,
+              "dummy_client_socket is a client_socket?!");
+static_assert(http::is_client_socket<dummy_client_socket>::value,
+              "dummy_client_socket is not a client_socket?!");
 
 static_assert(!http::is_socket<int>::value, "int is a socket?!");
 static_assert(http::is_socket<http::socket>::value,
@@ -49,6 +70,8 @@ static_assert(http::is_socket<http::basic_socket<int>>::value,
               "http::basic_socket<int> is not a socket?!");
 static_assert(http::is_socket<dummy_server_socket>::value,
               "dummy_server_socket is not a socket?!");
+static_assert(http::is_socket<dummy_client_socket>::value,
+              "dummy_client_socket is not a socket?!");
 
 static_assert(http::is_server_socket<http::buffered_socket>::value,
               "http::buffered_socket is not a server_socket?!");
