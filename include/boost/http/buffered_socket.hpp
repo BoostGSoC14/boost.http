@@ -41,11 +41,14 @@ public:
     using Parent::write_response_native_stream;
     using Parent::get_io_service;
     using Parent::async_read_request;
+    using Parent::async_read_response;
     using Parent::async_read_some;
     using Parent::async_read_trailers;
     using Parent::async_write_response;
     using Parent::async_write_response_continue;
     using Parent::async_write_response_metadata;
+    using Parent::async_write_request;
+    using Parent::async_write_request_metadata;
     using Parent::async_write;
     using Parent::async_write_trailers;
     using Parent::async_write_end_of_message;
@@ -72,6 +75,11 @@ typedef basic_buffered_socket<boost::asio::ip::tcp::socket> buffered_socket;
 
 template<class Socket, class Settings, std::size_t N>
 struct is_server_socket<basic_buffered_socket<Socket, Settings, N>>
+    : public std::true_type
+{};
+
+template<class Socket, class Settings, std::size_t N>
+struct is_client_socket<basic_buffered_socket<Socket, Settings, N>>
     : public std::true_type
 {};
 

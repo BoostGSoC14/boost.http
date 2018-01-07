@@ -78,6 +78,11 @@ static_assert(http::is_server_socket<http::buffered_socket>::value,
 static_assert(http::is_server_socket<http::basic_buffered_socket<int>>::value,
               "http::basic_buffered_socket<int> is not a server_socket?!");
 
+static_assert(http::is_client_socket<http::buffered_socket>::value,
+              "http::buffered_socket is not a client_socket?!");
+static_assert(http::is_client_socket<http::basic_buffered_socket<int>>::value,
+              "http::basic_buffered_socket<int> is not a client_socket?!");
+
 static_assert(http::is_socket<http::buffered_socket>::value,
               "http::buffered_socket is not a socket?!");
 static_assert(http::is_socket<http::basic_buffered_socket<int>>::value,
