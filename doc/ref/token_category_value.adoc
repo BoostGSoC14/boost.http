@@ -1,0 +1,27 @@
+[[token_category_value]]
+==== `token::category::value`
+
+[source,cpp]
+----
+#include <boost/http/token.hpp>
+----
+
+[source,cpp]
+----
+namespace token {
+
+struct category
+{
+    enum value
+    {
+        status,
+        data,
+        structural
+    };
+
+    static value convert(code::value);
+    static value convert(symbol::value);
+};
+
+} // namespace token
+----

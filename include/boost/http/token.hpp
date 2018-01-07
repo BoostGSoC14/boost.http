@@ -48,6 +48,50 @@ struct code
     };
 };
 
+struct symbol
+{
+    enum value
+    {
+        error,
+
+        skip,
+
+        method,
+        request_target,
+        version,
+        status_code,
+        reason_phrase,
+        field_name,
+        field_value,
+
+        end_of_headers,
+
+        body_chunk,
+
+        end_of_body,
+
+        trailer_name,
+        trailer_value,
+
+        end_of_message
+    };
+
+    static value convert(code::value);
+};
+
+struct category
+{
+    enum value
+    {
+        status,
+        data,
+        structural
+    };
+
+    static value convert(code::value);
+    static value convert(symbol::value);
+};
+
 //-----------------------------------------------------------------------------
 // Token tags
 //-----------------------------------------------------------------------------
@@ -135,5 +179,7 @@ struct reason_phrase
 } // namespace token
 } // namespace http
 } // namespace boost
+
+#include "token.ipp"
 
 #endif // BOOST_HTTP_TOKEN_HPP

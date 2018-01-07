@@ -47,6 +47,8 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 ==== Enumerations
 
 * <<token_code_value,`token::code::value`>>
+* <<token_symbol_value,`token::symbol::value`>>
+* <<token_category_value,`token::category::value`>>
 
 ==== Headers
 
@@ -67,6 +69,10 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 === Detailed
 
 include::ref/token_code_value.adoc[]
+
+include::ref/token_symbol_value.adoc[]
+
+include::ref/token_category_value.adoc[]
 
 include::ref/token_skip.adoc[]
 

@@ -66,6 +66,22 @@ The following values are *never* returned:
 * `token::code::reason_phrase`.
 --
 
+`token::symbol::value symbol() const`::
+
+  Use it to inspect current token. Returns symbol.
++
+[NOTE]
+--
+The following values are *never* returned:
+
+* `token::symbol::status_code`.
+* `token::symbol::reason_phrase`.
+--
+
+`token::category::value category() const`::
+
+  Use it to inspect current token. Returns category.
+
 `size_type token_size() const`::
 
   Returns the size of current token.

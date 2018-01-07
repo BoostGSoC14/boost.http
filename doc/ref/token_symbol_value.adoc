@@ -1,5 +1,5 @@
-[[token_code_value]]
-==== `token::code::value`
+[[token_symbol_value]]
+==== `token::symbol::value`
 
 [source,cpp]
 ----
@@ -10,20 +10,14 @@
 ----
 namespace token {
 
-struct code
+struct symbol
 {
     enum value
     {
-        error_insufficient_data,
-        error_set_method,
-        error_use_another_connection,
-        error_invalid_data,
-        error_no_host,
-        error_invalid_content_length,
-        error_content_length_overflow,
-        error_invalid_transfer_encoding,
-        error_chunk_size_overflow,
+        error,
+
         skip,
+
         method,
         request_target,
         version,
@@ -31,18 +25,21 @@ struct code
         reason_phrase,
         field_name,
         field_value,
+
         end_of_headers,
+
         body_chunk,
+
         end_of_body,
+
         trailer_name,
         trailer_value,
+
         end_of_message
     };
+
+    static value convert(code::value);
 };
 
 } // namespace token
 ----
-
-`error_insufficient_data`::
-
-  `token_size()` of this token will always be zero.
