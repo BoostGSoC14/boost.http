@@ -7,10 +7,12 @@
 ----
 
 This template can be used to easily define classes fulfilling the strict
-<<server_socket_concept,`ServerSocket` concept>> and specializing the
-<<is_server_socket,`is_server_socket`>> trait. These classes exposes the
-`HTTP/1.1` wire format (i.e. a builtin/standalone HTTP server) into an
-easy-to-use API.
+<<server_socket_concept,`ServerSocket` concept>> and the strict
+<<client_socket_concept,`ClientSocket` concept>>
+(<<is_server_socket,`is_server_socket`>> and
+<<is_client_socket,`is_client_socket`>> traits are specialized). These classes
+exposes the `HTTP/1.1` wire format (i.e. a builtin/standalone HTTP server) into
+an easy-to-use API.
 
 The underlying I/O object is expected to have the following properties:
 
@@ -181,3 +183,23 @@ See the <<server_socket_concept,`ServerSocket` concept>>.
                                   void(boost::system::error_code)>::type>::type
   async_write_response_metadata(const Response &response,
                                 CompletionToken &&token)`
+
+====== `ClientSocket` concept
+
+See the <<client_socket_concept,`ClientSocket` concept>>.
+
+* `template<class Request, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_write_request(const Request &request, CompletionToken &&token)`
+* `template<class Request, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_write_request_metadata(const Request &request, CompletionToken &&token)`
+* `template<class Response, class CompletionToken>
+  typename boost::asio::async_result<
+      typename boost::asio::handler_type<CompletionToken,
+                                  void(boost::system::error_code)>::type>::type
+  async_read_response(Response &response, CompletionToken &&token)`
