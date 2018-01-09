@@ -1,5 +1,6 @@
 = Boost.Http
-Vinícius dos Santos Oliveira <vini.ipsmaker@gmail.com>
+:author: Vinícius dos Santos Oliveira
+:email: vini.ipsmaker@gmail.com
 :doctype: book
 
 :source-highlighter: pygments
