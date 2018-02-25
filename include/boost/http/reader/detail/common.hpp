@@ -7,7 +7,7 @@
 #ifndef BOOST_HTTP_READER_DETAIL_COMMON_HPP
 #define BOOST_HTTP_READER_DETAIL_COMMON_HPP
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/http/reader/detail/abnf.hpp>
 
 namespace boost {
@@ -15,7 +15,7 @@ namespace http {
 namespace reader {
 namespace detail {
 
-inline string_ref decode_field_value(string_ref in)
+inline string_view decode_field_value(string_view in)
 {
     /* The field value does not include any leading or trailing whitespace: OWS
        occurring before the first non-whitespace octet of the field value or

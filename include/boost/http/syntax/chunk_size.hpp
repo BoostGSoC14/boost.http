@@ -9,7 +9,7 @@
 
 #include <cassert>
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/core/scoped_enum.hpp>
 
 namespace boost {
@@ -18,7 +18,7 @@ namespace syntax {
 
 template<class CharT>
 struct chunk_size {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     BOOST_SCOPED_ENUM_DECLARE_BEGIN(result)
     {

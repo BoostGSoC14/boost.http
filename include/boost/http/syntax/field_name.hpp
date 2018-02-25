@@ -7,7 +7,7 @@
 #ifndef BOOST_HTTP_SYNTAX_FIELD_NAME_HPP
 #define BOOST_HTTP_SYNTAX_FIELD_NAME_HPP
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 
 namespace boost {
 namespace http {
@@ -15,7 +15,7 @@ namespace syntax {
 
 template<class CharT>
 struct field_name {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     static std::size_t match(view_type view);
 };

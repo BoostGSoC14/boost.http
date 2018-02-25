@@ -12,7 +12,7 @@ namespace syntax {
 
 template<class CharT>
 struct reason_phrase {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     static std::size_t match(view_type view);
 };

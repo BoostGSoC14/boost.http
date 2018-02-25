@@ -24,14 +24,14 @@ struct isspace
 
 } // namespace detail
 
-template<class StringRef, class Predicate>
-bool header_value_any_of(const StringRef &header_value, Predicate p)
+template<class StringView, class Predicate>
+bool header_value_any_of(const StringView &header_value, Predicate p)
 {
     using detail::isspace;
 
-    typedef typename StringRef::value_type char_type;
-    typedef typename StringRef::const_reverse_iterator reverse_iterator;
-    typedef typename StringRef::const_iterator iterator;
+    typedef typename StringView::value_type char_type;
+    typedef typename StringView::const_reverse_iterator reverse_iterator;
+    typedef typename StringView::const_iterator iterator;
 
     iterator comma = header_value.begin();
     iterator next_comma;

@@ -308,14 +308,14 @@ my_token::value make_error(http::token::code::value error)
     return t;
 }
 
-my_token::value make_field_name(boost::string_ref value)
+my_token::value make_field_name(boost::string_view value)
 {
     my_token::field_name t;
     t.value = std::string(&value.front(), value.size());
     return t;
 }
 
-my_token::value make_field_value(boost::string_ref value, std::size_t size)
+my_token::value make_field_value(boost::string_view value, std::size_t size)
 {
     my_token::field_value t;
     t.value = std::string(&value.front(), value.size());
@@ -353,14 +353,14 @@ my_token::value make_body_chunk(const char (&value)[N])
     return t;
 }
 
-my_token::value make_trailer_name(boost::string_ref value)
+my_token::value make_trailer_name(boost::string_view value)
 {
     my_token::trailer_name t;
     t.value = std::string(&value.front(), value.size());
     return t;
 }
 
-my_token::value make_trailer_value(boost::string_ref value, std::size_t size)
+my_token::value make_trailer_value(boost::string_view value, std::size_t size)
 {
     my_token::trailer_value t;
     t.value = std::string(&value.front(), value.size());
@@ -411,14 +411,14 @@ my_token::value make_end_of_body(std::size_t size)
     return t;
 }
 
-my_token::value make_method(boost::string_ref value)
+my_token::value make_method(boost::string_view value)
 {
     my_token::method t;
     t.value = std::string(&value.front(), value.size());
     return t;
 }
 
-my_token::value make_request_target(boost::string_ref value)
+my_token::value make_request_target(boost::string_view value)
 {
     my_token::request_target t;
     t.value = std::string(&value.front(), value.size());

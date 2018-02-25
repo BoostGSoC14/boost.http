@@ -7,7 +7,7 @@
 #ifndef BOOST_HTTP_SYNTAX_FIELD_VALUE_HPP
 #define BOOST_HTTP_SYNTAX_FIELD_VALUE_HPP
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/http/syntax/detail/is_ows.hpp>
 #include <boost/http/syntax/detail/is_vchar.hpp>
 #include <boost/http/syntax/detail/is_obs_text.hpp>
@@ -18,7 +18,7 @@ namespace syntax {
 
 template<class CharT>
 struct left_trimmed_field_value {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     static std::size_t match(view_type view);
 };

@@ -12,7 +12,7 @@ namespace syntax {
 
 template<class CharT>
 struct liberal_crlf {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     BOOST_SCOPED_ENUM_DECLARE_BEGIN(result)
     {
