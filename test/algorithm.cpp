@@ -21,14 +21,14 @@ struct my_accumulator
 
 BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     using boost::http::header_value_all_of;
-    using boost::string_ref;
+    using boost::string_view;
     using std::string;
     using std::vector;
 
     int counter = 0;
     string connection;
     bool ret;
-    ret = header_value_all_of(connection, [&counter](string_ref) {
+    ret = header_value_all_of(connection, [&counter](string_view) {
             ++counter;
             return false;
         });
@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return true;
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = ",upgrade";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return true;
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade   ,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",    upgrade";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade,close";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-5]);
                                   ++counter;
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade   ,close";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
             vector<string> v = {"upgrade", "close"};
             BOOST_REQUIRE(value == v[counter-7]);
             ++counter;
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade,   close";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-9]);
                                   ++counter;
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade    ,    close";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-11]);
                                   ++counter;
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "\tupgrade\t,,\tclose\t\t";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-13]);
                                   ++counter;
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "\t \t upgrade\t \t \t,,\t \t \tclose \t \t";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-15]);
                                   ++counter;
@@ -141,105 +141,105 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = " ";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "\t";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "          ";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "\t\t\t\t\t\t\t\t\t\t\t";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",,";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",,,";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = " ,";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ", ";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",    ";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = " , ";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,   ";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,,   ";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,,   ,     ,,,    ";
-    ret = header_value_all_of(connection, [](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_word_splitting_and_iteration_count) {
 
 BOOST_AUTO_TEST_CASE(header_value_all_of_iteration_control) {
     using boost::http::header_value_all_of;
-    using boost::string_ref;
+    using boost::string_view;
     using std::string;
     using std::vector;
 
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_iteration_control) {
     string connection;
     bool ret;
 
-    ret = header_value_all_of(connection, [&counter](string_ref) {
+    ret = header_value_all_of(connection, [&counter](string_view) {
             ++counter;
             return true;
         });
@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_iteration_control) {
     BOOST_REQUIRE(ret == true);
 
     connection = ",,test, test2,,test4";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test";
         });
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = "test ,test2  ,,test4 ,  ,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test2";
         });
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",   ,  test, test2 ,test4 ,,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test4";
         });
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",   ,  test, test2 ,test4 ,,";
-    ret = header_value_all_of(connection, [&counter](string_ref value) {
+    ret = header_value_all_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test" || value == "test2";
         });
@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",   ,  test, test2 ,test4 ,,";
-    ret = header_value_all_of(connection, [&counter](string_ref /*value*/) {
+    ret = header_value_all_of(connection, [&counter](string_view /*value*/) {
                                   ++counter;
                                   return true;
         });
@@ -306,14 +306,14 @@ BOOST_AUTO_TEST_CASE(header_value_all_of_iteration_control) {
 
 BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     using boost::http::header_value_any_of;
-    using boost::string_ref;
+    using boost::string_view;
     using std::string;
     using std::vector;
 
     int counter = 0;
     string connection;
     bool ret;
-    ret = header_value_any_of(connection, [&counter](string_ref) {
+    ret = header_value_any_of(connection, [&counter](string_view) {
             ++counter;
             return true;
         });
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade,";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return true;
@@ -339,7 +339,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = ",upgrade";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -348,7 +348,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade   ,";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",    upgrade";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade,close";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-5]);
                                   ++counter;
@@ -376,7 +376,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade   ,close";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
             vector<string> v = {"upgrade", "close"};
             BOOST_REQUIRE(value == v[counter-7]);
             ++counter;
@@ -386,7 +386,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade,   close";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-9]);
                                   ++counter;
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "upgrade    ,    close";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-11]);
                                   ++counter;
@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "\tupgrade\t,,\tclose\t\t";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-13]);
                                   ++counter;
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = "\t \t upgrade\t \t \t,,\t \t \tclose \t \t";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-15]);
                                   ++counter;
@@ -426,105 +426,105 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = " ";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "\t";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "          ";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "\t\t\t\t\t\t\t\t\t\t\t";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ",";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ",,";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ",,,";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = " ,";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "   ,";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ", ";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = ",    ";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = " , ";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "   ,   ";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "   ,,   ";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == false);
 
     connection = "   ,,   ,     ,,,    ";
-    ret = header_value_any_of(connection, [](string_ref /*value*/) {
+    ret = header_value_any_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
@@ -533,7 +533,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_word_splitting_and_iteration_count) {
 
 BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
     using boost::http::header_value_any_of;
-    using boost::string_ref;
+    using boost::string_view;
     using std::string;
     using std::vector;
 
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
     string connection;
     bool ret;
 
-    ret = header_value_any_of(connection, [&counter](string_ref) {
+    ret = header_value_any_of(connection, [&counter](string_view) {
             ++counter;
             return true;
         });
@@ -549,7 +549,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",,test, test2,,test4";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test";
         });
@@ -557,7 +557,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
     BOOST_REQUIRE(ret == true);
 
     connection = "test ,test2  ,,test4 ,  ,";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test2";
         });
@@ -565,7 +565,7 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
     BOOST_REQUIRE(ret == true);
 
     connection = ",   ,  test, test2 ,test4 ,,";
-    ret = header_value_any_of(connection, [&counter](string_ref value) {
+    ret = header_value_any_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test4";
         });
@@ -575,14 +575,14 @@ BOOST_AUTO_TEST_CASE(header_value_any_of_iteration_control) {
 
 BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     using boost::http::header_value_none_of;
-    using boost::string_ref;
+    using boost::string_view;
     using std::string;
     using std::vector;
 
     int counter = 0;
     string connection;
     bool ret;
-    ret = header_value_none_of(connection, [&counter](string_ref) {
+    ret = header_value_none_of(connection, [&counter](string_view) {
             ++counter;
             return true;
         });
@@ -590,7 +590,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -599,7 +599,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade,";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return true;
@@ -608,7 +608,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",upgrade";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -617,7 +617,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade   ,";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -626,7 +626,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = ",    upgrade";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   BOOST_REQUIRE(value == "upgrade");
                                   ++counter;
                                   return false;
@@ -635,7 +635,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade,close";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-5]);
                                   ++counter;
@@ -645,7 +645,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade   ,close";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
             vector<string> v = {"upgrade", "close"};
             BOOST_REQUIRE(value == v[counter-7]);
             ++counter;
@@ -655,7 +655,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade,   close";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-9]);
                                   ++counter;
@@ -665,7 +665,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "upgrade    ,    close";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-11]);
                                   ++counter;
@@ -675,7 +675,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "\tupgrade\t,,\tclose\t\t";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-13]);
                                   ++counter;
@@ -685,7 +685,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = "\t \t upgrade\t \t \t,,\t \t \tclose \t \t";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   vector<string> v = {"upgrade", "close"};
                                   BOOST_REQUIRE(value == v[counter-15]);
                                   ++counter;
@@ -695,105 +695,105 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
     BOOST_REQUIRE(ret == true);
 
     connection = " ";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "\t";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "          ";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "\t\t\t\t\t\t\t\t\t\t\t";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",,";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",,,";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = " ,";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ", ";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = ",    ";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = " , ";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,   ";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,,   ";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
     BOOST_REQUIRE(ret == true);
 
     connection = "   ,,   ,     ,,,    ";
-    ret = header_value_none_of(connection, [](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [](string_view /*value*/) {
             BOOST_REQUIRE(false);
             return false;
         });
@@ -802,7 +802,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_word_splitting_and_iteration_count) {
 
 BOOST_AUTO_TEST_CASE(header_value_none_of_iteration_control) {
     using boost::http::header_value_none_of;
-    using boost::string_ref;
+    using boost::string_view;
     using std::string;
     using std::vector;
 
@@ -810,7 +810,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_iteration_control) {
     string connection;
     bool ret;
 
-    ret = header_value_none_of(connection, [&counter](string_ref) {
+    ret = header_value_none_of(connection, [&counter](string_view) {
             ++counter;
             return true;
         });
@@ -818,7 +818,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_iteration_control) {
     BOOST_REQUIRE(ret == true);
 
     connection = ",,test, test2,,test4";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test";
         });
@@ -826,7 +826,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = "test ,test2  ,,test4 ,  ,";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test2";
         });
@@ -834,7 +834,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",   ,  test, test2 ,test4 ,,";
-    ret = header_value_none_of(connection, [&counter](string_ref value) {
+    ret = header_value_none_of(connection, [&counter](string_view value) {
                                   ++counter;
                                   return value == "test4";
         });
@@ -842,7 +842,7 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_iteration_control) {
     BOOST_REQUIRE(ret == false);
 
     connection = ",   ,  test, test2 ,test4 ,,";
-    ret = header_value_none_of(connection, [&counter](string_ref /*value*/) {
+    ret = header_value_none_of(connection, [&counter](string_view /*value*/) {
                                   ++counter;
                                   return false;
         });
@@ -852,8 +852,8 @@ BOOST_AUTO_TEST_CASE(header_value_none_of_iteration_control) {
 
 BOOST_AUTO_TEST_CASE(header_value_for_each_case) {
     using boost::http::header_value_for_each;
-    using boost::string_ref;
-    BOOST_CHECK(header_value_for_each(string_ref("t,t2,t"), my_accumulator())
+    using boost::string_view;
+    BOOST_CHECK(header_value_for_each(string_view("t,t2,t"), my_accumulator())
                 .count == 3);
 }
 
@@ -890,25 +890,25 @@ BOOST_AUTO_TEST_CASE(request_upgrade_desired) {
 BOOST_AUTO_TEST_CASE(header_value_etag_match) {
     using boost::http::etag_match_strong;
     using boost::http::etag_match_weak;
-    using boost::string_ref;
+    using boost::string_view;
 
     // Strong comparisons
-    BOOST_CHECK(etag_match_strong(string_ref("W/\"a\""), string_ref("W/\"a\""))
+    BOOST_CHECK(etag_match_strong(string_view("W/\"a\""), string_view("W/\"a\""))
                 == false);
-    BOOST_CHECK(etag_match_strong(string_ref("W/\"a\""), string_ref("W/\"b\""))
+    BOOST_CHECK(etag_match_strong(string_view("W/\"a\""), string_view("W/\"b\""))
                 == false);
-    BOOST_CHECK(etag_match_strong(string_ref("W/\"a\""), string_ref("\"a\""))
+    BOOST_CHECK(etag_match_strong(string_view("W/\"a\""), string_view("\"a\""))
                 == false);
-    BOOST_CHECK(etag_match_strong(string_ref("\"a\""), string_ref("\"a\""))
+    BOOST_CHECK(etag_match_strong(string_view("\"a\""), string_view("\"a\""))
                 == true);
 
     // Weak comparisons
-    BOOST_CHECK(etag_match_weak(string_ref("W/\"a\""), string_ref("W/\"a\""))
+    BOOST_CHECK(etag_match_weak(string_view("W/\"a\""), string_view("W/\"a\""))
                 == true);
-    BOOST_CHECK(etag_match_weak(string_ref("W/\"a\""), string_ref("W/\"b\""))
+    BOOST_CHECK(etag_match_weak(string_view("W/\"a\""), string_view("W/\"b\""))
                 == false);
-    BOOST_CHECK(etag_match_weak(string_ref("W/\"a\""), string_ref("\"a\""))
+    BOOST_CHECK(etag_match_weak(string_view("W/\"a\""), string_view("\"a\""))
                 == true);
-    BOOST_CHECK(etag_match_weak(string_ref("\"a\""), string_ref("\"a\""))
+    BOOST_CHECK(etag_match_weak(string_view("\"a\""), string_view("\"a\""))
                 == true);
 }

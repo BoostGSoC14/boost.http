@@ -6,7 +6,7 @@
 #ifndef BOOST_HTTP_ALGORITHM_QUERY_HPP
 #define BOOST_HTTP_ALGORITHM_QUERY_HPP
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 #include <boost/http/traits.hpp>
@@ -28,7 +28,7 @@ bool request_continue_required(const Request &request)
 }
 
 template<class Request,
-         class StringRef = boost::basic_string_ref<
+         class StringView = boost::basic_string_view<
              typename Request::headers_type::mapped_type::value_type>>
 bool request_upgrade_desired(const Request &request)
 {
@@ -39,7 +39,7 @@ bool request_upgrade_desired(const Request &request)
 
     auto connection_headers = request.headers().equal_range("connection");
 
-    auto contains_upgrade = [](const StringRef &value) {
+    auto contains_upgrade = [](const StringView &value) {
         return iequals(value, "upgrade");
     };
 

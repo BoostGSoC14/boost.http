@@ -202,7 +202,7 @@ inline void request::next()
         return;
 
     asio::const_buffer rest_buf = ibuffer + idx;
-    basic_string_ref<unsigned char>
+    basic_string_view<unsigned char>
         rest_view(asio::buffer_cast<const unsigned char*>(rest_buf),
                   asio::buffer_size(rest_buf));
 
@@ -349,7 +349,7 @@ inline void request::next()
                - CONTENT_LENGTH_READ
                - CHUNKED_ENCODING_READ
                - RANDOM_ENCODING_READ */
-            string_ref field = value<token::field_name>();
+            string_view field = value<token::field_name>();
             if (iequals(field, "Host")) {
                 /* A server MUST respond with a 400 (Bad Request) status code to
                    any HTTP/1.1 request message that lacks a Host header field
@@ -457,7 +457,7 @@ inline void request::next()
             code_ = token::code::field_value;
             token_size_ = nmatched;
 
-            string_ref field = value<token::field_value>();
+            string_view field = value<token::field_value>();
             switch (body_type) {
             case READING_CONTENT_LENGTH:
                 body_type = CONTENT_LENGTH_READ;

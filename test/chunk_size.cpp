@@ -12,7 +12,7 @@ namespace syntax = http::syntax;
 typedef syntax::chunk_size<char> chunk_size;
 typedef chunk_size::result result;
 
-result from_hex_string(boost::string_ref in, uint16_t &out) {
+result from_hex_string(boost::string_view in, uint16_t &out) {
     return chunk_size::decode(in, out);
 }
 

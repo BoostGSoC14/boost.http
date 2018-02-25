@@ -42,7 +42,7 @@ struct decode_transfer_encoding_p
         , res(s.res)
     {}
 
-    bool operator()(string_ref v) const
+    bool operator()(string_view v) const
     {
         using boost::algorithm::iequals;
 
@@ -76,7 +76,7 @@ struct decode_transfer_encoding_p
     DecodeTransferEncodingResult &res;
 };
 
-inline DecodeTransferEncodingResult decode_transfer_encoding(string_ref field)
+inline DecodeTransferEncodingResult decode_transfer_encoding(string_view field)
 {
     decode_transfer_encoding_p::state p_state;
     decode_transfer_encoding_p p(p_state);

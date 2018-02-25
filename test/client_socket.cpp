@@ -20,9 +20,9 @@ void feed_with_buffer(std::size_t min_buf_size, F &&f)
     char buffer[2048];
     if (min_buf_size == 0) {
         min_buf_size = max({
-            string_ref("Host").size(),
-            string_ref("Transfer-Encoding").size(),
-            string_ref("Content-Length").size(),
+            string_view("Host").size(),
+            string_view("Transfer-Encoding").size(),
+            string_view("Content-Length").size(),
         });
     }
     for (std::size_t i = min_buf_size ; i != 2048 ; ++i) {

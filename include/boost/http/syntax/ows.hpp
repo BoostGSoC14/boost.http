@@ -7,7 +7,7 @@
 #ifndef BOOST_HTTP_SYNTAX_OWS_HPP
 #define BOOST_HTTP_SYNTAX_OWS_HPP
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/http/syntax/detail/is_ows.hpp>
 
 namespace boost {
@@ -16,7 +16,7 @@ namespace syntax {
 
 template<class CharT>
 struct ows {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     static std::size_t match(view_type view);
 };

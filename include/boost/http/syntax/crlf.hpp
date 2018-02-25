@@ -7,7 +7,7 @@
 #ifndef BOOST_HTTP_SYNTAX_CRLF_HPP
 #define BOOST_HTTP_SYNTAX_CRLF_HPP
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/core/scoped_enum.hpp>
 
 namespace boost {
@@ -16,14 +16,14 @@ namespace syntax {
 
 template<class CharT>
 struct strict_crlf {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     static std::size_t match(view_type view);
 };
 
 template<class CharT>
 struct liberal_crlf {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     BOOST_SCOPED_ENUM_DECLARE_BEGIN(result)
     {

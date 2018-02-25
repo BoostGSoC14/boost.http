@@ -7,7 +7,7 @@
 #ifndef BOOST_HTTP_SYNTAX_REASON_PHRASE_HPP
 #define BOOST_HTTP_SYNTAX_REASON_PHRASE_HPP
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/http/syntax/detail/is_ows.hpp>
 #include <boost/http/syntax/detail/is_vchar.hpp>
 #include <boost/http/syntax/detail/is_obs_text.hpp>
@@ -18,7 +18,7 @@ namespace syntax {
 
 template<class CharT>
 struct reason_phrase {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     static std::size_t match(view_type view);
 };

@@ -42,7 +42,7 @@ public:
     typedef std::size_t size_type;
     typedef const char value_type;
     typedef value_type *pointer;
-    typedef boost::string_ref view_type;
+    typedef boost::string_view view_type;
 
     response();
 

@@ -1,7 +1,7 @@
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/http/algorithm/header.hpp>
 
 template<class Target, class String>
@@ -288,136 +288,136 @@ BOOST_AUTO_TEST_CASE(rfc1123_rfc1036_asctime) {
     using boost::http::detail::rfc1123;
     using boost::http::detail::rfc1036;
     using boost::http::detail::asctime;
-    using boost::string_ref;
+    using boost::string_view;
 
     ptime datetime;
 
     // "additive" (correct inputs are correct outputs) tests
-    BOOST_REQUIRE(rfc1123(string_ref("Sun, 06 Nov 1994 08:49:37 GMT"),
+    BOOST_REQUIRE(rfc1123(string_view("Sun, 06 Nov 1994 08:49:37 GMT"),
                           datetime));
     BOOST_REQUIRE(datetime == make_datetime(1994, 11, 6, 8, 49, 37));
 
     reset(datetime);
     BOOST_REQUIRE(datetime == ptime());
 
-    BOOST_REQUIRE(rfc1036(string_ref("Sunday, 06-Nov-94 08:49:37 GMT"),
+    BOOST_REQUIRE(rfc1036(string_view("Sunday, 06-Nov-94 08:49:37 GMT"),
                           datetime));
     BOOST_REQUIRE(datetime == make_datetime(1994, 11, 6, 8, 49, 37));
 
     reset(datetime);
 
-    BOOST_REQUIRE(asctime(string_ref("Sun Nov  6 08:49:37 1994"), datetime));
+    BOOST_REQUIRE(asctime(string_view("Sun Nov  6 08:49:37 1994"), datetime));
     BOOST_REQUIRE(datetime == make_datetime(1994, 11, 6, 8, 49, 37));
 
-    BOOST_REQUIRE(rfc1123(string_ref("Tue, 01 Dec 1903 00:00:00 GMT"),
+    BOOST_REQUIRE(rfc1123(string_view("Tue, 01 Dec 1903 00:00:00 GMT"),
                           datetime));
     BOOST_REQUIRE(datetime == make_datetime(1903, 12, 1, 0, 0, 0));
 
     reset(datetime);
 
-    BOOST_REQUIRE(rfc1036(string_ref("Tuesday, 01-Dec-03 00:00:00 GMT"),
+    BOOST_REQUIRE(rfc1036(string_view("Tuesday, 01-Dec-03 00:00:00 GMT"),
                           datetime));
     BOOST_REQUIRE(datetime == make_datetime(1903, 12, 1, 0, 0, 0));
 
     reset(datetime);
 
-    BOOST_REQUIRE(asctime(string_ref("Tue Dec  1 00:00:00 1903"),
+    BOOST_REQUIRE(asctime(string_view("Tue Dec  1 00:00:00 1903"),
                           datetime));
     BOOST_REQUIRE(datetime == make_datetime(1903, 12, 1, 0, 0, 0));
 
     // "negative" (invalid input is rejected) tests
-    BOOST_CHECK(!rfc1123(string_ref(" Sun, 06 Nov 1994 08:49:37 GMT"),
+    BOOST_CHECK(!rfc1123(string_view(" Sun, 06 Nov 1994 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1123(string_ref("Sun, 06 Nov 1994 08:49:37 GMT "),
+    BOOST_CHECK(!rfc1123(string_view("Sun, 06 Nov 1994 08:49:37 GMT "),
                          datetime));
-    BOOST_CHECK(!rfc1123(string_ref("Sun, 06 Nov 0001 08:49:37 GMT"),
+    BOOST_CHECK(!rfc1123(string_view("Sun, 06 Nov 0001 08:49:37 GMT"),
                          datetime)); // boost::date range limitation
-    BOOST_CHECK(!rfc1123(string_ref("Thu, 31 Nov 1994 08:49:37 GMT"),
+    BOOST_CHECK(!rfc1123(string_view("Thu, 31 Nov 1994 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1123(string_ref("Sun, 06 Nov 1994 24:49:37 GMT"),
+    BOOST_CHECK(!rfc1123(string_view("Sun, 06 Nov 1994 24:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1123(string_ref("Sun, 06 Nov 1994 08:60:37 GMT"),
+    BOOST_CHECK(!rfc1123(string_view("Sun, 06 Nov 1994 08:60:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1123(string_ref("Sun, 06 Nov 1994 08:49:61 GMT"),
+    BOOST_CHECK(!rfc1123(string_view("Sun, 06 Nov 1994 08:49:61 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1123(string_ref("Sun, 06 Nov 1994 08:49:37 GMT"
+    BOOST_CHECK(!rfc1123(string_view("Sun, 06 Nov 1994 08:49:37 GMT"
                                     "Sun, 06 Nov 1994 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1123(string_ref("Sunday, 06-Nov-94 08:49:37 GMT"),
+    BOOST_CHECK(!rfc1123(string_view("Sunday, 06-Nov-94 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1123(string_ref("Sun Nov  6 08:49:37 1994"), datetime));
-    BOOST_CHECK(!rfc1123(string_ref("All your base are belong to us"),
+    BOOST_CHECK(!rfc1123(string_view("Sun Nov  6 08:49:37 1994"), datetime));
+    BOOST_CHECK(!rfc1123(string_view("All your base are belong to us"),
                          datetime));
 
-    BOOST_CHECK(!rfc1036(string_ref(" Sunday, 06-Nov-94 08:49:37 GMT"),
+    BOOST_CHECK(!rfc1036(string_view(" Sunday, 06-Nov-94 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1036(string_ref("Sunday, 06-Nov-94 08:49:37 GMT "),
+    BOOST_CHECK(!rfc1036(string_view("Sunday, 06-Nov-94 08:49:37 GMT "),
                          datetime));
-    BOOST_CHECK(!rfc1036(string_ref("Thursday, 31-Nov-94 08:49:37 GMT"),
+    BOOST_CHECK(!rfc1036(string_view("Thursday, 31-Nov-94 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1036(string_ref("Sunday, 06-Nov-94 24:49:37 GMT"),
+    BOOST_CHECK(!rfc1036(string_view("Sunday, 06-Nov-94 24:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1036(string_ref("Sunday, 06-Nov-94 08:60:37 GMT"),
+    BOOST_CHECK(!rfc1036(string_view("Sunday, 06-Nov-94 08:60:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1036(string_ref("Sunday, 06-Nov-94 08:49:61 GMT"),
+    BOOST_CHECK(!rfc1036(string_view("Sunday, 06-Nov-94 08:49:61 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1036(string_ref("Sunday, 06-Nov-94 08:49:37 GMT"
+    BOOST_CHECK(!rfc1036(string_view("Sunday, 06-Nov-94 08:49:37 GMT"
                                     "Sunday, 06-Nov-94 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1036(string_ref("Sun, 06 Nov 1994 08:49:37 GMT"),
+    BOOST_CHECK(!rfc1036(string_view("Sun, 06 Nov 1994 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!rfc1036(string_ref("Sun Nov  6 08:49:37 1994"), datetime));
-    BOOST_CHECK(!rfc1036(string_ref("All your base are belong to us"),
+    BOOST_CHECK(!rfc1036(string_view("Sun Nov  6 08:49:37 1994"), datetime));
+    BOOST_CHECK(!rfc1036(string_view("All your base are belong to us"),
                          datetime));
 
-    BOOST_CHECK(!asctime(string_ref(" Tue Dec  1 00:00:00 1903"),
+    BOOST_CHECK(!asctime(string_view(" Tue Dec  1 00:00:00 1903"),
                          datetime));
-    BOOST_CHECK(!asctime(string_ref("Tue Dec  1 00:00:00 1903 "),
+    BOOST_CHECK(!asctime(string_view("Tue Dec  1 00:00:00 1903 "),
                          datetime));
-    BOOST_CHECK(!asctime(string_ref("Sun Dec  1 00:00:00 0001"),
+    BOOST_CHECK(!asctime(string_view("Sun Dec  1 00:00:00 0001"),
                           datetime)); // boost::date range limitation
-    BOOST_CHECK(!asctime(string_ref("Thu Nov 31 08:49:37 1994"),
+    BOOST_CHECK(!asctime(string_view("Thu Nov 31 08:49:37 1994"),
                           datetime));
-    BOOST_CHECK(!asctime(string_ref("Tue Dec  1 24:00:00 1903"),
+    BOOST_CHECK(!asctime(string_view("Tue Dec  1 24:00:00 1903"),
                           datetime));
-    BOOST_CHECK(!asctime(string_ref("Tue Dec  1 00:60:00 1903"),
+    BOOST_CHECK(!asctime(string_view("Tue Dec  1 00:60:00 1903"),
                           datetime));
-    BOOST_CHECK(!asctime(string_ref("Tue Dec  1 00:00:61 1903"),
+    BOOST_CHECK(!asctime(string_view("Tue Dec  1 00:00:61 1903"),
                           datetime));
-    BOOST_CHECK(!asctime(string_ref("Tue Dec  1 00:00:00 1903"
+    BOOST_CHECK(!asctime(string_view("Tue Dec  1 00:00:00 1903"
                                     "Tue Dec  1 00:00:00 1903"),
                           datetime));
-    BOOST_CHECK(!asctime(string_ref("Sun, 06 Nov 1994 08:49:37 GMT"),
+    BOOST_CHECK(!asctime(string_view("Sun, 06 Nov 1994 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!asctime(string_ref("Sunday, 06-Nov-94 08:49:37 GMT"),
+    BOOST_CHECK(!asctime(string_view("Sunday, 06-Nov-94 08:49:37 GMT"),
                          datetime));
-    BOOST_CHECK(!asctime(string_ref("All your base are belong to us"),
+    BOOST_CHECK(!asctime(string_view("All your base are belong to us"),
                          datetime));
 }
 
 BOOST_AUTO_TEST_CASE(header_to_ptime_case) {
     using namespace boost::posix_time;
     using boost::http::header_to_ptime;
-    using boost::string_ref;
+    using boost::string_view;
 
     ptime datetime;
 
-    BOOST_CHECK(header_to_ptime(string_ref("Sun, 06 Nov 1994 08:49:37 GMT"))
+    BOOST_CHECK(header_to_ptime(string_view("Sun, 06 Nov 1994 08:49:37 GMT"))
                 == make_datetime(1994, 11, 6, 8, 49, 37));
 
     reset(datetime);
 
     BOOST_REQUIRE(datetime == ptime());
 
-    BOOST_CHECK(header_to_ptime(string_ref("Sunday, 06-Nov-94 08:49:37 GMT"))
+    BOOST_CHECK(header_to_ptime(string_view("Sunday, 06-Nov-94 08:49:37 GMT"))
                 == make_datetime(1994, 11, 6, 8, 49, 37));
 
     reset(datetime);
 
-    BOOST_CHECK(header_to_ptime(string_ref("Sun Nov  6 08:49:37 1994"))
+    BOOST_CHECK(header_to_ptime(string_view("Sun Nov  6 08:49:37 1994"))
                 == make_datetime(1994, 11, 6, 8, 49, 37));
 
-    BOOST_CHECK(header_to_ptime(string_ref("All your base are belong to us"))
+    BOOST_CHECK(header_to_ptime(string_view("All your base are belong to us"))
                 .is_not_a_date_time());
 }
 

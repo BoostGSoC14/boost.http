@@ -88,7 +88,7 @@ int response::value<token::version>() const
 }
 
 template<>
-string_ref response::value<token::reason_phrase>() const
+string_view response::value<token::reason_phrase>() const
 {
     assert(code_ == token::reason_phrase::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -254,7 +254,7 @@ inline void response::next()
     }
 
     asio::const_buffer rest_buf = ibuffer + idx;
-    basic_string_ref<unsigned char>
+    basic_string_view<unsigned char>
         rest_view(asio::buffer_cast<const unsigned char*>(rest_buf),
                   asio::buffer_size(rest_buf));
 
@@ -412,7 +412,7 @@ inline void response::next()
                - CONTENT_LENGTH_READ
                - CHUNKED_ENCODING_READ
                - RANDOM_ENCODING_READ */
-            string_ref field = value<token::field_name>();
+            string_view field = value<token::field_name>();
             if (body_type == FORCE_NO_BODY
                 || body_type == FORCE_NO_BODY_AND_STOP) {
                 // Ignore field
@@ -506,7 +506,7 @@ inline void response::next()
             code_ = token::code::field_value;
             token_size_ = nmatched;
 
-            string_ref field = value<token::field_value>();
+            string_view field = value<token::field_value>();
             switch (body_type) {
             case READING_CONTENT_LENGTH:
                 body_type = CONTENT_LENGTH_READ;

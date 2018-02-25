@@ -8,8 +8,8 @@
 
 [source,cpp]
 ----
-template<class StringRef, class Predicate>
-bool header_value_all_of(const StringRef &header_value, const Predicate &p)
+template<class StringView, class Predicate>
+bool header_value_all_of(const StringView &header_value, const Predicate &p)
 ----
 
 Checks if unary predicate _p_ returns `true` for all elements from the
@@ -21,10 +21,10 @@ character than optional white space (i.e. `'\x20'` or `'\t'`).
 
 ===== Template parameters
 
-`StringRef`::
+`StringView`::
 
-  It MUST fulfill the requirements of the `StringRef` concept
-  (i.e. `boost::basic_string_ref`).
+  It MUST fulfill the requirements of the `StringView` concept
+  (i.e. `boost::basic_string_view`).
 
 `Predicate`::
 
@@ -32,12 +32,12 @@ character than optional white space (i.e. `'\x20'` or `'\t'`).
 +
 [source,cpp]
 ----
-bool(StringRef)
+bool(StringView)
 ----
 
 ===== Parameters
 
-`const StringRef &header_value`::
+`const StringView &header_value`::
 
   The HTTP field value.
 

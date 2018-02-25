@@ -37,7 +37,7 @@ If you want to reuse the same reader object to parse another stream, just call
 
   Pointer-to-value type.
 
-`typedef boost::string_ref view_type`::
+`typedef boost::string_view view_type`::
 
   Type used to refer to non-owning string slices.
 

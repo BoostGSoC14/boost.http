@@ -20,7 +20,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/http/buffered_socket.hpp>

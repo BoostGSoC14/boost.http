@@ -12,7 +12,7 @@ namespace syntax = http::syntax;
 typedef syntax::content_length<char> content_length;
 typedef content_length::result result;
 
-result from_decimal_string(boost::string_ref in, uint8_t &out) {
+result from_decimal_string(boost::string_view in, uint8_t &out) {
     return content_length::decode(in, out);
 }
 

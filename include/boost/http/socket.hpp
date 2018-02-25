@@ -20,7 +20,7 @@
 
 #include <boost/none.hpp>
 #include <boost/variant.hpp>
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/container/small_vector.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>

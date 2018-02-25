@@ -15,7 +15,7 @@
 #include <boost/asio/async_result.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/algorithm/string/find_iterator.hpp>
 #include <boost/algorithm/string/finder.hpp>
 #include <boost/algorithm/cxx14/equal.hpp>
@@ -162,8 +162,8 @@ bool is_valid_range(const String &value, std::uintmax_t file_size,
                     &range_set)
 {
     typedef typename String::value_type CharT;
-    typedef basic_string_ref<CharT> string_ref_type;
-    typedef std::basic_regex<typename string_ref_type::value_type> regex_type;
+    typedef basic_string_view<CharT> string_view_type;
+    typedef std::basic_regex<typename string_view_type::value_type> regex_type;
 
     assert(file_size);
 
@@ -176,14 +176,14 @@ bool is_valid_range(const String &value, std::uintmax_t file_size,
     if (!std::equal(prefix, prefix + prefix_size, value.begin()))
         return false;
 
-    string_ref_type range_set_value(value);
+    string_view_type range_set_value(value);
     range_set_value.remove_prefix(prefix_size);
 
     /* accumulates ranges into range_set
 
        returns true if range is invalid */
-    auto fail = [&range_set,file_size](const string_ref_type &value) {
-        typedef std::match_results<typename string_ref_type::const_iterator>
+    auto fail = [&range_set,file_size](const string_view_type &value) {
+        typedef std::match_results<typename string_view_type::const_iterator>
         match_results_type;
         typedef typename match_results_type::value_type sub_match_type;
 
@@ -940,10 +940,10 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
 
     typedef typename Request::headers_type::value_type headers_value_type;
     typedef typename Request::headers_type::mapped_type::value_type ReqCharT;
-    typedef basic_string_ref<ReqCharT> req_string_ref_type;
+    typedef basic_string_view<ReqCharT> req_string_view_type;
     typedef typename Response::headers_type::mapped_type String;
     typedef typename String::value_type ResCharT;
-    typedef basic_string_ref<ResCharT> res_string_ref_type;
+    typedef basic_string_view<ResCharT> res_string_view_type;
     typedef typename Response::body_type::value_type body_value_type;
     typedef typename asio::handler_type<
         CompletionToken, void(system::error_code)>::type Handler;
@@ -991,31 +991,31 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
         auto etag = [](const typename Response::headers_type &headers) {
             auto header = headers.equal_range("etag");
             if (std::distance(header.first, header.second) != 1)
-                return std::make_pair(res_string_ref_type{}, false);
+                return std::make_pair(res_string_view_type{}, false);
 
             auto &value = header.first->second;
             if (value.size() < 2 || value.back() != '"')
-                return std::make_pair(res_string_ref_type{}, false);
+                return std::make_pair(res_string_view_type{}, false);
 
             if (value.front() == '"') {
-                return std::make_pair(res_string_ref_type{&value[1],
+                return std::make_pair(res_string_view_type{&value[1],
                                                       value.size() - 2},
                                       true);
             } else if (value.size() > 2 && (value[0] == 'W' && value[1] == '/'
                                             && value[2] == '"')) {
-                return std::make_pair(res_string_ref_type{&value[3],
+                return std::make_pair(res_string_view_type{&value[3],
                                                       value.size() - 4},
                                       false);
             }
 
-            return std::make_pair(res_string_ref_type{}, false);
+            return std::make_pair(res_string_view_type{}, false);
         };
 
-        auto etag_value = [](const std::pair<res_string_ref_type, bool> &etag) {
+        auto etag_value = [](const std::pair<res_string_view_type, bool> &etag) {
             return etag.first;
         };
 
-        auto etag_is_strong = [](const std::pair<res_string_ref_type, bool>
+        auto etag_is_strong = [](const std::pair<res_string_view_type, bool>
                                  &etag) {
             return etag.second;
         };
@@ -1050,7 +1050,7 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
 
             auto none_of_predicate = [&current_etag_value]
                 (const headers_value_type &v) {
-                auto p = [&current_etag_value](const req_string_ref_type &v) {
+                auto p = [&current_etag_value](const req_string_view_type &v) {
                     auto &c = current_etag_value;
                     return v == "*" || etag_match_strong(c, v);
                 };
@@ -1093,7 +1093,7 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
 
             auto any_of_predicate = [&current_etag_value]
                 (const headers_value_type &v) {
-                auto p = [&current_etag_value](const req_string_ref_type &v) {
+                auto p = [&current_etag_value](const req_string_view_type &v) {
                     auto &c = current_etag_value;
                     return v == "*" || etag_match_weak(c, v);
                 };
@@ -1216,7 +1216,7 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                 return result.get();
             } else {
                 // range_set.size() > 1
-                // TODO: use string_ref?
+                // TODO: use string_view?
                 String content_type;
                 {
                     auto h = omessage.headers().equal_range("content-type");

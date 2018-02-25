@@ -7,7 +7,7 @@
 #ifndef BOOST_HTTP_TOKEN_HPP
 #define BOOST_HTTP_TOKEN_HPP
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/cstdint.hpp>
 
@@ -103,13 +103,13 @@ struct skip
 
 struct field_name
 {
-    typedef boost::string_ref type;
+    typedef boost::string_view type;
     static const token::code::value code = token::code::field_name;
 };
 
 struct field_value
 {
-    typedef boost::string_ref type;
+    typedef boost::string_view type;
     static const token::code::value code = token::code::field_value;
 };
 
@@ -121,13 +121,13 @@ struct body_chunk
 
 struct trailer_name
 {
-    typedef boost::string_ref type;
+    typedef boost::string_view type;
     static const token::code::value code = token::code::trailer_name;
 };
 
 struct trailer_value
 {
-    typedef boost::string_ref type;
+    typedef boost::string_view type;
     static const token::code::value code = token::code::trailer_value;
 };
 
@@ -148,13 +148,13 @@ struct end_of_message
 
 struct method
 {
-    typedef boost::string_ref type;
+    typedef boost::string_view type;
     static const token::code::value code = token::code::method;
 };
 
 struct request_target
 {
-    typedef boost::string_ref type;
+    typedef boost::string_view type;
     static const token::code::value code = token::code::request_target;
 };
 
@@ -172,7 +172,7 @@ struct status_code
 
 struct reason_phrase
 {
-    typedef boost::string_ref type;
+    typedef boost::string_view type;
     static const token::code::value code = token::code::reason_phrase;
 };
 

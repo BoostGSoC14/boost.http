@@ -113,8 +113,8 @@ Target from_submatch_to_month(std::sub_match<BidirIt> m)
     }
 }
 
-template<class StringRef>
-bool rfc1123(const StringRef &value, posix_time::ptime &datetime)
+template<class StringView>
+bool rfc1123(const StringView &value, posix_time::ptime &datetime)
 {
     using namespace gregorian;
     using namespace posix_time;
@@ -126,7 +126,7 @@ bool rfc1123(const StringRef &value, posix_time::ptime &datetime)
     typedef time_duration::min_type min_type;
     typedef time_duration::sec_type sec_type;
 
-    static const std::basic_regex<typename StringRef::value_type>
+    static const std::basic_regex<typename StringView::value_type>
         regex("(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), " // day
               "(\\d{2}) " // day-1
               "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) " // month-2
@@ -136,7 +136,7 @@ bool rfc1123(const StringRef &value, posix_time::ptime &datetime)
               "(\\d{2}) " // seconds-6
               "GMT");
 
-    std::match_results<typename StringRef::const_iterator> matches;
+    std::match_results<typename StringView::const_iterator> matches;
     if (!std::regex_match(value.begin(), value.end(), matches, regex))
         return false;
 
@@ -159,8 +159,8 @@ bool rfc1123(const StringRef &value, posix_time::ptime &datetime)
     return true;
 }
 
-template<class StringRef>
-bool rfc1036(const StringRef &value, posix_time::ptime &datetime)
+template<class StringView>
+bool rfc1036(const StringView &value, posix_time::ptime &datetime)
 {
     using namespace gregorian;
     using namespace posix_time;
@@ -172,7 +172,7 @@ bool rfc1036(const StringRef &value, posix_time::ptime &datetime)
     typedef time_duration::min_type min_type;
     typedef time_duration::sec_type sec_type;
 
-    static const std::basic_regex<typename StringRef::value_type>
+    static const std::basic_regex<typename StringView::value_type>
         regex("(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), " // day
               "(\\d{2})-" // day-1
               "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-" // month-2
@@ -182,7 +182,7 @@ bool rfc1036(const StringRef &value, posix_time::ptime &datetime)
               "(\\d{2}) " // seconds-6
               "GMT");
 
-    std::match_results<typename StringRef::const_iterator> matches;
+    std::match_results<typename StringView::const_iterator> matches;
     if (!std::regex_match(value.begin(), value.end(), matches, regex))
         return false;
 
@@ -206,8 +206,8 @@ bool rfc1036(const StringRef &value, posix_time::ptime &datetime)
     return true;
 }
 
-template<class StringRef>
-bool asctime(const StringRef &value, posix_time::ptime &datetime)
+template<class StringView>
+bool asctime(const StringView &value, posix_time::ptime &datetime)
 {
     using namespace gregorian;
     using namespace posix_time;
@@ -219,7 +219,7 @@ bool asctime(const StringRef &value, posix_time::ptime &datetime)
     typedef time_duration::min_type min_type;
     typedef time_duration::sec_type sec_type;
 
-    static const std::basic_regex<typename StringRef::value_type>
+    static const std::basic_regex<typename StringView::value_type>
         regex("(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) " // day
               "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) " // month-1
               "((?:\\d| )\\d) " // day-2
@@ -229,7 +229,7 @@ bool asctime(const StringRef &value, posix_time::ptime &datetime)
               "(\\d{4})" // year-6
               );
 
-    std::match_results<typename StringRef::const_iterator> matches;
+    std::match_results<typename StringView::const_iterator> matches;
     if (!std::regex_match(value.begin(), value.end(), matches, regex))
         return false;
 
@@ -270,8 +270,8 @@ void append_number(String &string, Unsigned value)
 
 } // namespace detail
 
-template<class StringRef>
-posix_time::ptime header_to_ptime(const StringRef &value)
+template<class StringView>
+posix_time::ptime header_to_ptime(const StringView &value)
 {
     using namespace gregorian;
     using namespace posix_time;
@@ -346,11 +346,11 @@ String to_http_date(const posix_time::ptime &datetime)
     return ret;
 }
 
-template<class StringRef, class Predicate>
-bool header_value_all_of(const StringRef &header_value, const Predicate &p)
+template<class StringView, class Predicate>
+bool header_value_all_of(const StringView &header_value, const Predicate &p)
 {
-    typedef typename StringRef::value_type char_type;
-    typedef typename StringRef::const_reverse_iterator reverse_iterator;
+    typedef typename StringView::value_type char_type;
+    typedef typename StringView::const_reverse_iterator reverse_iterator;
 
     auto isspace = [](const char_type &c) {
         return c == ' ' || c == '\t';
@@ -384,26 +384,26 @@ bool header_value_all_of(const StringRef &header_value, const Predicate &p)
     return true;
 }
 
-template<class StringRef, class Predicate>
-bool header_value_none_of(const StringRef &header_value, const Predicate &p)
+template<class StringView, class Predicate>
+bool header_value_none_of(const StringView &header_value, const Predicate &p)
 {
-    return header_value_all_of(header_value, [&p](const StringRef &s) {
+    return header_value_all_of(header_value, [&p](const StringView &s) {
             return !p(s);
         });
 }
 
-template<class StringRef, class F>
-F header_value_for_each(const StringRef &header_value, F f)
+template<class StringView, class F>
+F header_value_for_each(const StringView &header_value, F f)
 {
-    header_value_any_of(header_value, [&f](const StringRef &v) {
+    header_value_any_of(header_value, [&f](const StringView &v) {
             f(v);
             return false;
         });
     return std::move(f);
 }
 
-template<class StringRef>
-bool etag_match_strong(const StringRef &a, const StringRef &b)
+template<class StringView>
+bool etag_match_strong(const StringView &a, const StringView &b)
 {
     if ((a.size() && a[0] == 'W') || (b.size() && b[0] == 'W'))
         return false;
@@ -411,8 +411,8 @@ bool etag_match_strong(const StringRef &a, const StringRef &b)
     return a == b;
 }
 
-template<class StringRef>
-bool etag_match_weak(const StringRef &a, const StringRef &b)
+template<class StringView>
+bool etag_match_weak(const StringView &a, const StringView &b)
 {
     bool a_is_weak = a.size() > 2 && a[0] == 'W';
     bool b_is_weak = b.size() > 2 && b[0] == 'W';

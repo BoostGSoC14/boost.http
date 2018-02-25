@@ -7,7 +7,7 @@
 #ifndef BOOST_HTTP_SYNTAX_STATUS_CODE_HPP
 #define BOOST_HTTP_SYNTAX_STATUS_CODE_HPP
 
-#include <boost/utility/string_ref.hpp>
+#include <boost/utility/string_view.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/http/syntax/detail/is_digit.hpp>
 #include <cassert>
@@ -18,7 +18,7 @@ namespace syntax {
 
 template<class CharT>
 struct status_code {
-    typedef basic_string_ref<CharT> view_type;
+    typedef basic_string_view<CharT> view_type;
 
     static std::size_t match(view_type view);
 

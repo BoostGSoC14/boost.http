@@ -8,8 +8,8 @@
 
 [source,cpp]
 ----
-template<class StringRef>
-boost::posix_time::ptime header_to_ptime(const StringRef &value)
+template<class StringView>
+boost::posix_time::ptime header_to_ptime(const StringView &value)
 ----
 
 Converts an _HTTP-date_ footnote:[Defined in RFC 7231, section 7.1.1.1.] field
@@ -21,14 +21,14 @@ intentional.
 
 ===== Template parameters
 
-`StringRef`::
+`StringView`::
 
-  It MUST fulfill the requirements of the `StringRef` concept
-  (i.e. `boost::basic_string_ref`).
+  It MUST fulfill the requirements of the `StringView` concept
+  (i.e. `boost::basic_string_view`).
 
 ===== Paremeters
 
-`const StringRef &value`::
+`const StringView &value`::
 
   An _HTTP-date_.
 

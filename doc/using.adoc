@@ -12,8 +12,8 @@ The full list of dependencies is:
 
 * CMake 3.1.0 or newer footnote:[for tests]. You can skip this requirement if
   you don't intend to run the tests.
-* Boost 1.57 or newer.
-** algorithm, container, string_ref, ASIO, date_time and system footnote:[Used
+* Boost 1.61 or newer.
+** algorithm, container, string_view, ASIO, date_time and system footnote:[Used
    in the core library.].
 ** unit_test_framework footnote:[For tests.].
 ** context and coroutine footnote:[For the examples and tests.].

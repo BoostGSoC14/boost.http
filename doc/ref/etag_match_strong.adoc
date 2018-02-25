@@ -8,8 +8,8 @@
 
 [source,cpp]
 ----
-template<class StringRef>
-bool etag_match_strong(const StringRef &a, const StringRef &b)
+template<class StringView>
+bool etag_match_strong(const StringView &a, const StringView &b)
 ----
 
 Check if _a_ and _b_ match.
@@ -24,18 +24,18 @@ Builtin validation is only done enough to protect against attacks.
 
 ===== Template parameters
 
-`StringRef`::
+`StringView`::
 
-  It MUST fulfill the requirements of the `StringRef` concept
-  (i.e. `boost::basic_string_ref`).
+  It MUST fulfill the requirements of the `StringView` concept
+  (i.e. `boost::basic_string_view`).
 
 ===== Parameters
 
-`const StringRef &a`::
+`const StringView &a`::
 
   The entity tag to compare against _b_.
 
-`const StringRef &b`::
+`const StringView &b`::
 
   The entity tag to compare against _a_.
 

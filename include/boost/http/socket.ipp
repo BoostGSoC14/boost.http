@@ -6,13 +6,13 @@ namespace detail {
 template <class Headers>
 bool has_connection_close(const Headers &headers)
 {
-    typedef basic_string_ref<typename Headers::mapped_type::value_type>
-        string_ref_type;
+    typedef basic_string_view<typename Headers::mapped_type::value_type>
+        string_view_type;
 
     auto range = headers.equal_range("connection");
     for (; range.first != range.second ; ++range.first) {
         if (header_value_any_of((*range.first).second,
-                                [](const string_ref_type &v) {
+                                [](const string_view_type &v) {
                                     return iequals(v, "close");
                                 })) {
             return true;
@@ -494,7 +494,7 @@ basic_socket<Socket, Settings>
 
     std::size_t size =
         // Request line
-        method.size() + 1 + target.size() + string_ref(" HTTP/1.x\r\n").size()
+        method.size() + 1 + target.size() + string_view(" HTTP/1.x\r\n").size()
         // Headers are computed later
         + 0
         // Final CRLF
@@ -514,7 +514,7 @@ basic_socket<Socket, Settings>
     if (request.body().size()) {
         content_length_ndigits
             = detail::count_decdigits(request.body().size());
-        size += string_ref("content-length: \r\n").size()
+        size += string_view("content-length: \r\n").size()
             + content_length_ndigits;
     }
 
@@ -538,7 +538,7 @@ basic_socket<Socket, Settings>
     idx += target.size();
 
     {
-        string_ref x;
+        string_view x;
 
         if (modern_http)
             x = " HTTP/1.1\r\n";
@@ -550,7 +550,7 @@ basic_socket<Socket, Settings>
     }
 
     if (request.body().size()) {
-        string_ref x("content-length: ");
+        string_view x("content-length: ");
         std::memcpy(buf + idx, x.data(), x.size());
         idx += x.size();
 
@@ -665,9 +665,9 @@ basic_socket<Socket, Settings>
 
     std::size_t size =
         // Request line
-        method.size() + 1 + target.size() + string_ref(" HTTP/1.1\r\n").size()
+        method.size() + 1 + target.size() + string_view(" HTTP/1.1\r\n").size()
         // "transfer-encoding" header
-        + string_ref("transfer-encoding: chunked\r\n").size()
+        + string_view("transfer-encoding: chunked\r\n").size()
         // Headers are computed later
         + 0
         // Final CRLF
@@ -702,7 +702,7 @@ basic_socket<Socket, Settings>
     idx += target.size();
 
     {
-        string_ref x = " HTTP/1.1\r\n" "transfer-encoding: chunked\r\n";
+        string_view x = " HTTP/1.1\r\n" "transfer-encoding: chunked\r\n";
         std::memcpy(buf + idx, x.data(), x.size());
         idx += x.size();
     }
@@ -1050,7 +1050,7 @@ namespace detail {
 
 template<bool server_mode, class Message, class Parser>
 typename std::enable_if<!is_request_message<Message>::value || !server_mode,
-                        boost::string_ref>::type
+                        boost::string_view>::type
 fill_method(Message &request, const Parser &parser)
 {
     return ""; //< no-op
@@ -1058,7 +1058,7 @@ fill_method(Message &request, const Parser &parser)
 
 template<bool server_mode, class Request, class Parser>
 typename std::enable_if<is_request_message<Request>::value && server_mode,
-                        boost::string_ref>::type
+                        boost::string_view>::type
 fill_method(Request &request, const Parser &parser)
 {
     auto value = parser.template value<token::method>();
@@ -1084,7 +1084,7 @@ template<bool server_mode, class Message, class Parser>
 typename std::enable_if<!is_response_message<Message>::value || server_mode,
                         std::uint_least16_t>
 ::type
-fill_status_code(Message&, Parser&, boost::string_ref)
+fill_status_code(Message&, Parser&, boost::string_view)
 {
     // no-op
     return 0;
@@ -1095,7 +1095,7 @@ typename std::enable_if<is_response_message<Response>::value && !server_mode,
                         std::uint_least16_t>
 ::type
 fill_status_code(Response &response, Parser &parser,
-                 boost::string_ref sent_method)
+                 boost::string_view sent_method)
 {
     auto value = parser.template value<token::status_code>();
     response.status_code() = value;
@@ -1314,7 +1314,7 @@ void basic_socket<Socket, Settings>
             break;
         case token::code::status_code:
             {
-                boost::string_ref sent_method;
+                boost::string_view sent_method;
                 if (sent_requests.size() == 0) {
                     clear_buffer();
                     handler(http_errc::parsing_error);
@@ -1398,7 +1398,7 @@ void basic_socket<Socket, Settings>
                         switch (keep_alive) {
                         case KEEP_ALIVE_UNKNOWN:
                         case KEEP_ALIVE_KEEP_ALIVE_READ:
-                            header_value_any_of(value, [&](string_ref v) {
+                            header_value_any_of(value, [&](string_view v) {
                                     if (iequals(v, "close")) {
                                         keep_alive = KEEP_ALIVE_CLOSE_READ;
                                         return true;
