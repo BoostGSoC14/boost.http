@@ -13,7 +13,7 @@ response::response()
 {}
 
 template<>
-uint_least16_t response::value<token::status_code>() const
+inline uint_least16_t response::value<token::status_code>() const
 {
     assert(code_ == token::status_code::code);
     view_type view(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
@@ -81,14 +81,14 @@ response::size_type response::token_size() const
 }
 
 template<>
-int response::value<token::version>() const
+inline int response::value<token::version>() const
 {
     assert(code_ == token::version::code);
     return *(asio::buffer_cast<const char*>(ibuffer) + idx) - '0';
 }
 
 template<>
-string_ref response::value<token::reason_phrase>() const
+inline string_ref response::value<token::reason_phrase>() const
 {
     assert(code_ == token::reason_phrase::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -96,7 +96,7 @@ string_ref response::value<token::reason_phrase>() const
 }
 
 template<>
-response::view_type response::value<token::field_name>() const
+inline response::view_type response::value<token::field_name>() const
 {
     // It accepts “implicit conversion” from `trailer_name`
     assert(code_ == token::field_name::code
@@ -106,7 +106,7 @@ response::view_type response::value<token::field_name>() const
 }
 
 template<>
-response::view_type response::value<token::field_value>() const
+inline response::view_type response::value<token::field_value>() const
 {
     // It accepts “implicit conversion” from `trailer_value`
     assert(code_ == token::field_value::code
@@ -116,14 +116,14 @@ response::view_type response::value<token::field_value>() const
 }
 
 template<>
-asio::const_buffer response::value<token::body_chunk>() const
+inline asio::const_buffer response::value<token::body_chunk>() const
 {
     assert(code_ == token::body_chunk::code);
     return asio::buffer(ibuffer + idx, token_size_);
 }
 
 template<>
-response::view_type response::value<token::trailer_name>() const
+inline response::view_type response::value<token::trailer_name>() const
 {
     assert(code_ == token::trailer_name::code);
     return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
@@ -131,7 +131,7 @@ response::view_type response::value<token::trailer_name>() const
 }
 
 template<>
-response::view_type response::value<token::trailer_value>() const
+inline response::view_type response::value<token::trailer_value>() const
 {
     assert(code_ == token::trailer_value::code);
     view_type raw(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
