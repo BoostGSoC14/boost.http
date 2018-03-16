@@ -93,7 +93,7 @@ asio::const_buffer request::value<token::body_chunk>() const
 }
 
 template<>
-request::view_type request::value<token::trailer_name>() const
+inline request::view_type request::value<token::trailer_name>() const
 {
     assert(code_ == token::trailer_name::code);
     return view_type(static_cast<const char*>(ibuffer.data()) + idx,
@@ -101,7 +101,7 @@ request::view_type request::value<token::trailer_name>() const
 }
 
 template<>
-request::view_type request::value<token::trailer_value>() const
+inline request::view_type request::value<token::trailer_value>() const
 {
     assert(code_ == token::trailer_value::code);
     view_type raw(static_cast<const char*>(ibuffer.data()) + idx, token_size_);
