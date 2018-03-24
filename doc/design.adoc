@@ -154,12 +154,11 @@ it is easier to replace the communication channel later. You could easily use an
 unprotected embedded HTTP server on development environment to tests and replace
 it in favor of a full-blow solution during production.
 
-Boost.Http defines some type requirements to abstract communication channels and
-provide some polymorphic adapters who will type erase them. The abstraction was
-specified carefully to allow robust applications. Your application will not hang
-trying to live stream a video because the request was done from an `HTTP/1.0`
-client. Also, your handler won't know what HTTP version (if any) the HTTP
-request was made with.
+Boost.Http defines some type requirements to abstract communication channels.
+The abstraction was specified carefully to allow robust applications. Your
+application will not hang trying to live stream a video because the request was
+done from an `HTTP/1.0` client. Also, your handler won't know what HTTP version
+(if any) the HTTP request was made with.
 
 Also among the wanted features was to retain the usefulness of the library
 whether you're using it to power an application intended to run from an low-end
@@ -431,11 +430,6 @@ elements with equivalent keys as if there was a single header where the values
 are joined with commas. Some old headers don't work with this approach and their
 values, when multiple elements with equivalent keys are present, must be stored
 separately. The order matters, just as the {cpp11} definition of multimap.
-
-Runtime-based polymorphic behaviour isn't used by default, because not all
-projects are willing to pay for this price. Well defined type requirements are
-provided and some polymorphic adaptors will convert models of these type
-requirements to classes inheriting a single specific abstract base class.
 
 Member-functions as opposed to member-variables are used in HTTP messages,
 because some setup (e.g. a proxy who doesn't want to reformat the messages) may

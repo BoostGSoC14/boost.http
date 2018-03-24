@@ -222,9 +222,6 @@ boost::asio::async_result<
 
 * <<basic_socket,`basic_socket`>>
 * <<basic_buffered_socket,`basic_buffered_socket`>>
-* <<polymorphic_socket_base,`polymorphic_socket_base`>>
-* <<polymorphic_server_socket,`polymorphic_server_socket`>>
-* <<server_socket_adaptor,`server_socket_adaptor`>>
 
 ===== See also
 

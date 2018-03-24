@@ -94,8 +94,7 @@ Boost.Http also provides a couple of special-purpose server classes:
 ** Stateless abstractions, relying on OS capabilities to provide cache.
 
 Boost.Http has been designed for multiple backends, such HTTP/2, and FastGCI,
-which can be added in the future. You can choose between compile-time and
-runtime polymorphism. Adapters are provided.
+which can be added in the future.
 
 include::using.adoc[]
 

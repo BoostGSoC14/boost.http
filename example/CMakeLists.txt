@@ -25,8 +25,6 @@ set(examples
   "regex_router"
   "basic_router"
   "spawn-chunked"
-  "spawn-with-runtime"
-  "spawn-with-runtime2"
   "spawn-fileserver"
   "spawn-fileserver2"
   "spawn-settings"

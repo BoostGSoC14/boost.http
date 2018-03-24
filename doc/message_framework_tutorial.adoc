@@ -262,28 +262,3 @@ to respond the request:
 . `async_write_response_metadata` once.
 . `async_write` zero or more times.
 . `async_write_trailers` or `async_write_end_of_message`, once.
-
-==== Runtime-based polymorphic abstractions
-
-If you want to create a function that will handle requests originated from
-different HTTP backends, you have three choices:
-
-* Rewrite the handler for every HTTP backend.
-* Write generic handlers.
-* Type-erase the HTTP backends.
-
-Boost.Http provide some abstractions to type erase the HTTP backends (playing a
-similar role to `std::function`). The starting point to learn about it is the
-<<server_socket_adaptor,`server_socket_adaptor` page>>.
-
-[source,cpp]
-----
-void handler(http::polymorphic_server_socket &socket)
-{
-    // ...
-}
-
-http::server_socket_adaptor<http::buffered_socket>
-    socket(acceptor.get_io_service());
-handler(socket);
-----

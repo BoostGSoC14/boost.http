@@ -85,7 +85,3 @@ the same applies to `Response::body_type`. Also, if `const` is applied to
 `const headers_type &trailers() const`::
 
   Returns the wrapped trailers object.
-
-===== See also
-
-* <<polymorphic_socket_base,`polymorphic_socket_base`>>

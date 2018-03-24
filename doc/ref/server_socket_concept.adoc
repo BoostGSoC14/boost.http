@@ -292,5 +292,3 @@ defined in the section 3.3.2 of the RFC 7230.
 
 * <<basic_socket,`basic_socket`>>
 * <<basic_buffered_socket,`basic_buffered_socket`>>
-* <<polymorphic_server_socket,`polymorphic_server_socket`>>
-* <<server_socket_adaptor,`server_socket_adaptor`>>
