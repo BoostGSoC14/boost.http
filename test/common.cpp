@@ -9,8 +9,8 @@ namespace asio = boost::asio;
 
 TEST_CASE("Utility test functions", "[misc]")
 {
-    CHECK(asio::buffer_size(my_buffer("")) == 0);
-    CHECK(asio::buffer_size(my_buffer("Nu")) == 2);
+    CHECK(my_buffer("").size() == 0);
+    CHECK(my_buffer("Nu").size() == 2);
 
     {
         std::vector<char> buf(10, 'c');
