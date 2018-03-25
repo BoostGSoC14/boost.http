@@ -390,9 +390,9 @@ my_token::value make_trailer_value(const char (&value)[N])
 my_token::value make_body_chunk(asio::const_buffer value)
 {
     my_token::body_chunk t;
-    t.value.resize(asio::buffer_size(value));
-    for (std::size_t i = 0 ; i != asio::buffer_size(value) ; ++i) {
-        t.value[i] = asio::buffer_cast<const boost::uint8_t*>(value)[i];
+    t.value.resize(value.size());
+    for (std::size_t i = 0 ; i != value.size() ; ++i) {
+        t.value[i] = static_cast<const boost::uint8_t*>(value.data())[i];
     }
     return t;
 }
@@ -528,9 +528,8 @@ void my_tester(const char (&input)[N],
 
                     if (v) {
                         auto body
-                            = asio::buffer_cast<const boost::uint8_t*>(value);
-                        for (std::size_t i = 0 ; i != asio::buffer_size(value)
-                                 ; ++i) {
+                            = static_cast<const boost::uint8_t*>(value.data());
+                        for (std::size_t i = 0 ; i != value.size() ; ++i) {
                             auto e = body[i];
                             v->value.push_back(e);
                         }

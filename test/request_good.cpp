@@ -264,9 +264,9 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
     REQUIRE(parser.token_size() == 4);
     {
         asio::const_buffer buf = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(buf) == 4);
+        REQUIRE(buf.size() == 4);
 
-        const char *body = asio::buffer_cast<const char*>(buf);
+        const char *body = static_cast<const char*>(buf.data());
         REQUIRE(body[0] == 'p');
         REQUIRE(body[1] == 'i');
         REQUIRE(body[2] == 'n');
@@ -430,9 +430,9 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
     REQUIRE(parser.token_size() == 4);
     {
         asio::const_buffer buf = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(buf) == 4);
+        REQUIRE(buf.size() == 4);
 
-        const char *body = asio::buffer_cast<const char*>(buf);
+        const char *body = static_cast<const char*>(buf.data());
         REQUIRE(body[0] == 'W');
         REQUIRE(body[1] == 'i');
         REQUIRE(body[2] == 'k');
@@ -464,9 +464,9 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
     REQUIRE(parser.token_size() == 5);
     {
         asio::const_buffer buf = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(buf) == 5);
+        REQUIRE(buf.size() == 5);
 
-        const char *body = asio::buffer_cast<const char*>(buf);
+        const char *body = static_cast<const char*>(buf.data());
         REQUIRE(body[0] == 'p');
         REQUIRE(body[1] == 'e');
         REQUIRE(body[2] == 'd');
@@ -499,9 +499,9 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
     REQUIRE(parser.token_size() == 14);
     {
         asio::const_buffer buf = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(buf) == 14);
+        REQUIRE(buf.size() == 14);
 
-        const char *body = asio::buffer_cast<const char*>(buf);
+        const char *body = static_cast<const char*>(buf.data());
         REQUIRE(body[0] == ' ');
         REQUIRE(body[1] == 'i');
         REQUIRE(body[2] == 'n');
@@ -687,9 +687,9 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
     REQUIRE(parser.token_size() == 4);
     {
         asio::const_buffer buf = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(buf) == 4);
+        REQUIRE(buf.size() == 4);
 
-        const char *body = asio::buffer_cast<const char*>(buf);
+        const char *body = static_cast<const char*>(buf.data());
         REQUIRE(body[0] == 'W');
         REQUIRE(body[1] == 'i');
         REQUIRE(body[2] == 'k');
@@ -721,9 +721,9 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
     REQUIRE(parser.token_size() == 5);
     {
         asio::const_buffer buf = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(buf) == 5);
+        REQUIRE(buf.size() == 5);
 
-        const char *body = asio::buffer_cast<const char*>(buf);
+        const char *body = static_cast<const char*>(buf.data());
         REQUIRE(body[0] == 'p');
         REQUIRE(body[1] == 'e');
         REQUIRE(body[2] == 'd');
@@ -756,9 +756,9 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
     REQUIRE(parser.token_size() == 14);
     {
         asio::const_buffer buf = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(buf) == 14);
+        REQUIRE(buf.size() == 14);
 
-        const char *body = asio::buffer_cast<const char*>(buf);
+        const char *body = static_cast<const char*>(buf.data());
         REQUIRE(body[0] == ' ');
         REQUIRE(body[1] == 'i');
         REQUIRE(body[2] == 'n');

@@ -864,8 +864,8 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         REQUIRE(parser.token_size() == 4);
         {
             asio::const_buffer buf = parser.value<http::token::body_chunk>();
-            REQUIRE(asio::buffer_size(buf) == 4);
-            const char *view = asio::buffer_cast<const char*>(buf);
+            REQUIRE(buf.size() == 4);
+            const char *view = static_cast<const char*>(buf.data());
             REQUIRE(view[0] == 'W');
             REQUIRE(view[1] == 'i');
             REQUIRE(view[2] == 'k');
@@ -1013,8 +1013,8 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         REQUIRE(parser.token_size() == 4);
         {
             asio::const_buffer buf = parser.value<http::token::body_chunk>();
-            REQUIRE(asio::buffer_size(buf) == 4);
-            const char *view = asio::buffer_cast<const char*>(buf);
+            REQUIRE(buf.size() == 4);
+            const char *view = static_cast<const char*>(buf.data());
             REQUIRE(view[0] == 'W');
             REQUIRE(view[1] == 'i');
             REQUIRE(view[2] == 'k');
@@ -1180,8 +1180,8 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         REQUIRE(parser.token_size() == 4);
         {
             asio::const_buffer buf = parser.value<http::token::body_chunk>();
-            REQUIRE(asio::buffer_size(buf) == 4);
-            const char *view = asio::buffer_cast<const char*>(buf);
+            REQUIRE(buf.size() == 4);
+            const char *view = static_cast<const char*>(buf.data());
             REQUIRE(view[0] == 'W');
             REQUIRE(view[1] == 'i');
             REQUIRE(view[2] == 'k');
@@ -1347,8 +1347,8 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         REQUIRE(parser.token_size() == 4);
         {
             asio::const_buffer buf = parser.value<http::token::body_chunk>();
-            REQUIRE(asio::buffer_size(buf) == 4);
-            const char *view = asio::buffer_cast<const char*>(buf);
+            REQUIRE(buf.size() == 4);
+            const char *view = static_cast<const char*>(buf.data());
             REQUIRE(view[0] == 'W');
             REQUIRE(view[1] == 'i');
             REQUIRE(view[2] == 'k');
@@ -1514,8 +1514,8 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         REQUIRE(parser.token_size() == 4);
         {
             asio::const_buffer buf = parser.value<http::token::body_chunk>();
-            REQUIRE(asio::buffer_size(buf) == 4);
-            const char *view = asio::buffer_cast<const char*>(buf);
+            REQUIRE(buf.size() == 4);
+            const char *view = static_cast<const char*>(buf.data());
             REQUIRE(view[0] == 'W');
             REQUIRE(view[1] == 'i');
             REQUIRE(view[2] == 'k');
@@ -1688,8 +1688,8 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         REQUIRE(parser.token_size() == 4);
         {
             asio::const_buffer buf = parser.value<http::token::body_chunk>();
-            REQUIRE(asio::buffer_size(buf) == 4);
-            const char *view = asio::buffer_cast<const char*>(buf);
+            REQUIRE(buf.size() == 4);
+            const char *view = static_cast<const char*>(buf.data());
             REQUIRE(view[0] == 'W');
             REQUIRE(view[1] == 'i');
             REQUIRE(view[2] == 'k');
@@ -1875,8 +1875,8 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         REQUIRE(parser.token_size() == 4);
         {
             asio::const_buffer buf = parser.value<http::token::body_chunk>();
-            REQUIRE(asio::buffer_size(buf) == 4);
-            const char *view = asio::buffer_cast<const char*>(buf);
+            REQUIRE(buf.size() == 4);
+            const char *view = static_cast<const char*>(buf.data());
             REQUIRE(view[0] == 'W');
             REQUIRE(view[1] == 'i');
             REQUIRE(view[2] == 'k');
@@ -2062,8 +2062,8 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         REQUIRE(parser.token_size() == 4);
         {
             asio::const_buffer buf = parser.value<http::token::body_chunk>();
-            REQUIRE(asio::buffer_size(buf) == 4);
-            const char *view = asio::buffer_cast<const char*>(buf);
+            REQUIRE(buf.size() == 4);
+            const char *view = static_cast<const char*>(buf.data());
             REQUIRE(view[0] == 'W');
             REQUIRE(view[1] == 'i');
             REQUIRE(view[2] == 'k');
@@ -2250,8 +2250,8 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
         REQUIRE(parser.token_size() == 4);
         {
             asio::const_buffer buf = parser.value<http::token::body_chunk>();
-            REQUIRE(asio::buffer_size(buf) == 4);
-            const char *view = asio::buffer_cast<const char*>(buf);
+            REQUIRE(buf.size() == 4);
+            const char *view = static_cast<const char*>(buf.data());
             REQUIRE(view[0] == 'W');
             REQUIRE(view[1] == 'i');
             REQUIRE(view[2] == 'k');

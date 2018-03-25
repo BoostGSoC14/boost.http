@@ -4,7 +4,7 @@
 
 * CMake 3.1.0 or newer footnote:[for tests]. You can skip this requirement if
   you don't intend to run the tests.
-* Boost 1.61 or newer.
+* Boost 1.66 or newer.
 ** `boost::asio::const_buffer`.
 ** `boost::string_view`.
 * http://asciidoctor.org/[asciidoctor] footnote:[For the documentation.]. You'll

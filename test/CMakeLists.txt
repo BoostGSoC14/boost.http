@@ -45,6 +45,9 @@ macro(add_test_target target version)
   set_property(TARGET "${target}" PROPERTY CXX_STANDARD ${version})
   set_property(TARGET "${target}" PROPERTY CXX_STANDARD_REQUIRED ON)
 
+  target_compile_definitions("${target}"
+    PRIVATE BOOST_ASIO_NO_DEPRECATED)
+
   target_include_directories("${target}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include" ${Boost_INCLUDE_DIR})
 

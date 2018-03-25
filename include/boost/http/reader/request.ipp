@@ -46,7 +46,7 @@ template<>
 request::view_type request::value<token::method>() const
 {
     assert(code_ == token::method::code);
-    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
+    return view_type(static_cast<const char*>(ibuffer.data()) + idx,
                      token_size_);
 }
 
@@ -54,7 +54,7 @@ template<>
 request::view_type request::value<token::request_target>() const
 {
     assert(code_ == token::request_target::code);
-    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
+    return view_type(static_cast<const char*>(ibuffer.data()) + idx,
                      token_size_);
 }
 
@@ -62,7 +62,7 @@ template<>
 int request::value<token::version>() const
 {
     assert(code_ == token::version::code);
-    return *(asio::buffer_cast<const char*>(ibuffer) + idx) - '0';
+    return *(static_cast<const char*>(ibuffer.data()) + idx) - '0';
 }
 
 template<>
@@ -71,7 +71,7 @@ request::view_type request::value<token::field_name>() const
     // It accepts “implicit conversion” from `trailer_name`
     assert(code_ == token::field_name::code
            || code_ == token::trailer_name::code);
-    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
+    return view_type(static_cast<const char*>(ibuffer.data()) + idx,
                      token_size_);
 }
 
@@ -81,7 +81,7 @@ request::view_type request::value<token::field_value>() const
     // It accepts “implicit conversion” from `trailer_value`
     assert(code_ == token::field_value::code
            || code_ == token::trailer_value::code);
-    view_type raw(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
+    view_type raw(static_cast<const char*>(ibuffer.data()) + idx, token_size_);
     return detail::decode_field_value(raw);
 }
 
@@ -96,7 +96,7 @@ template<>
 request::view_type request::value<token::trailer_name>() const
 {
     assert(code_ == token::trailer_name::code);
-    return view_type(asio::buffer_cast<const char*>(ibuffer) + idx,
+    return view_type(static_cast<const char*>(ibuffer.data()) + idx,
                      token_size_);
 }
 
@@ -104,7 +104,7 @@ template<>
 request::view_type request::value<token::trailer_value>() const
 {
     assert(code_ == token::trailer_value::code);
-    view_type raw(asio::buffer_cast<const char*>(ibuffer) + idx, token_size_);
+    view_type raw(static_cast<const char*>(ibuffer.data()) + idx, token_size_);
     return detail::decode_field_value(raw);
 }
 
@@ -198,21 +198,21 @@ inline void request::next()
         code_ = token::code::error_insufficient_data;
     }
 
-    if (idx == asio::buffer_size(ibuffer))
+    if (idx == ibuffer.size())
         return;
 
     asio::const_buffer rest_buf = ibuffer + idx;
     basic_string_view<unsigned char>
-        rest_view(asio::buffer_cast<const unsigned char*>(rest_buf),
-                  asio::buffer_size(rest_buf));
+        rest_view(static_cast<const unsigned char*>(rest_buf.data()),
+                  rest_buf.size());
 
     switch (state) {
     case EXPECT_METHOD:
         {
             size_type i = idx + token_size_;
-            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
+            for ( ; i != ibuffer.size() ; ++i) {
                 unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                    = static_cast<const unsigned char*>(ibuffer.data())[i];
                 if (!detail::is_tchar(c)) {
                     if (i != idx) {
                         state = EXPECT_SP_AFTER_METHOD;
@@ -231,7 +231,7 @@ inline void request::next()
     case EXPECT_SP_AFTER_METHOD:
         {
             unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
+                = static_cast<const unsigned char*>(ibuffer.data())[idx];
             if (detail::is_sp(c)) {
                 state = EXPECT_REQUEST_TARGET;
                 code_ = token::code::skip;
@@ -243,10 +243,9 @@ inline void request::next()
             return;
         }
     case EXPECT_REQUEST_TARGET:
-        for (size_type i = idx + token_size_ ; i != asio::buffer_size(ibuffer)
-                 ; ++i) {
+        for (size_type i = idx + token_size_ ; i != ibuffer.size() ; ++i) {
             unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                = static_cast<const unsigned char*>(ibuffer.data())[i];
             if (!detail::is_request_target_char(c)) {
                 if (i != idx) {
                     state = EXPECT_STATIC_STR_AFTER_TARGET;
@@ -259,17 +258,16 @@ inline void request::next()
                 return;
             }
         }
-        token_size_ = asio::buffer_size(ibuffer) - idx;
+        token_size_ = ibuffer.size() - idx;
         return;
     case EXPECT_STATIC_STR_AFTER_TARGET:
         {
             unsigned char skip[] = {' ', 'H', 'T', 'T', 'P', '/', '1', '.'};
             size_type i = idx + token_size_;
-            size_type count = std::min(asio::buffer_size(ibuffer),
-                                       idx + sizeof(skip));
+            size_type count = std::min(ibuffer.size(), idx + sizeof(skip));
             for ( ; i != count ; ++i) {
                 unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                    = static_cast<const unsigned char*>(ibuffer.data())[i];
                 if (c != skip[i - idx]) {
                     state = ERRORED;
                     code_ = token::code::error_invalid_data;
@@ -286,7 +284,7 @@ inline void request::next()
     case EXPECT_VERSION:
         {
             unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
+                = static_cast<const unsigned char*>(ibuffer.data())[idx];
             if (c < '0' || c > '9') {
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
@@ -407,7 +405,7 @@ inline void request::next()
     case EXPECT_COLON:
         {
             unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
+                = static_cast<const unsigned char*>(ibuffer.data())[idx];
             if (c != ':') {
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
@@ -417,9 +415,9 @@ inline void request::next()
             code_ = token::code::skip;
 
             size_type i = idx + 1;
-            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
+            for ( ; i != ibuffer.size() ; ++i) {
                 unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                    = static_cast<const unsigned char*>(ibuffer.data())[i];
                 if (!detail::is_ows(c)) {
                     state = EXPECT_FIELD_VALUE;
                     break;
@@ -610,8 +608,7 @@ inline void request::next()
         {
             typedef common_type<std::size_t, uint_least64_t>::type Largest;
 
-            token_size_ = std::min<Largest>(asio::buffer_size(ibuffer + idx),
-                                            body_size);
+            token_size_ = std::min<Largest>((ibuffer + idx).size(), body_size);
             body_size -= token_size_;
 
             if (body_size == 0)
@@ -659,9 +656,9 @@ inline void request::next()
     case EXPECT_CHUNK_EXT:
         {
             size_type i = idx + token_size_;
-            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
+            for ( ; i != ibuffer.size() ; ++i) {
                 unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                    = static_cast<const unsigned char*>(ibuffer.data())[i];
                 if (detail::is_chunk_ext_char(c))
                     continue;
 
@@ -713,8 +710,7 @@ inline void request::next()
         {
             typedef common_type<std::size_t, uint_least64_t>::type Largest;
 
-            token_size_ = std::min<Largest>(asio::buffer_size(ibuffer + idx),
-                                            body_size);
+            token_size_ = std::min<Largest>((ibuffer + idx).size(), body_size);
             body_size -= token_size_;
 
             if (body_size == 0)
@@ -763,7 +759,7 @@ inline void request::next()
     case EXPECT_TRAILER_COLON:
         {
             unsigned char c
-                = asio::buffer_cast<const unsigned char*>(ibuffer)[idx];
+                = static_cast<const unsigned char*>(ibuffer.data())[idx];
             if (c != ':') {
                 state = ERRORED;
                 code_ = token::code::error_invalid_data;
@@ -773,9 +769,9 @@ inline void request::next()
             code_ = token::code::skip;
 
             size_type i = idx + 1;
-            for ( ; i != asio::buffer_size(ibuffer) ; ++i) {
+            for ( ; i != ibuffer.size() ; ++i) {
                 unsigned char c
-                    = asio::buffer_cast<const unsigned char*>(ibuffer)[i];
+                    = static_cast<const unsigned char*>(ibuffer.data())[i];
                 if (!detail::is_ows(c)) {
                     state = EXPECT_TRAILER_VALUE;
                     break;

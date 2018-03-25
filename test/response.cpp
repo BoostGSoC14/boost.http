@@ -612,8 +612,8 @@ TEST_CASE("Test varying body types", "[parser,good]")
     REQUIRE(parser.token_size() == 2);
     {
         asio::const_buffer body = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(body) == 2);
-        const char *buf_view = asio::buffer_cast<const char*>(body);
+        REQUIRE(body.size() == 2);
+        const char *buf_view = static_cast<const char*>(body.data());
         REQUIRE(buf_view[0] == 'H');
         REQUIRE(buf_view[1] == 'I');
     }
@@ -730,8 +730,8 @@ TEST_CASE("Test varying body types", "[parser,good]")
     REQUIRE(parser.token_size() == 1);
     {
         asio::const_buffer body = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(body) == 1);
-        REQUIRE(*(asio::buffer_cast<const char*>(body)) == 'a');
+        REQUIRE(body.size() == 1);
+        REQUIRE(*(static_cast<const char*>(body.data())) == 'a');
     }
     REQUIRE(parser.expected_token() == http::token::code::skip);
 
@@ -820,8 +820,8 @@ TEST_CASE("Test varying body types", "[parser,good]")
     REQUIRE(parser.token_size() == 14);
     {
         asio::const_buffer body = parser.value<http::token::body_chunk>();
-        REQUIRE(asio::buffer_size(body) == 14);
-        const char *buf_view = asio::buffer_cast<const char*>(body);
+        REQUIRE(body.size() == 14);
+        const char *buf_view = static_cast<const char*>(body.data());
         REQUIRE(buf_view[0] == 'R');
         REQUIRE(buf_view[1] == 'a');
         REQUIRE(buf_view[2] == 'p');
