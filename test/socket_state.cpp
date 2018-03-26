@@ -48,31 +48,25 @@ void clear_message(Message &m)
 
 struct outer_storage
 {
-    typedef typename asio::handler_type<asio::yield_context,
-                                        void(system::error_code)>::type
-    coro_handler_t;
-    typedef asio::async_result<coro_handler_t> coro_result_t;
-
     outer_storage(asio::yield_context &yield)
-        : handler(yield)
-        , result(handler)
+        : init(yield)
     {}
 
-    coro_handler_t handler;
-    coro_result_t result;
+    asio::async_completion<asio::yield_context, void(system::error_code)> init;
 };
 
 struct use_yielded_future_t
 {
-    typedef typename asio::handler_type<asio::yield_context,
-                                        void(system::error_code)>::type
-    coro_handler_t;
+    typedef BOOST_ASIO_HANDLER_TYPE(asio::yield_context,
+                                    void(system::error_code))
+        coro_handler_t;
 
     struct Handler
     {
         Handler(use_yielded_future_t use_yielded_future)
             : storage(use_yielded_future.storage)
-            , coro_handler(std::move(use_yielded_future.storage.handler))
+            , coro_handler(std::move(use_yielded_future.storage.init
+                                     .completion_handler))
         {}
 
         void operator()(system::error_code ec)
@@ -95,7 +89,7 @@ struct yielded_future
 
     void get()
     {
-        storage.result.get();
+        storage.init.result.get();
     }
 
     outer_storage &storage;
@@ -105,15 +99,10 @@ namespace boost {
 namespace asio {
 
 template<>
-struct handler_type<use_yielded_future_t, void(system::error_code)>
+struct async_result<use_yielded_future_t, void(system::error_code)>
 {
-    typedef use_yielded_future_t::Handler type;
-};
-
-template<>
-struct async_result<use_yielded_future_t::Handler>
-{
-    typedef yielded_future type;
+    typedef use_yielded_future_t::Handler completion_handler_type;
+    typedef yielded_future return_type;
 
     async_result(use_yielded_future_t::Handler &handler)
         : storage(handler.storage)
@@ -135,7 +124,7 @@ bool check_out_of_order(const system::system_error &e)
 }
 
 BOOST_AUTO_TEST_CASE(double_read_request_call) {
-    asio::io_service ios;
+    asio::io_context ios;
     auto work = [&ios](asio::yield_context yield) {
         feed_with_buffer(36, [&ios,&yield](asio::mutable_buffer inbuffer) {
                 http::basic_socket<mock_socket> socket(ios, inbuffer);

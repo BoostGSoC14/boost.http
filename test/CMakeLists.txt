@@ -14,6 +14,8 @@ find_package(Boost 1.55 COMPONENTS
   regex
   REQUIRED)
 
+find_package(Threads)
+
 # Config
 
 if(NOT Boost_USE_STATIC_LIBS)
@@ -69,7 +71,7 @@ macro(add_test_target target version)
   endif()
 
   target_compile_definitions("${target}"
-    PRIVATE BOOST_COROUTINES_NO_DEPRECATION_WARNING)
+    PRIVATE BOOST_COROUTINES_NO_DEPRECATION_WARNING BOOST_ASIO_NO_DEPRECATED)
 
   target_include_directories("${target}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include" ${Boost_INCLUDE_DIR})
@@ -81,7 +83,8 @@ macro(add_test_target target version)
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     ${Boost_COROUTINE_LIBRARY}
     ${Boost_CONTEXT_LIBRARY}
-    ${Boost_REGEX_LIBRARY})
+    ${Boost_REGEX_LIBRARY}
+    ${CMAKE_THREAD_LIBS_INIT})
 
   add_test(NAME "${target}" COMMAND $<TARGET_FILE:${target}>)
 endmacro()

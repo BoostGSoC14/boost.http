@@ -12,9 +12,7 @@ This function has two overloads.
 ----
 template<class ServerSocket, class Request, class Response,
          class CompletionToken>
-typename boost::asio::async_result<
-    typename boost::asio::handler_type<CompletionToken,
-                                void(boost::system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
 async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                              Response &omessage,
                              const boost::filesystem::path &file,
@@ -25,9 +23,7 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
 ----
 template<class ServerSocket, class Request, class Response,
          class CompletionToken>
-typename boost::asio::async_result<
-    typename boost::asio::handler_type<CompletionToken,
-                                void(boost::system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
 async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                              Response &omessage,
                              const boost::filesystem::path &file,

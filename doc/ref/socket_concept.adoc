@@ -69,9 +69,7 @@ when you're about to send a message.
 +
 [source,cpp]
 ----
-boost::asio::async_result<
-    boost::asio::handler_type<
-        CompletionToken, void(boost::system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
 ----
 
 `token`::
@@ -98,9 +96,10 @@ boost::asio::async_result<
 
 |`std::is_base_of<std::true_type, http::is_socket<X>>` |`std::true_type`| | |
 
-|`a.get_io_service()`|`asio::io_service&`|
-|Returns the `io_service` object through which the handlers of asynchronous
- operations will be invoked.
+|`X::executor_type` | | | The type of the executor associated with the object. |
+
+|`a.get_executor()`|`X::executor_type`|
+|Returns the executor associated with the object.
 |
 
 |`X::message_type`|

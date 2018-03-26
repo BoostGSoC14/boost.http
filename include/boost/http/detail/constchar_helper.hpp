@@ -37,7 +37,7 @@ struct constchar_helper
 };
 
 template<std::size_t N>
-asio::const_buffers_1 string_literal_buffer(const char (&input)[N])
+asio::const_buffer string_literal_buffer(const char (&input)[N])
 {
     return asio::buffer(input, N - 1);
 }

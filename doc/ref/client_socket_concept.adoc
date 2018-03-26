@@ -46,9 +46,7 @@ Types fulfilling the `ClientSocket` concept and also possessing the _strict_ pro
 +
 [source,cpp]
 ----
-boost::asio::async_result<
-     boost::asio::handler_type<
-         CompletionToken, void(boost::system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
 ----
 
 `token`::

@@ -35,11 +35,12 @@ public:
 
     typedef Socket next_layer_type;
 
+    using typename Parent::executor_type;
     using Parent::is_open;
     using Parent::read_state;
     using Parent::write_state;
     using Parent::write_response_native_stream;
-    using Parent::get_io_service;
+    using Parent::get_executor;
     using Parent::async_read_request;
     using Parent::async_read_response;
     using Parent::async_read_some;
@@ -53,8 +54,8 @@ public:
     using Parent::async_write_trailers;
     using Parent::async_write_end_of_message;
 
-    basic_buffered_socket(boost::asio::io_service &io_service)
-        : Parent(io_service, boost::asio::buffer(BufferParent::buffer))
+    basic_buffered_socket(boost::asio::io_context &io_context)
+        : Parent(io_context, boost::asio::buffer(BufferParent::buffer))
     {}
 
     template<class... Args>

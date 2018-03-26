@@ -12,9 +12,7 @@ This function has two overloads.
 ----
 template<class ServerSocket, class ConvertibleToPath, class Request,
          class Response, class CompletionToken>
-typename boost::asio::async_result<
-    typename boost::asio::handler_type<CompletionToken,
-                                void(boost::system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
 async_response_transmit_dir(ServerSocket &socket,
                             const ConvertibleToPath &ipath,
                             const Request &imessage, Response &omessage,
@@ -26,9 +24,7 @@ async_response_transmit_dir(ServerSocket &socket,
 ----
 template<class ServerSocket, class ConvertibleToPath, class Request,
          class Response, class Predicate, class CompletionToken>
-typename asio::async_result<
-    typename boost::asio::handler_type<CompletionToken,
-                                void(boost::system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
 async_response_transmit_dir(ServerSocket &socket,
                             const ConvertibleToPath &ipath,
                             const Request &imessage, Response &omessage,

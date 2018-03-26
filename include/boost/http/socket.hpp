@@ -52,6 +52,7 @@ template<class Socket, class Settings = default_socket_settings>
 class basic_socket
 {
 public:
+    typedef typename Socket::executor_type executor_type;
     typedef Socket next_layer_type;
 
     // ### QUERY FUNCTIONS ###
@@ -61,34 +62,26 @@ public:
     http::write_state write_state() const;
     bool write_response_native_stream() const;
 
-    asio::io_service &get_io_service();
+    executor_type get_executor();
 
     // ### END OF QUERY FUNCTIONS ###
 
     // ### READ FUNCTIONS ###
 
     template<class Request, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_read_request(Request &request, CompletionToken &&token);
 
     template<class Response, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_read_response(Response &response, CompletionToken &&token);
 
     template<class Message, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_read_some(Message &message, CompletionToken &&token);
 
     template<class Message, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_read_trailers(Message &message, CompletionToken &&token);
 
     // ### END OF READ FUNCTIONS ###
@@ -96,60 +89,44 @@ public:
     // ### WRITE FUNCTIONS ###
 
     template<class Response, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_write_response(const Response &response, CompletionToken &&token);
 
     template<class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_write_response_continue(CompletionToken &&token);
 
     template<class Response, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_write_response_metadata(const Response &response,
                                   CompletionToken &&token);
 
     template<class Request, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_write_request(const Request &request, CompletionToken &&token);
 
     template<class Request, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_write_request_metadata(const Request &request,
                                  CompletionToken &&token);
 
     template<class Message, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_write(const Message &message, CompletionToken &&token);
 
     template<class Message, class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_write_trailers(const Message &message, CompletionToken &&token);
 
     template<class CompletionToken>
-    typename asio::async_result<
-        typename asio::handler_type<CompletionToken,
-                                    void(system::error_code)>::type>::type
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_write_end_of_message(CompletionToken &&token);
 
     // ### END OF WRITE FUNCTIONS ###
 
     // ### START OF basic_server SPECIFIC FUNCTIONS ###
 
-    basic_socket(boost::asio::io_service &io_service,
+    basic_socket(boost::asio::io_context &io_context,
                  boost::asio::mutable_buffer inbuffer);
 
     template<class... Args>
@@ -175,10 +152,10 @@ private:
     };
 
     template<class Message, class Handler>
-    void schedule_on_async_read_message(Handler &handler, Message &message);
+    void schedule_on_async_read_message(Handler &&handler, Message &message);
 
     template<bool server_mode, class Parser, class Message, class Handler>
-    void on_async_read_message(Handler handler, Message &message,
+    void on_async_read_message(Handler &&handler, Message &message,
                                const system::error_code &ec,
                                std::size_t bytes_transferred);
 

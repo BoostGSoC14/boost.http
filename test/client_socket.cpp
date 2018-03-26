@@ -38,7 +38,7 @@ void fill_vector(vector<char> &v, const char (&s)[N])
 }
 
 BOOST_AUTO_TEST_CASE(socket_basic) {
-    asio::io_service ios;
+    asio::io_context ios;
     bool reached_the_end_of_the_test = false;
     auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
         feed_with_buffer(38, [&](asio::mutable_buffer inbuffer) {
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(socket_http10_native_stream_unsupported) {
     //
     // * `native_stream_unsupported`.
     // * `stream_finished` if a second request is tried within HTTP/1.0.
-    asio::io_service ios;
+    asio::io_context ios;
     bool reached_the_end_of_the_test = false;
     auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
         feed_with_buffer(38, [&](asio::mutable_buffer inbuffer) {
@@ -339,7 +339,7 @@ BOOST_AUTO_TEST_CASE(socket_http10_native_stream_unsupported2) {
     //
     // * `native_stream_unsupported`.
     // * `stream_finished` if a second request is tried within HTTP/1.0.
-    asio::io_service ios;
+    asio::io_context ios;
     bool reached_the_end_of_the_test = false;
     auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
         feed_with_buffer(38, [&](asio::mutable_buffer inbuffer) {
@@ -409,7 +409,7 @@ BOOST_AUTO_TEST_CASE(socket_http10_native_stream_unsupported2) {
 }
 
 BOOST_AUTO_TEST_CASE(socket_upgrade_head) {
-    asio::io_service ios;
+    asio::io_context ios;
     bool reached_the_end_of_the_test = false;
     auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
         feed_with_buffer(131, [&](asio::mutable_buffer inbuffer) {
@@ -471,9 +471,9 @@ BOOST_AUTO_TEST_CASE(socket_upgrade_head) {
 
             {
                 auto x = socket.upgrade_head();
-                BOOST_REQUIRE(asio::buffer_size(x) == 2);
-                BOOST_REQUIRE(asio::buffer_cast<const char*>(x)[0] == '\x59');
-                BOOST_REQUIRE(asio::buffer_cast<const char*>(x)[1] == '\x2F');
+                BOOST_REQUIRE(x.size() == 2);
+                BOOST_REQUIRE(static_cast<const char*>(x.data())[0] == '\x59');
+                BOOST_REQUIRE(static_cast<const char*>(x.data())[1] == '\x2F');
             }
 
             // ---

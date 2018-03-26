@@ -90,7 +90,7 @@ internal T object. The `buffered_socket` typedef uses `asio::ip::tcp::socket` as
 
 [source,cpp]
 ----
-spawn(acceptor.get_io_service(), handle_connection);
+spawn(acceptor.get_executor(), handle_connection);
 ----
 
 We spawn a new handler for every connection, so we'll be able to handle them all

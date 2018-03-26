@@ -4,7 +4,7 @@
 #include <boost/http/basic_router.hpp>
 
 #include <boost/utility/string_view.hpp>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/http/buffered_socket.hpp>
 #include <boost/http/algorithm.hpp>
@@ -136,14 +136,14 @@ public:
         return socket.next_layer();
     }
 
-    static std::shared_ptr<connection> make_connection(asio::io_service &ios,
+    static std::shared_ptr<connection> make_connection(asio::io_context &ios,
                                                        int counter)
     {
         return std::shared_ptr<connection>{new connection{ios, counter}};
     }
 
 private:
-    connection(asio::io_service &ios, int counter)
+    connection(asio::io_context &ios, int counter)
         : socket(ios)
         , counter(counter)
     {}
@@ -184,18 +184,17 @@ http::basic_router<std::function<bool(const ::std::string&)>,
 
 int main()
 {
-    asio::io_service ios;
+    asio::io_context ios;
     asio::ip::tcp::acceptor acceptor(ios,
                                      asio::ip::tcp
                                      ::endpoint(asio::ip::tcp::v6(), 8080));
 
-    auto work = [&acceptor](asio::yield_context yield) {
+    auto work = [&acceptor,&ios](asio::yield_context yield) {
         int counter = 0;
         for ( ; true ; ++counter ) {
             try {
                 auto connection
-                    = connection::make_connection(acceptor.get_io_service(),
-                                                  counter);
+                    = connection::make_connection(ios, counter);
                 cout << "About to accept a new connection" << endl;
                 acceptor.async_accept(connection->tcp_layer(), yield);
 
@@ -203,7 +202,7 @@ int main()
                     = [connection](asio::yield_context yield) mutable {
                     (*connection)(yield);
                 };
-                spawn(acceptor.get_io_service(), handle_connection);
+                spawn(acceptor.get_executor(), handle_connection);
             } catch (std::exception &e) {
                 cerr << "Aborting on exception: " << e.what() << endl;
                 std::exit(1);

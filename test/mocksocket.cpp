@@ -11,7 +11,7 @@ using namespace boost;
 using namespace std;
 
 BOOST_AUTO_TEST_CASE(mocksocket_read) {
-    asio::io_service ios;
+    asio::io_context ios;
 
     auto work = [&ios](asio::yield_context yield) {
         mock_socket s(ios);
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(mocksocket_read) {
 }
 
 BOOST_AUTO_TEST_CASE(mocksocket_write) {
-    asio::io_service ios;
+    asio::io_context ios;
 
     auto work = [&ios](asio::yield_context yield) {
         mock_socket s(ios);

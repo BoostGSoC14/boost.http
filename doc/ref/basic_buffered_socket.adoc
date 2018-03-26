@@ -66,11 +66,15 @@ layer.
 
   The type of the underlying communication channel.
 
+`typedef typename next_layer_type::executor_type executor_type`::
+
+  The type of the executor associated with the object.
+
 ===== Member functions
 
-`basic_buffered_socket(boost::asio::io_service &io_service)`::
+`basic_buffered_socket(boost::asio::io_context &io_context)`::
 
-  Constructor. _io_service_ is passed to the constructor from the underlying
+  Constructor. _io_context_ is passed to the constructor from the underlying
   stream.
 
 `template<class... Args> basic_buffered_socket(Args&&... args)`::
@@ -99,34 +103,29 @@ layer.
 
 See the <<socket_concept,`Socket` concept>>.
 
-* `asio::io_service& get_io_service()`
+* `executor_type get_executor()`
 * `bool is_open() const`
 * `read_state read_state() const`
 * `write_state write_state() const`
 * `template<class Message, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_read_some(Message &message, CompletionToken &&token)`
 * `template<class Message, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_read_trailers(Message &message, CompletionToken &&token)`
 * `template<class Message, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_write(const Message &message, CompletionToken &&token)`
 * `template<class Message, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_write_trailers(const Message &message, CompletionToken &&token)`
 * `template<class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_write_end_of_message(CompletionToken &&token)`
 
 ====== `ServerSocket` concept
@@ -135,24 +134,20 @@ See the <<server_socket_concept,`ServerSocket` concept>>.
 
 * `bool write_response_native_stream() const`
 * `template<class Request, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_read_request(Request &request, CompletionToken &&token)`
 * `template<class Response, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_write_response(const Response &response, CompletionToken &&token)`
 * `template<class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_write_response_continue(CompletionToken &&token)`
 * `template<class Response, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_write_response_metadata(const Response &response,
                                 CompletionToken &&token)`
 
@@ -161,17 +156,14 @@ See the <<server_socket_concept,`ServerSocket` concept>>.
 See the <<client_socket_concept,`ClientSocket` concept>>.
 
 * `template<class Request, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_write_request(const Request &request, CompletionToken &&token)`
 * `template<class Request, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_write_request_metadata(const Request &request, CompletionToken &&token)`
 * `template<class Response, class CompletionToken>
-  typename boost::asio::async_result<
-      typename boost::asio::handler_type<CompletionToken,
-                                  void(boost::system::error_code)>::type>::type
+  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                void(boost::system::error_code))
   async_read_response(Response &response, CompletionToken &&token)`

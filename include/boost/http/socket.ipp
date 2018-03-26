@@ -49,28 +49,23 @@ bool basic_socket<Socket, Settings>::write_response_native_stream() const
 }
 
 template<class Socket, class Settings>
-asio::io_service &basic_socket<Socket, Settings>::get_io_service()
+typename basic_socket<Socket, Settings>::executor_type
+basic_socket<Socket, Settings>::get_executor()
 {
-    return channel.get_io_service();
+    return channel.get_executor();
 }
 
 template<class Socket, class Settings>
 template<class Request, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>::async_read_request(Request &request,
                                                    CompletionToken &&token)
 {
     static_assert(is_request_message<Request>::value,
                   "Request must fulfill the Request concept");
 
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
-
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     switch (parser.which()) {
     case 0: // none
@@ -80,130 +75,113 @@ basic_socket<Socket, Settings>::async_read_request(Request &request,
     case 1: // req_parser
         break;
     case 2: // res_parser
-        invoke_handler(handler, http_errc::wrong_direction);
-        return result.get();
+        invoke_handler(std::move(init.completion_handler),
+                       http_errc::wrong_direction);
+        return init.result.get();
     }
 
     if (istate != http::read_state::empty) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
 
     request.method().clear();
     request.target().clear();
     clear_message(request);
     writer_helper = http::write_state::finished;
-    schedule_on_async_read_message(handler, request);
+    schedule_on_async_read_message(std::move(init.completion_handler), request);
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class Response, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>::async_read_response(Response &response,
                                                     CompletionToken &&token)
 {
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
 
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
-
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     switch (parser.which()) {
     case 0: // none
         parser = res_parser{};
         break;
     case 1: // req_parser
-        invoke_handler(handler, http_errc::wrong_direction);
-        return result.get();
+        invoke_handler(std::move(init.completion_handler),
+                       http_errc::wrong_direction);
+        return init.result.get();
     case 2: // res_parser
         break;
     }
 
     if (istate != http::read_state::empty) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
 
     response.reason_phrase().clear();
     clear_message(response);
-    schedule_on_async_read_message(handler, response);
+    schedule_on_async_read_message(std::move(init.completion_handler),
+                                   response);
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class Message, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>::async_read_some(Message &message,
                                                 CompletionToken &&token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
-
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     if (istate != http::read_state::message_ready) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
 
-    schedule_on_async_read_message(handler, message);
+    schedule_on_async_read_message(std::move(init.completion_handler), message);
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class Message, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>::async_read_trailers(Message &message,
                                                     CompletionToken &&token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
-
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     if (istate != http::read_state::body_ready) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
 
-    schedule_on_async_read_message(handler, message);
+    schedule_on_async_read_message(std::move(init.completion_handler), message);
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class Response, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>
 ::async_write_response(const Response &response, CompletionToken &&token)
 {
@@ -211,20 +189,18 @@ basic_socket<Socket, Settings>
                   "Response must fulfill the Response concept");
 
     using detail::string_literal_buffer;
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
 
-    Handler handler(std::forward<CompletionToken>(token));
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     const auto status_code = response.status_code();
     const auto &reason_phrase = response.reason_phrase();
     const auto &headers = response.headers();
 
     if (!writer_helper.write_message()) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
     istate = http::read_state::empty;
 
@@ -301,6 +277,7 @@ basic_socket<Socket, Settings>
     if (!implicit_content_length)
         buffers.push_back(asio::buffer(response.body()));
 
+    auto handler = std::move(init.completion_handler);
     asio::async_write(channel, buffers,
                       [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
@@ -310,30 +287,25 @@ basic_socket<Socket, Settings>
         handler(ec);
     });
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>
 ::async_write_response_continue(CompletionToken &&token)
 {
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
-
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     if (!writer_helper.write_continue()) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
 
+    auto handler = std::move(init.completion_handler);
     asio::async_write(channel,
                       detail::string_literal_buffer("HTTP/1.1 100"
                                                     " Continue\r\n\r\n"),
@@ -342,14 +314,12 @@ basic_socket<Socket, Settings>
         handler(ec);
     });
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class Response, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>
 ::async_write_response_metadata(const Response &response,
                                 CompletionToken &&token)
@@ -358,12 +328,9 @@ basic_socket<Socket, Settings>
                   "Response must fulfill the Response concept");
 
     using detail::string_literal_buffer;
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
 
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     const auto status_code = response.status_code();
     const auto &reason_phrase = response.reason_phrase();
@@ -372,16 +339,16 @@ basic_socket<Socket, Settings>
     {
         auto prev = writer_helper.state;
         if (!writer_helper.write_metadata()) {
-            invoke_handler(std::forward<decltype(handler)>(handler),
+            invoke_handler(std::move(init.completion_handler),
                            http_errc::out_of_order);
-            return result.get();
+            return init.result.get();
         }
 
         if (!modern_http) {
             writer_helper = prev;
-            invoke_handler(std::forward<decltype(handler)>(handler),
+            invoke_handler(std::move(init.completion_handler),
                            http_errc::native_stream_unsupported);
-            return result.get();
+            return init.result.get();
         }
     }
 
@@ -433,20 +400,19 @@ basic_socket<Socket, Settings>
     buffers.push_back(string_literal_buffer("transfer-encoding: chunked\r\n"
                                             "\r\n"));
 
+    auto handler = std::move(init.completion_handler);
     asio::async_write(channel, buffers,
                       [handler]
                       (const system::error_code &ec, std::size_t) mutable {
         handler(ec);
     });
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class Request, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>
 ::async_write_request(const Request &request, CompletionToken &&token)
 {
@@ -454,26 +420,26 @@ basic_socket<Socket, Settings>
                   "Request must fulfill the Request concept");
 
     using detail::string_literal_buffer;
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
 
-    Handler handler(std::forward<CompletionToken>(token));
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     switch (parser.which()) {
     case 0: // none
         parser = res_parser{};
         break;
     case 1: // req_parser
-        invoke_handler(handler, http_errc::wrong_direction);
-        return result.get();
+        invoke_handler(std::move(init.completion_handler),
+                       http_errc::wrong_direction);
+        return init.result.get();
     case 2: // res_parser
         break;
     }
 
     if (write_state() != http::write_state::empty) {
-        invoke_handler(handler, http_errc::out_of_order);
-        return result.get();
+        invoke_handler(std::move(init.completion_handler),
+                       http_errc::out_of_order);
+        return init.result.get();
     }
 
     const auto &method = request.method();
@@ -521,7 +487,8 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
+        buf = reinterpret_cast<char*>(asio_handler_allocate
+                                      (size, &init.completion_handler));
     } catch (const std::bad_alloc&) {
         sent_requests.pop_back();
         throw;
@@ -588,6 +555,7 @@ basic_socket<Socket, Settings>
     }
     assert(size == idx);
 
+    auto handler = std::move(init.completion_handler);
     asio::async_write(channel, asio::buffer(buf, size),
                       [handler,buf,size,this]
                       (const system::error_code &ec, std::size_t) mutable {
@@ -595,14 +563,12 @@ basic_socket<Socket, Settings>
                           handler(ec);
                       });
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class Request, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>
 ::async_write_request_metadata(const Request &request, CompletionToken &&token)
 {
@@ -610,39 +576,38 @@ basic_socket<Socket, Settings>
                   "Request must fulfill the Request concept");
 
     using detail::string_literal_buffer;
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
 
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     switch (parser.which()) {
     case 0: // none
         parser = res_parser{};
         break;
     case 1: // req_parser
-        invoke_handler(handler, http_errc::wrong_direction);
-        return result.get();
+        invoke_handler(std::move(init.completion_handler),
+                       http_errc::wrong_direction);
+        return init.result.get();
     case 2: // res_parser
         break;
     }
 
     if (write_state() != http::write_state::empty) {
-        invoke_handler(handler, http_errc::out_of_order);
-        return result.get();
+        invoke_handler(std::move(init.completion_handler),
+                       http_errc::out_of_order);
+        return init.result.get();
     }
 
     if (writer_helper.state != write_state::empty) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
 
     if (!modern_http) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::native_stream_unsupported);
-        return result.get();
+        return init.result.get();
     }
 
     writer_helper.state = write_state::metadata_issued;
@@ -684,7 +649,8 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
+        buf = reinterpret_cast<char*>(asio_handler_allocate
+                                      (size, &init.completion_handler));
     } catch (const std::bad_alloc&) {
         sent_requests.pop_back();
         writer_helper.state = write_state::empty;
@@ -726,6 +692,7 @@ basic_socket<Socket, Settings>
 
     assert(size == idx);
 
+    auto handler = std::move(init.completion_handler);
     asio::async_write(channel, asio::buffer(buf, size),
                       [handler,buf,size,this]
                       (const system::error_code &ec, std::size_t) mutable {
@@ -733,14 +700,12 @@ basic_socket<Socket, Settings>
                           handler(ec);
                       });
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class Message, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>::async_write(const Message &message,
                                             CompletionToken &&token)
 {
@@ -748,22 +713,19 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
                   "Message must fulfill the Message concept");
 
     using detail::string_literal_buffer;
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
 
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     if (!writer_helper.write()) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
 
     if (message.body().size() == 0) {
-        invoke_handler(std::forward<decltype(handler)>(handler));
-        return result.get();
+        invoke_handler(std::move(init.completion_handler));
+        return init.result.get();
     }
 
     auto crlf = string_literal_buffer("\r\n");
@@ -783,20 +745,19 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
         crlf
     };
 
+    auto handler = std::move(init.completion_handler);
     asio::async_write(channel, buffers,
                       [handler]
                       (const system::error_code &ec, std::size_t) mutable {
         handler(ec);
     });
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class Message, class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
                                                      CompletionToken &&token)
 {
@@ -804,17 +765,14 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
                   "Message must fulfill the Message concept");
 
     using detail::string_literal_buffer;
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
 
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     if (!writer_helper.write_trailers()) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
 
     switch (parser.which()) {
@@ -858,6 +816,7 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
 
     buffers.push_back(crlf);
 
+    auto handler = std::move(init.completion_handler);
     asio::async_write(channel, buffers,
                       [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
@@ -867,29 +826,24 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
         handler(ec);
     });
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 template<class CompletionToken>
-typename asio::async_result<
-    typename asio::handler_type<CompletionToken,
-                                void(system::error_code)>::type>::type
+BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>
 ::async_write_end_of_message(CompletionToken &&token)
 {
     using detail::string_literal_buffer;
-    typedef typename asio::handler_type<
-        CompletionToken, void(system::error_code)>::type Handler;
 
-    Handler handler(std::forward<CompletionToken>(token));
-
-    asio::async_result<Handler> result(handler);
+    asio::async_completion<CompletionToken, void(system::error_code)>
+        init{token};
 
     if (!writer_helper.end()) {
-        invoke_handler(std::forward<decltype(handler)>(handler),
+        invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
-        return result.get();
+        return init.result.get();
     }
 
     switch (parser.which()) {
@@ -906,6 +860,7 @@ basic_socket<Socket, Settings>
 
     auto last_chunk = string_literal_buffer("0\r\n\r\n");
 
+    auto handler = std::move(init.completion_handler);
     asio::async_write(channel, last_chunk,
                       [handler,this]
                       (const system::error_code &ec, std::size_t) mutable {
@@ -915,19 +870,19 @@ basic_socket<Socket, Settings>
         handler(ec);
     });
 
-    return result.get();
+    return init.result.get();
 }
 
 template<class Socket, class Settings>
 basic_socket<Socket, Settings>
-::basic_socket(boost::asio::io_service &io_service,
+::basic_socket(boost::asio::io_context &io_context,
                boost::asio::mutable_buffer inbuffer) :
-    channel(io_service),
+    channel(io_context),
     istate(http::read_state::empty),
     buffer(inbuffer),
     writer_helper(http::write_state::empty)
 {
-    if (asio::buffer_size(buffer) == 0)
+    if (buffer.size() == 0)
         throw std::invalid_argument("buffers must not be 0-sized");
 }
 
@@ -940,7 +895,7 @@ basic_socket<Socket, Settings>
     , buffer(inbuffer)
     , writer_helper(http::write_state::empty)
 {
-    if (asio::buffer_size(buffer) == 0)
+    if (buffer.size() == 0)
         throw std::invalid_argument("buffers must not be 0-sized");
 }
 
@@ -990,7 +945,7 @@ void basic_socket<Socket, Settings>::lock_client_to_http10()
 template<class Socket, class Settings>
 template<class Message, class Handler>
 void basic_socket<Socket, Settings>
-::schedule_on_async_read_message(Handler &handler, Message &message)
+::schedule_on_async_read_message(Handler &&handler, Message &message)
 {
     bool server_mode;
     if (is_request_message<Message>::value
@@ -1016,12 +971,13 @@ void basic_socket<Socket, Settings>
     if (used_size) {
         // Have cached some bytes from a previous read
         if (server_mode) {
-            on_async_read_message<true, req_parser>(std::move(handler), message,
-                                                    system::error_code{}, 0);
+            on_async_read_message<true, req_parser>
+                (std::forward<Handler>(handler), message, system::error_code{},
+                 0);
         } else {
-            on_async_read_message<false, res_parser>(std::move(handler),
-                                                     message,
-                                                     system::error_code{}, 0);
+            on_async_read_message<false, res_parser>
+                (std::forward<Handler>(handler), message, system::error_code{},
+                 0);
         }
     } else {
         if (server_mode) {
@@ -1135,7 +1091,7 @@ puteof(Parser &parser)
 template<class Socket, class Settings>
 template<bool server_mode, class Parser, class Message, class Handler>
 void basic_socket<Socket, Settings>
-::on_async_read_message(Handler handler, Message &message,
+::on_async_read_message(Handler &&handler, Message &message,
                         const system::error_code &ec,
                         std::size_t bytes_transferred)
 {
@@ -1185,9 +1141,9 @@ void basic_socket<Socket, Settings>
                 if (server_mode) {
                     asio::async_write(channel, asio::buffer(error_message),
                                       [handler](system::error_code
-                                                     /*ignored_ec*/,
-                                                     std::size_t
-                                                     /*bytes_transferred*/)
+                                                /*ignored_ec*/,
+                                                std::size_t
+                                                /*bytes_transferred*/)
                                       mutable {
                                           handler(http_errc::parsing_error);
                                       });
@@ -1209,9 +1165,9 @@ void basic_socket<Socket, Settings>
                 if (server_mode) {
                     asio::async_write(channel, asio::buffer(error_message),
                                       [handler](system::error_code
-                                                     /*ignored_ec*/,
-                                                     std::size_t
-                                                     /*bytes_transferred*/)
+                                                /*ignored_ec*/,
+                                                std::size_t
+                                                /*bytes_transferred*/)
                                       mutable {
                                           handler(http_errc::parsing_error);
                                       });
@@ -1234,9 +1190,9 @@ void basic_socket<Socket, Settings>
                 if (server_mode) {
                     asio::async_write(channel, asio::buffer(error_message),
                                       [handler](system::error_code
-                                                     /*ignored_ec*/,
-                                                     std::size_t
-                                                     /*bytes_transferred*/)
+                                                /*ignored_ec*/,
+                                                std::size_t
+                                                /*bytes_transferred*/)
                                       mutable {
                                           handler(http_errc::parsing_error);
                                       });
@@ -1258,9 +1214,9 @@ void basic_socket<Socket, Settings>
                 if (server_mode) {
                     asio::async_write(channel, asio::buffer(error_message),
                                       [handler](system::error_code
-                                                     /*ignored_ec*/,
-                                                     std::size_t
-                                                     /*bytes_transferred*/)
+                                                /*ignored_ec*/,
+                                                std::size_t
+                                                /*bytes_transferred*/)
                                       mutable {
                                           handler(http_errc::parsing_error);
                                       });
@@ -1282,9 +1238,9 @@ void basic_socket<Socket, Settings>
                 if (server_mode) {
                     asio::async_write(channel, asio::buffer(error_message),
                                       [handler](system::error_code
-                                                     /*ignored_ec*/,
-                                                     std::size_t
-                                                     /*bytes_transferred*/)
+                                                /*ignored_ec*/,
+                                                std::size_t
+                                                /*bytes_transferred*/)
                                       mutable {
                                           handler(http_errc::parsing_error);
                                       });
@@ -1359,7 +1315,7 @@ void basic_socket<Socket, Settings>
 
                 // Header name
                 {
-                    auto buf_view = asio::buffer_cast<char*>(buffer);
+                    auto buf_view = static_cast<char*>(buffer.data());
                     std::size_t field_name_begin = parser.parsed_count();
                     std::size_t field_name_size = parser.token_size();
 
@@ -1448,8 +1404,8 @@ void basic_socket<Socket, Settings>
         case token::code::body_chunk:
             {
                 auto value = parser.template value<token::body_chunk>();
-                auto begin = asio::buffer_cast<const std::uint8_t*>(value);
-                auto size = asio::buffer_size(value);
+                auto begin = static_cast<const std::uint8_t*>(value.data());
+                auto size = value.size();
                 message.body().insert(message.body().end(), begin, begin + size);
                 cb_ready = true;
             }
@@ -1473,7 +1429,7 @@ void basic_socket<Socket, Settings>
     }
 
     {
-        auto buf_view = asio::buffer_cast<char*>(buffer);
+        auto buf_view = static_cast<char*>(buffer.data());
         auto nparsed = parser.parsed_count();
         if (parser.code() == token::code::end_of_message) {
             const auto token_size = parser.token_size();
@@ -1491,7 +1447,7 @@ void basic_socket<Socket, Settings>
     if (cb_ready) {
         handler(system::error_code{});
     } else {
-        if (used_size == asio::buffer_size(buffer)) {
+        if (used_size == buffer.size()) {
             /* TODO: use `expected_token()` to reply with appropriate "... too
                long" status code */
             handler(system::error_code{http_errc::buffer_exhausted});
@@ -1536,22 +1492,19 @@ template <typename Handler,
 void basic_socket<Socket, Settings>::invoke_handler(Handler&& handler,
                                                     ErrorCode error)
 {
-    channel.get_io_service().post
-        ([handler, error] () mutable
-         {
-             handler(make_error_code(error));
-         });
+    auto ex(asio::get_associated_executor(handler, get_executor()));
+    auto alloc(asio::get_associated_allocator(handler));
+    ex.post([handler, error] () mutable { handler(make_error_code(error)); },
+            alloc);
 }
 
 template<class Socket, class Settings>
 template <class Handler>
 void basic_socket<Socket, Settings>::invoke_handler(Handler&& handler)
 {
-    channel.get_io_service().post
-        ([handler] () mutable
-         {
-             handler(system::error_code{});
-         });
+    auto ex(asio::get_associated_executor(handler, get_executor()));
+    auto alloc(asio::get_associated_allocator(handler));
+    ex.post([handler] () mutable { handler(system::error_code{}); }, alloc);
 }
 
 } // namespace boost

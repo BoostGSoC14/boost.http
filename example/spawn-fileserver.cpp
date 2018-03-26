@@ -1,7 +1,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/http/buffered_socket.hpp>
 #include <boost/http/algorithm.hpp>
@@ -106,7 +106,7 @@ public:
         return socket.next_layer();
     }
 
-    static std::shared_ptr<connection> make_connection(asio::io_service &ios,
+    static std::shared_ptr<connection> make_connection(asio::io_context &ios,
                                                        int counter,
                                                        const char *file)
     {
@@ -114,7 +114,7 @@ public:
     }
 
 private:
-    connection(asio::io_service &ios, int counter, const char *file)
+    connection(asio::io_context &ios, int counter, const char *file)
         : socket(ios)
         , counter(counter)
         , file(file)
@@ -135,18 +135,17 @@ int main(int argc, char *argv[])
     }
 
     char *file = argv[1];
-    asio::io_service ios;
+    asio::io_context ios;
     asio::ip::tcp::acceptor acceptor(ios,
                                      asio::ip::tcp
                                      ::endpoint(asio::ip::tcp::v6(), 8080));
 
-    auto work = [&acceptor,file](asio::yield_context yield) {
+    auto work = [&acceptor,&ios,file](asio::yield_context yield) {
         int counter = 0;
         for ( ; true ; ++counter ) {
             try {
                 auto connection
-                    = connection::make_connection(acceptor.get_io_service(),
-                                                  counter, file);
+                    = connection::make_connection(ios, counter, file);
                 cout << "About to accept a new connection" << endl;
                 acceptor.async_accept(connection->tcp_layer(), yield);
 
@@ -154,7 +153,7 @@ int main(int argc, char *argv[])
                     = [connection](asio::yield_context yield) mutable {
                     (*connection)(yield);
                 };
-                spawn(acceptor.get_io_service(), handle_connection);
+                spawn(acceptor.get_executor(), handle_connection);
             } catch (std::exception &e) {
                 cerr << "Aborting on exception: " << e.what() << endl;
                 std::exit(1);
