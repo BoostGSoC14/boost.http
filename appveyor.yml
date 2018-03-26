@@ -1,12 +1,12 @@
 platform:
   - x86
-  - x64
+  #- x64
 
 configuration:
   - Debug
   - Release
 
-image: Visual Studio 2015
+image: Visual Studio 2017
 
 branches:
   except:
@@ -16,20 +16,20 @@ environment:
   CXXFLAGS: -DWIN32_LEAN_AND_MEAN
 
 install:
-  - C:\"Program Files (x86)"\"Microsoft Visual Studio 14.0"\VC\vcvarsall.bat
+  - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
   - cinst -y cmake.portable
-  - ps: (new-object net.webclient).DownloadFile('https://github.com/ned14/boost-release/archive/master.zip', 'C:\master.zip')
+  - ps: (new-object net.webclient).DownloadFile('https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.zip', 'C:\boost_1_66_0.zip')
   - ps: Add-Type -A System.IO.Compression.FileSystem
-  - ps: "[IO.Compression.ZipFile]::ExtractToDirectory('C:\\master.zip', 'C:\\')"
-  - cd "C:\boost-release-master"
-  - bootstrap.bat --with-toolset=msvc-14.0
-  - b2 --with-container --with-context --with-coroutine --with-date_time --with-filesystem --with-system --with-regex
+  - ps: "[IO.Compression.ZipFile]::ExtractToDirectory('C:\\boost_1_66_0.zip', 'C:\\')"
+  - cd "C:\boost_1_66_0"
+  - bootstrap.bat --with-toolset=msvc-15.0
+  - b2 --with-container --with-context --with-coroutine --with-date_time --with-filesystem --with-system --with-regex --with=test
   - cd "%APPVEYOR_BUILD_FOLDER%"
 
 build_script:
   - md "test\build"
   - cd "test\build"
   - set LDFLAGS="/SAFESEH:NO"
-  - cmake -G"Visual Studio 14 2015" -DBOOST_ROOT="C:/boost-release-master" -DBoost_USE_STATIC_LIBS=ON ..
+  - cmake -G"Visual Studio 15 2017" -DBOOST_ROOT="C:/boost_1_66_0" -DBoost_USE_STATIC_LIBS=ON ..
   - cmake --build .
   - ctest --output-on-failure -C Debug

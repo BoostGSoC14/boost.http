@@ -1,4 +1,4 @@
-sudo: required
+sudo: false
 dist: trusty
 notifications:
   on_success: change
@@ -11,74 +11,50 @@ matrix:
       env: CMAKE_COMPILER=clang++
 
     - os: linux
-      env: CC=gcc-4.9 CXX=g++-4.9 BUILD_TYPE=Debug
-      addons: &gcc49
+      env: CC=gcc-6 CXX=g++-6 BUILD_TYPE=Debug
+      addons: &gcc6
         apt:
           packages:
-            - libstdc++-5-dev
-          sources:
-            - ubuntu-toolchain-r-test
-      install:
-        - sudo apt-get update -qq
-        - sudo apt-get install -qq g++-4.9
-
-    - os: linux
-      env: CC=gcc-4.9 CXX=g++-4.9 BUILD_TYPE=Release
-      addons: &gcc49
-        apt:
-          packages:
-            - libstdc++-5-dev
-          sources:
-            - ubuntu-toolchain-r-test
-      install:
-        - sudo apt-get update -qq
-        - sudo apt-get install -qq g++-4.9
-
-    - os: linux
-      env: CC=gcc-5 CXX=g++-5 BUILD_TYPE=Debug
-      addons: &gcc5
-        apt:
-          packages:
-            - g++-5
+            - realpath
+            - g++-6
             - libstdc++-5-dev
           sources:
             - ubuntu-toolchain-r-test
 
     - os: linux
-      env: CC=gcc-5 CXX=g++-5 BUILD_TYPE=Release
-      addons: &gcc5
+      env: CC=gcc-6 CXX=g++-6 BUILD_TYPE=Release
+      addons: &gcc6
         apt:
           packages:
-            - g++-5
+            - realpath
+            - g++-6
             - libstdc++-5-dev
           sources:
             - ubuntu-toolchain-r-test
 
     - os: linux
-      env: CC=clang-3.8 CXX=clang++-3.8 BUILD_TYPE=Debug
-      addons: &clang38
+      env: CC=clang-5.0 CXX=clang++-5.0 BUILD_TYPE=Debug
+      addons: &clang50
         apt:
           packages:
-            - clang-3.8
+            - realpath
+            - clang-5.0
+            - g++-4.9
           sources:
-            - llvm-toolchain-trusty-3.8
+            - llvm-toolchain-trusty-5.0
             - ubuntu-toolchain-r-test
-      install:
-        - sudo apt-get update -qq
-        - sudo apt-get install -qq g++-4.9
 
     - os: linux
-      env: CC=clang-3.8 CXX=clang++-3.8 BUILD_TYPE=Release
-      addons: &clang38
+      env: CC=clang-5.0 CXX=clang++-5.0 BUILD_TYPE=Release
+      addons: &clang50
         apt:
           packages:
-            - clang-3.8
+            - realpath
+            - clang-5.0
+            - g++-4.9
           sources:
-            - llvm-toolchain-trusty-3.8
+            - llvm-toolchain-trusty-5.0
             - ubuntu-toolchain-r-test
-      install:
-        - sudo apt-get update -qq
-        - sudo apt-get install -qq g++-4.9
 
 #    - os: linux
 #      env: CC=clang-3.8 CXX=clang++-3.8 CXXFLAGS="-g -O1 -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2"
@@ -96,39 +72,37 @@ matrix:
 #        - sudo apt-get install -qq g++-4.9
 
     - os: linux
-      env: CC=clang-3.8 CXX=clang++-3.8 CXXFLAGS="-g -O1 -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls" ASAN_OPTIONS=check_initialization_order=1
-      addons: &clang38
+      env: CC=clang-5.0 CXX=clang++-5.0 CXXFLAGS="-g -O1 -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls" ASAN_OPTIONS=check_initialization_order=1
+      sudo: required
+      addons: &clang50
         apt:
           packages:
-            - clang-3.8
+            - realpath
+            - clang-5.0
+            - g++-4.9
           sources:
-            - llvm-toolchain-trusty-3.8
+            - llvm-toolchain-trusty-5.0
             - ubuntu-toolchain-r-test
-      install:
-        - sudo apt-get update -qq
-        - sudo apt-get install -qq g++-4.9
 
     - os: linux
-      env: CC=clang-3.8 CXX=clang++-3.8 CXXFLAGS="-g -O1 -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls"
-      addons: &clang38
+      env: CC=clang-5.0 CXX=clang++-5.0 CXXFLAGS="-g -O1 -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+      addons: &clang50
         apt:
           packages:
-            - clang-3.8
+            - realpath
+            - clang-5.0
+            - g++-4.9
           sources:
-            - llvm-toolchain-trusty-3.8
+            - llvm-toolchain-trusty-5.0
             - ubuntu-toolchain-r-test
-      install:
-        - sudo apt-get update -qq
-        - sudo apt-get install -qq g++-4.9
 
 before_install:
- - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -qq realpath; fi
- - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget https://github.com/ned14/boost-release/archive/master.zip; fi
- - if [ "$TRAVIS_OS_NAME" = "linux" ]; then unzip -q master.zip; fi
- - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export BOOST_ROOT="$(realpath boost-release-master)"; fi
+ - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget https://dl.bintray.com/boostorg/release/1.66.0/source/boost_1_66_0.tar.bz2; fi
+ - if [ "$TRAVIS_OS_NAME" = "linux" ]; then tar xjf boost_1_66_0.tar.bz2; fi
+ - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export BOOST_ROOT="$(realpath boost_1_66_0)"; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then pushd "${BOOST_ROOT}"; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then chmod +x bootstrap.sh; fi
- - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./bootstrap.sh --with-libraries=container,context,coroutine,date_time,filesystem,system,regex; fi
+ - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./bootstrap.sh --with-libraries=container,context,coroutine,date_time,filesystem,system,regex,test; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then ./b2; fi
  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then popd; fi
  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
