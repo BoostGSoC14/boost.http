@@ -3,9 +3,9 @@
 https://gitter.im/BoostGSoC14/boost.http?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge[image:https://badges.gitter.im/Join%20Chat.svg[Join
 the chat at https://gitter.im/BoostGSoC14/boost.http]]
 
-https://travis-ci.org/vinipsmaker/asiohttpserver[image:https://travis-ci.org/vinipsmaker/asiohttpserver.svg?branch=master[Build
+https://travis-ci.org/vinipsmaker/asiohttpserver[image:https://travis-ci.org/vinipsmaker/asiohttpserver.svg?branch=socket[Build
 Status]]
-https://ci.appveyor.com/project/vinipsmaker/boost-http[image:https://ci.appveyor.com/api/projects/status/0bkoiqxndehg2mj9/branch/master?svg=true[Build
+https://ci.appveyor.com/project/vinipsmaker/boost-http[image:https://ci.appveyor.com/api/projects/status/0bkoiqxndehg2mj9/branch/socket?svg=true[Build
 status]]
 
 This library implements a core HTTP server for Boost that can be used from
