@@ -555,7 +555,7 @@ basic_socket<Socket, Settings>
 
     auto handler = std::move(init.completion_handler);
     asio::async_write(channel, asio::buffer(buf, size),
-                      [handler,buf,size,this]
+                      [handler,buf,size]
                       (const system::error_code &ec, std::size_t) mutable {
                           asio_handler_deallocate(buf, size, &handler);
                           handler(ec);
@@ -689,7 +689,7 @@ basic_socket<Socket, Settings>
 
     auto handler = std::move(init.completion_handler);
     asio::async_write(channel, asio::buffer(buf, size),
-                      [handler,buf,size,this]
+                      [handler,buf,size]
                       (const system::error_code &ec, std::size_t) mutable {
                           asio_handler_deallocate(buf, size, &handler);
                           handler(ec);
