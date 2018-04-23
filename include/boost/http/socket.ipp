@@ -419,8 +419,6 @@ basic_socket<Socket, Settings>
     static_assert(is_request_message<Request>::value,
                   "Request must fulfill the Request concept");
 
-    using detail::string_literal_buffer;
-
     asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
@@ -575,8 +573,6 @@ basic_socket<Socket, Settings>
     static_assert(is_request_message<Request>::value,
                   "Request must fulfill the Request concept");
 
-    using detail::string_literal_buffer;
-
     asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
@@ -637,7 +633,6 @@ basic_socket<Socket, Settings>
         + 0
         // Final CRLF
         + 2;
-    std::size_t content_length_ndigits = 0;
 
     // Headers
     for (const auto &e: headers) {
