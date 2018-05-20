@@ -65,6 +65,8 @@ struct
 {
     typedef reader::request req_parser;
     typedef reader::response res_parser;
+    static constexpr std::size_t body_copy_threshold
+        = BOOST_HTTP_SOCKET_DEFAULT_BODY_COPY_THRESHOLD;
 };
 ----
 

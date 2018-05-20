@@ -39,6 +39,10 @@
 #include <boost/http/detail/constchar_helper.hpp>
 #include <boost/http/algorithm/header.hpp>
 
+#ifndef BOOST_HTTP_SOCKET_DEFAULT_BODY_COPY_THRESHOLD
+#define BOOST_HTTP_SOCKET_DEFAULT_BODY_COPY_THRESHOLD 1024
+#endif // BOOST_HTTP_SOCKET_DEFAULT_BODY_COPY_THRESHOLD
+
 namespace boost {
 namespace http {
 
@@ -46,6 +50,8 @@ struct default_socket_settings
 {
     typedef reader::request req_parser;
     typedef reader::response res_parser;
+    static constexpr std::size_t body_copy_threshold
+        = BOOST_HTTP_SOCKET_DEFAULT_BODY_COPY_THRESHOLD;
 };
 
 template<class Socket, class Settings = default_socket_settings>

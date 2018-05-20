@@ -148,6 +148,16 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
   this function in HTTP client mode. It'll throw an exception to notify the
   violation.
 
+`BOOST_HTTP_SOCKET_DEFAULT_BODY_COPY_THRESHOLD`::
+
+  This macro defines the default value for <<basic_socket,`basic_socket`>>'s
+  `Settings::body_copy_threshold`. It represents the maximum amount of bytes
+  <<basic_socket,`basic_socket`>> will copy from message bodies in an attempt to
+  send a single buffer chunk to the underlying network write syscall. If `0`,
+  then no body is copied and a split write buffer will always be used. The
+  default provided value (i.e. the non-overriden version) is unspecified
+  (e.g. can change among versions and platforms).
+
 === Detailed
 
 include::ref/headers.adoc[]

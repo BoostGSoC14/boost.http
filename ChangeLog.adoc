@@ -9,3 +9,4 @@ You can check any breaking changes here.
   while `socket.read_state() != read_state::finished`.
 * Remove all runtime-based polymorphic helpers.
 * Boost requirement raised to 1.66.
+* New `BOOST_HTTP_SOCKET_DEFAULT_BODY_COPY_THRESHOLD` macro.

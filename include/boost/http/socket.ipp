@@ -188,15 +188,10 @@ basic_socket<Socket, Settings>
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
 
-    using detail::string_literal_buffer;
-
     asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
-    const auto status_code = response.status_code();
-    const auto &reason_phrase = response.reason_phrase();
-    const auto &headers = response.headers();
-
+    auto prev_state = writer_helper.state;
     if (!writer_helper.write_message()) {
         invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
@@ -204,8 +199,10 @@ basic_socket<Socket, Settings>
     }
     istate = http::read_state::empty;
 
-    auto crlf = string_literal_buffer("\r\n");
-    auto sep = string_literal_buffer(": ");
+    const auto status_code = response.status_code();
+    const auto &reason_phrase = response.reason_phrase();
+    const auto &headers = response.headers();
+
     bool implicit_content_length
         = (headers.find("content-length") != headers.end())
         || (status_code / 100 == 1) || (status_code == 204)
@@ -218,74 +215,160 @@ basic_socket<Socket, Settings>
     auto use_connection_close_buf = (keep_alive == KEEP_ALIVE_CLOSE_READ)
         && !has_connection_close;
 
-    // because we don't create multiple responses at once with HTTP/1.1
-    // pipelining, it's safe to use this "shared state"
-    content_length_buffer = std::to_string(status_code) + ' ';
-    std::string::size_type content_length_delim = content_length_buffer.size();
+    const bool copy_body
+        = (response.body().size() < Settings::body_copy_threshold)
+        || (response.body().size() == 0);
 
-    // because we don't create multiple responses at once with HTTP/1.1
-    // pipelining, it's safe to use this "shared state"
-    content_length_buffer += std::to_string(response.body().size());
-
-    const auto nbuffer_pieces =
+    std::size_t size =
         // Start line (http version + status code + reason phrase) + CRLF
-        4
-        // Headers
+        string_view("HTTP/1.1 NNN ").size() + reason_phrase.size() + 2
         // If user didn't provided "connection: close"
-        + (use_connection_close_buf ? 1 : 0)
-        // Each header is 4 buffer pieces: key + sep + value + crlf
-        + 4 * headers.size()
-        // Extra content-length header uses 3 pieces
-        + (implicit_content_length ? 0 : 3)
+        + (use_connection_close_buf
+           ? string_view("connection: close\r\n").size()
+           : 0)
+        // Headers are computed later
+        + 0
         // Extra CRLF for end of headers
-        + 1
+        + 2
         // And finally, the message body
-        + (implicit_content_length ? 0 : 1);
+        + ((implicit_content_length || !copy_body)
+           ? 0 : response.body().size());
+    std::size_t content_length_ndigits = 0;
 
-    // TODO (C++14): replace by dynarray
-    std::vector<asio::const_buffer> buffers;
-    buffers.reserve(nbuffer_pieces);
+    // Headers
+    for (const auto &e: headers) {
+        // Each header is 4 buffer pieces: key + sep + value + CRLF
+        // sep (": ") + CRLF is always 4 bytes.
+        size += 4 + e.first.size() + e.second.size();
+    }
 
-    buffers.push_back(modern_http ? string_literal_buffer("HTTP/1.1 ")
-                      : string_literal_buffer("HTTP/1.0 "));
-    buffers.push_back(asio::buffer(content_length_buffer.data(),
-                                   content_length_delim));
-    buffers.push_back(asio::buffer(reason_phrase.data(), reason_phrase.size()));
-    buffers.push_back(crlf);
+    // "content-length" header
+    if (!implicit_content_length) {
+        content_length_ndigits
+            = detail::count_decdigits(response.body().size());
+        size += string_view("content-length: \r\n").size()
+            + content_length_ndigits;
+    }
 
-    if (use_connection_close_buf)
-        buffers.push_back(string_literal_buffer("connection: close\r\n"));
+    char *buf = NULL;
+    std::size_t idx = 0;
+    try {
+        buf = reinterpret_cast<char*>(asio_handler_allocate
+                                      (size, &init.completion_handler));
+    } catch (const std::bad_alloc&) {
+        writer_helper.state = prev_state;
+        throw;
+    } catch (...) {
+        assert(false);
+    }
 
-    for (const auto &header: headers) {
-        buffers.push_back(asio::buffer(header.first));
-        buffers.push_back(sep);
-        buffers.push_back(asio::buffer(header.second));
-        buffers.push_back(crlf);
+    {
+        string_view x;
+
+        if (modern_http)
+            x = "HTTP/1.1 ";
+        else
+            x = "HTTP/1.0 ";
+
+        std::memcpy(buf + idx, x.data(), x.size());
+        idx += x.size();
+    }
+
+    buf[idx++] = (status_code / 100) + '0';
+    buf[idx++] = (status_code / 10) % 10 + '0';
+    buf[idx++] = (status_code % 10) + '0';
+    buf[idx++] = ' ';
+
+    std::memcpy(buf + idx, reason_phrase.data(), reason_phrase.size());
+    idx += reason_phrase.size();
+
+    std::memcpy(buf + idx, "\r\n", 2);
+    idx += 2;
+
+    if (use_connection_close_buf) {
+        string_view x = "connection: close\r\n";
+        std::memcpy(buf + idx, x.data(), x.size());
+        idx += x.size();
+    }
+
+    for (const auto &e: headers) {
+        std::memcpy(buf + idx, e.first.data(), e.first.size());
+        idx += e.first.size();
+
+        std::memcpy(buf + idx, ": ", 2);
+        idx += 2;
+
+        std::memcpy(buf + idx, e.second.data(), e.second.size());
+        idx += e.second.size();
+
+        std::memcpy(buf + idx, "\r\n", 2);
+        idx += 2;
     }
 
     if (!implicit_content_length) {
-        buffers.push_back(string_literal_buffer("content-length: "));
-        buffers.push_back(asio::buffer(content_length_buffer.data()
-                                       + content_length_delim,
-                                       content_length_buffer.size()
-                                       - content_length_delim));
-        buffers.push_back(crlf);
+        string_view x("content-length: ");
+        std::memcpy(buf + idx, x.data(), x.size());
+        idx += x.size();
+
+        auto body_size = response.body().size();
+        for (auto i = content_length_ndigits ; i != 0 ; --i) {
+            buf[idx + i - 1] = (body_size % 10) + '0';
+            body_size /= 10;
+        }
+        idx += content_length_ndigits;
+
+        std::memcpy(buf + idx, "\r\n", 2);
+        idx += 2;
     }
 
-    buffers.push_back(crlf);
+    std::memcpy(buf + idx, "\r\n", 2);
+    idx += 2;
 
-    if (!implicit_content_length)
-        buffers.push_back(asio::buffer(response.body()));
+    if (!implicit_content_length && copy_body) {
+        std::copy(response.body().begin(), response.body().end(), buf + idx);
+        idx += response.body().size();
+    }
+
+    assert(size == idx);
 
     auto handler = std::move(init.completion_handler);
-    asio::async_write(channel, buffers,
-                      [handler,this]
-                      (const system::error_code &ec, std::size_t) mutable {
-        is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-        if (!is_open_)
-            channel.lowest_layer().close();
-        handler(ec);
-    });
+    if (copy_body) {
+        asio::async_write(
+            channel, asio::buffer(buf, size),
+            [handler,buf,size,this]
+            (const system::error_code &ec, std::size_t) mutable {
+                asio_handler_deallocate(buf, size, &handler);
+                is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+                if (!is_open_)
+                    channel.lowest_layer().close();
+                handler(ec);
+            }
+        );
+    } else {
+        auto body_buf
+            = asio::buffer(response.body().data(), response.body().size());
+        asio::async_write(
+            channel, asio::buffer(buf, size),
+            [handler,buf,size,body_buf,this]
+            (const system::error_code &ec, std::size_t) mutable {
+                asio_handler_deallocate(buf, size, &handler);
+                if (ec) {
+                    handler(ec);
+                    return;
+                }
+                asio::async_write(
+                    channel, body_buf,
+                    [handler,this]
+                    (const system::error_code &ec, std::size_t) mutable {
+                        is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+                        if (!is_open_)
+                            channel.lowest_layer().close();
+                        handler(ec);
+                    }
+                );
+            }
+        );
+    }
 
     return init.result.get();
 }
