@@ -830,6 +830,7 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
     asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
+    auto prev_state = writer_helper.state;
     if (!writer_helper.write()) {
         invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
@@ -841,29 +842,104 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
         return init.result.get();
     }
 
-    auto crlf = string_literal_buffer("\r\n");
+    const bool copy_body
+        = message.body().size() < Settings::body_copy_threshold;
 
-    {
-        std::ostringstream ostr;
-        ostr << std::hex << message.body().size();
-        // because we don't create multiple responses at once with HTTP/1.1
-        // pipelining, it's safe to use this "shared state"
-        content_length_buffer = ostr.str();
+    std::size_t content_length_nhexdigits
+        = detail::count_hexdigits(message.body().size());
+    std::size_t size =
+        // hex string
+        content_length_nhexdigits
+        // crlf
+        + 2
+        // body chunk + crlf
+        + (copy_body
+           ? (message.body().size() + 2)
+           : 0);
+
+    char *buf = NULL;
+    std::size_t idx = 0;
+    try {
+        buf = reinterpret_cast<char*>(asio_handler_allocate
+                                      (size, &init.completion_handler));
+    } catch (const std::bad_alloc&) {
+        writer_helper.state = prev_state;
+        throw;
+    } catch (...) {
+        assert(false);
     }
 
-    std::array<boost::asio::const_buffer, 4> buffers = {
-        asio::buffer(content_length_buffer),
-        crlf,
-        asio::buffer(message.body()),
-        crlf
-    };
+    {
+        auto body_size = message.body().size();
+        for (auto i = content_length_nhexdigits ; i != 0 ; --i) {
+            char hexdigit = body_size % 16;
+            if (hexdigit > 10)
+                hexdigit += 'a' - 10;
+            else
+                hexdigit += '0';
+            buf[idx + i - 1] = hexdigit;
+            body_size /= 16;
+        }
+        idx += content_length_nhexdigits;
+    }
+
+    std::memcpy(buf + idx, "\r\n", 2);
+    idx += 2;
+
+    if (copy_body) {
+        std::copy(message.body().begin(), message.body().end(), buf + idx);
+        idx += message.body().size();
+
+        std::memcpy(buf + idx, "\r\n", 2);
+        idx += 2;
+    }
+
+    assert(size == idx);
 
     auto handler = std::move(init.completion_handler);
-    asio::async_write(channel, buffers,
-                      [handler]
-                      (const system::error_code &ec, std::size_t) mutable {
-        handler(ec);
-    });
+    if (copy_body) {
+        asio::async_write(
+            channel, asio::buffer(buf, size),
+            [handler,buf,size]
+            (const system::error_code &ec, std::size_t) mutable {
+                asio_handler_deallocate(buf, size, &handler);
+                handler(ec);
+            }
+        );
+    } else {
+        auto body_buf
+            = asio::buffer(message.body().data(), message.body().size());
+        asio::async_write(
+            channel, asio::buffer(buf, size),
+            [handler,buf,size,body_buf,this]
+            (const system::error_code &ec, std::size_t) mutable {
+                asio_handler_deallocate(buf, size, &handler);
+                if (ec) {
+                    handler(ec);
+                    return;
+                }
+                asio::async_write(
+                    channel, body_buf,
+                    [handler,this]
+                    (const system::error_code &ec, std::size_t) mutable {
+                        if (ec) {
+                            handler(ec);
+                            return;
+                        }
+                        auto crlf = string_literal_buffer("\r\n");
+                        asio::async_write(
+                            channel, crlf,
+                            [handler]
+                            (const system::error_code &ec,
+                             std::size_t) mutable {
+                                handler(ec);
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    }
 
     return init.result.get();
 }

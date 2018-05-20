@@ -36,6 +36,7 @@
 #include <boost/http/http_errc.hpp>
 #include <boost/http/detail/writer_helper.hpp>
 #include <boost/http/detail/count_decdigits.hpp>
+#include <boost/http/detail/count_hexdigits.hpp>
 #include <boost/http/detail/constchar_helper.hpp>
 #include <boost/http/algorithm/header.hpp>
 
@@ -197,7 +198,6 @@ private:
 
     // Output state
     detail::writer_helper writer_helper;
-    std::string content_length_buffer;
     bool connect_request;
 };
 
