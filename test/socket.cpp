@@ -48,6 +48,11 @@ void clear_message(Message &m)
     m.trailers().clear();
 }
 
+bool check_wrong_direction(const system::system_error &e)
+{
+    return system::error_code(http::http_errc::wrong_direction) == e.code();
+}
+
 struct outer_storage
 {
     outer_storage(asio::yield_context &yield)
@@ -1362,5 +1367,58 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
     };
 
     spawn(ios, work2);
+    ios.run();
+}
+
+BOOST_AUTO_TEST_CASE(check_wrong_direction_test) {
+    asio::io_context ios;
+    auto work = [&ios](asio::yield_context yield) {
+        char buf[1];
+        http::basic_socket<mock_socket> socket(ios, asio::buffer(buf));
+
+        http::request request;
+        request.method() = "GET";
+        request.target() = "/";
+        request.headers().emplace("host", "localhost:8080");
+
+        http::response response;
+
+        BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+        BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+
+        BOOST_CHECK_EXCEPTION(
+            socket.async_write_response_metadata(response, yield),
+            system::system_error,
+            check_wrong_direction
+        );
+
+        BOOST_CHECK_EXCEPTION(
+            socket.async_write_response(response, yield),
+            system::system_error,
+            check_wrong_direction
+        );
+
+        BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+        BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+
+        socket.async_write_request(request, yield);
+
+        BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+        BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+
+        BOOST_CHECK_EXCEPTION(
+            socket.async_write_response_metadata(response, yield),
+            system::system_error,
+            check_wrong_direction
+        );
+
+        BOOST_CHECK_EXCEPTION(
+            socket.async_write_response(response, yield),
+            system::system_error,
+            check_wrong_direction
+        );
+    };
+
+    spawn(ios, work);
     ios.run();
 }

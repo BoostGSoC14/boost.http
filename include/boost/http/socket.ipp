@@ -191,6 +191,12 @@ basic_socket<Socket, Settings>
     asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
+    if (parser.which() != 1) { //< !req_parser
+        invoke_handler(std::move(init.completion_handler),
+                       http_errc::wrong_direction);
+        return init.result.get();
+    }
+
     auto prev_state = writer_helper.state;
     if (!writer_helper.write_message()) {
         invoke_handler(std::move(init.completion_handler),
@@ -412,6 +418,12 @@ basic_socket<Socket, Settings>
 
     asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
+
+    if (parser.which() != 1) { //< !req_parser
+        invoke_handler(std::move(init.completion_handler),
+                       http_errc::wrong_direction);
+        return init.result.get();
+    }
 
     auto prev_state = writer_helper.state;
     if (!writer_helper.write_metadata()) {
