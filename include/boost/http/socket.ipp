@@ -586,6 +586,10 @@ basic_socket<Socket, Settings>
         sent_requests.push_back(sent_method);
     }
 
+    const bool copy_body
+        = (request.body().size() < Settings::body_copy_threshold)
+        || (request.body().size() == 0);
+
     std::size_t size =
         // Request line
         method.size() + 1 + target.size() + string_view(" HTTP/1.x\r\n").size()
@@ -594,7 +598,7 @@ basic_socket<Socket, Settings>
         // Final CRLF
         + 2
         // Body
-        + request.body().size();
+        + (copy_body ? request.body().size() : 0);
     std::size_t content_length_ndigits = 0;
 
     // Headers
@@ -677,19 +681,44 @@ basic_socket<Socket, Settings>
     std::memcpy(buf + idx, "\r\n", 2);
     idx += 2;
 
-    if (request.body().size()) {
+    if (copy_body) {
         std::copy(request.body().begin(), request.body().end(), buf + idx);
         idx += request.body().size();
     }
     assert(size == idx);
 
     auto handler = std::move(init.completion_handler);
-    asio::async_write(channel, asio::buffer(buf, size),
-                      [handler,buf,size]
-                      (const system::error_code &ec, std::size_t) mutable {
-                          asio_handler_deallocate(buf, size, &handler);
-                          handler(ec);
-                      });
+    if (copy_body) {
+        asio::async_write(
+            channel, asio::buffer(buf, size),
+            [handler,buf,size]
+            (const system::error_code &ec, std::size_t) mutable {
+                asio_handler_deallocate(buf, size, &handler);
+                handler(ec);
+            }
+        );
+    } else {
+        auto body_buf
+            = asio::buffer(request.body().data(), request.body().size());
+        asio::async_write(
+            channel, asio::buffer(buf, size),
+            [handler,buf,size,body_buf,this]
+            (const system::error_code &ec, std::size_t) mutable {
+                asio_handler_deallocate(buf, size, &handler);
+                if (ec) {
+                    handler(ec);
+                    return;
+                }
+                asio::async_write(
+                    channel, body_buf,
+                    [handler]
+                    (const system::error_code &ec, std::size_t) mutable {
+                        handler(ec);
+                    }
+                );
+            }
+        );
+    }
 
     return init.result.get();
 }
