@@ -953,11 +953,11 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    using detail::string_literal_buffer;
-
     asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
+    auto prev_rstate = istate;
+    auto prev_wstate = writer_helper.state;
     if (!writer_helper.write_trailers()) {
         invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
@@ -976,39 +976,58 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
         break;
     }
 
-
-    auto last_chunk = string_literal_buffer("0\r\n");
-    auto crlf = string_literal_buffer("\r\n");
-    auto sep = string_literal_buffer(": ");
-
-    const auto nbuffer_pieces =
+    std::size_t size =
         // last_chunk
-        1
-        // Trailers
-        // Each header is 4 buffer pieces: key + sep + value + crlf
-        + 4 * message.trailers().size()
+        string_view("0\r\n").size()
+        // Trailers are computed later
+        + 0
         // Final CRLF for end of trailers
-        + 1;
+        + 2;
 
-    // TODO (C++14): replace by dynarray
-    std::vector<asio::const_buffer> buffers;
-    buffers.reserve(nbuffer_pieces);
-
-    buffers.push_back(last_chunk);
-
-    for (const auto &header: message.trailers()) {
-        buffers.push_back(asio::buffer(header.first));
-        buffers.push_back(sep);
-        buffers.push_back(asio::buffer(header.second));
-        buffers.push_back(crlf);
+    for (const auto &e: message.trailers()) {
+        // Each header is 4 buffer pieces: key + sep + value + crlf
+        // sep (": ") + crlf is always 4 bytes.
+        size += 4 + e.first.size() + e.second.size();
     }
 
-    buffers.push_back(crlf);
+    char *buf = NULL;
+    std::size_t idx = 0;
+    try {
+        buf = reinterpret_cast<char*>(asio_handler_allocate
+                                      (size, &init.completion_handler));
+    } catch (const std::bad_alloc&) {
+        istate = prev_rstate;
+        writer_helper.state = prev_wstate;
+        throw;
+    } catch (...) {
+        assert(false);
+    }
+
+    std::memcpy(buf + idx, "0\r\n", 3);
+    idx += 3;
+
+    for (const auto &e: message.trailers()) {
+        std::memcpy(buf + idx, e.first.data(), e.first.size());
+        idx += e.first.size();
+
+        std::memcpy(buf + idx, ": ", 2);
+        idx += 2;
+
+        std::memcpy(buf + idx, e.second.data(), e.second.size());
+        idx += e.second.size();
+
+        std::memcpy(buf + idx, "\r\n", 2);
+        idx += 2;
+    }
+
+    std::memcpy(buf + idx, "\r\n", 2);
+    idx += 2;
 
     auto handler = std::move(init.completion_handler);
-    asio::async_write(channel, buffers,
-                      [handler,this]
+    asio::async_write(channel, asio::buffer(buf, size),
+                      [handler,buf,size,this]
                       (const system::error_code &ec, std::size_t) mutable {
+        asio_handler_deallocate(buf, size, &handler);
         is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
         if (!is_open_)
             channel.lowest_layer().close();
