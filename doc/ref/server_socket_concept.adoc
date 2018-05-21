@@ -127,6 +127,7 @@ BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
 a|
 
 * `a.write_state() == write_state ::finished`
+* `a.read_state() == read_state ::empty`
 * By the time the handler is called, the `om` message is considered delivered,
   if no error happened.
 
@@ -212,12 +213,18 @@ semantics/postconditions:
 |`a.async_write_trailers(cm, token)`
 |`a.write_state() == write_state ::metadata_issued`
 |
-|`a.write_state() == write_state::finished`
+a|
+
+* `a.write_state() == write_state::finished`
+* `a.read_state() == read_state ::empty`
 
 |`a.async_write_end_of_message (token)`
 |`a.write_state() == write_state ::metadata_issued`
 |
-|`a.write_state() == write_state::finished`
+a|
+
+* `a.write_state() == write_state::finished`
+* `a.read_state() == read_state ::empty`
 
 |===
 
