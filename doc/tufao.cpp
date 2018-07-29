@@ -7,29 +7,17 @@ void HttpServerRequest::onReadyRead()
     priv->parser.set_buffer(asio::buffer(priv->buffer.data(),
                                          priv->buffer.size()));
 
-    std::size_t nparsed = 0;
     Priv::Signals whatEmit(0);
     bool is_upgrade = false;
 
     while(priv->parser.code() != http::token::code::error_insufficient_data) {
-        switch(priv->parser.code()) {
-        case http::token::code::error_set_method:
-            qFatal("unreachable");
-            break;
-        case http::token::code::error_use_another_connection:
-            qFatal("unreachable");
-            break;
-        case http::token::code::error_invalid_data:
-        case http::token::code::error_no_host:
-        case http::token::code::error_invalid_content_length:
-        case http::token::code::error_content_length_overflow:
-        case http::token::code::error_invalid_transfer_encoding:
-        case http::token::code::error_chunk_size_overflow:
+        switch(priv->parser.symbol()) {
+        case http::token::symbol::error:
             priv->socket.close();
             return;
-        case http::token::code::skip:
+        case http::token::symbol::skip:
             break;
-        case http::token::code::method:
+        case http::token::symbol::method:
             {
                 clearRequest();
                 priv->responseOptions = 0;
@@ -38,14 +26,14 @@ void HttpServerRequest::onReadyRead()
                 priv->method = std::move(method);
             }
             break;
-        case http::token::code::request_target:
+        case http::token::symbol::request_target:
             {
                 auto value = priv->parser.value<http::token::request_target>();
                 QByteArray url(value.data(), value.size());
                 priv->url = std::move(url);
             }
             break;
-        case http::token::code::version:
+        case http::token::symbol::version:
             {
                 auto value = priv->parser.value<http::token::version>();
                 if (value == 0) {
@@ -57,20 +45,20 @@ void HttpServerRequest::onReadyRead()
                 }
             }
             break;
-        case http::token::code::status_code:
+        case http::token::symbol::status_code:
             qFatal("unreachable");
             break;
-        case http::token::code::reason_phrase:
+        case http::token::symbol::reason_phrase:
             qFatal("unreachable");
             break;
-        case http::token::code::field_name:
-        case http::token::code::trailer_name:
+        case http::token::symbol::field_name:
+        case http::token::symbol::trailer_name:
             {
                 auto value = priv->parser.value<http::token::field_name>();
                 priv->lastHeader = QByteArray(value.data(), value.size());
             }
             break;
-        case http::token::code::field_value:
+        case http::token::symbol::field_value:
             {
                 auto value = priv->parser.value<http::token::field_value>();
                 QByteArray header(value.data(), value.size());
@@ -78,7 +66,7 @@ void HttpServerRequest::onReadyRead()
                 priv->lastHeader.clear();
             }
             break;
-        case http::token::code::trailer_value:
+        case http::token::symbol::trailer_value:
             {
                 auto value = priv->parser.value<http::token::trailer_value>();
                 QByteArray header(value.data(), value.size());
@@ -86,7 +74,7 @@ void HttpServerRequest::onReadyRead()
                 priv->lastHeader.clear();
             }
             break;
-        case http::token::code::end_of_headers:
+        case http::token::symbol::end_of_headers:
             {
                 auto it = priv->headers.find("connection");
                 bool close_found = false;
@@ -116,7 +104,7 @@ void HttpServerRequest::onReadyRead()
                 whatEmit = Priv::READY;
             }
             break;
-        case http::token::code::body_chunk:
+        case http::token::symbol::body_chunk:
             {
                 auto value = priv->parser.value<http::token::body_chunk>();
                 priv->body.append(asio::buffer_cast<const char*>(value),
@@ -124,10 +112,11 @@ void HttpServerRequest::onReadyRead()
                 whatEmit |= Priv::DATA;
             }
             break;
-        case http::token::code::end_of_body:
+        case http::token::symbol::end_of_body:
             break;
-        case http::token::code::end_of_message:
-            priv->parser.set_buffer(asio::buffer(priv->buffer.data() + nparsed,
+        case http::token::symbol::end_of_message:
+            priv->buffer.remove(0, priv->parser.parsed_count());
+            priv->parser.set_buffer(asio::buffer(priv->buffer.data(),
                                                  priv->parser.token_size()));
             whatEmit |= Priv::END;
             disconnect(&priv->socket, SIGNAL(readyRead()),
@@ -135,12 +124,9 @@ void HttpServerRequest::onReadyRead()
             break;
         }
 
-        nparsed += priv->parser.token_size();
         priv->parser.next();
     }
-    nparsed += priv->parser.token_size();
-    priv->parser.next();
-    priv->buffer.remove(0, nparsed);
+    priv->buffer.remove(0, priv->parser.parsed_count());
 
     if (is_upgrade) {
         disconnect(&priv->socket, SIGNAL(readyRead()),
