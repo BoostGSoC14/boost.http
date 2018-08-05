@@ -233,7 +233,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 44);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
@@ -596,7 +596,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
@@ -717,12 +717,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -844,12 +845,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -993,12 +995,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -1032,7 +1035,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
@@ -1160,12 +1163,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -1199,7 +1203,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
@@ -1327,12 +1331,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -1366,7 +1371,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
@@ -1494,12 +1499,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -1533,7 +1539,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
@@ -1668,12 +1674,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -1707,7 +1714,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
@@ -1855,12 +1862,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -1894,7 +1902,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
@@ -2042,12 +2050,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -2081,7 +2090,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
@@ -2230,12 +2239,13 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 
-        REQUIRE(parser.code() == http::token::code::skip);
+        REQUIRE(parser.code() == http::token::code::chunk_ext);
         REQUIRE(parser.token_size() == 17);
+        REQUIRE(parser.value<http::token::chunk_ext>() == ";FSF=good;ms=evil");
         REQUIRE(parser.expected_token() == http::token::code::skip);
 
         parser.next();
@@ -2269,7 +2279,7 @@ TEST_CASE("Parse a few (good,bad) pipelined non-fragmented/whole requests",
 
         REQUIRE(parser.code() == http::token::code::skip);
         REQUIRE(parser.token_size() == 1);
-        REQUIRE(parser.expected_token() == http::token::code::skip);
+        REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
         parser.next();
 

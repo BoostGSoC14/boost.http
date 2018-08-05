@@ -716,7 +716,7 @@ TEST_CASE("Test varying body types", "[parser,good]")
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
@@ -745,7 +745,7 @@ TEST_CASE("Test varying body types", "[parser,good]")
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 

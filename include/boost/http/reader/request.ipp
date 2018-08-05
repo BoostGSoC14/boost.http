@@ -86,6 +86,14 @@ request::view_type request::value<token::field_value>() const
 }
 
 template<>
+inline request::view_type request::value<token::chunk_ext>() const
+{
+    assert(code_ == token::chunk_ext::code);
+    return view_type(static_cast<const char*>(ibuffer.data()) + idx,
+                     token_size_);
+}
+
+template<>
 asio::const_buffer request::value<token::body_chunk>() const
 {
     assert(code_ == token::body_chunk::code);
@@ -123,7 +131,6 @@ inline token::code::value request::expected_token() const
     case EXPECT_OWS_AFTER_COLON:
     case EXPECT_CRLF_AFTER_FIELD_VALUE:
     case EXPECT_CHUNK_SIZE:
-    case EXPECT_CHUNK_EXT:
     case EXPEXT_CRLF_AFTER_CHUNK_EXT:
     case EXPECT_CRLF_AFTER_CHUNK_DATA:
     case EXPECT_TRAILER_COLON:
@@ -139,6 +146,8 @@ inline token::code::value request::expected_token() const
         return token::code::field_name;
     case EXPECT_FIELD_VALUE:
         return token::code::field_value;
+    case EXPECT_CHUNK_EXT:
+        return token::code::chunk_ext;
     case EXPECT_BODY:
     case EXPECT_CHUNK_DATA:
         return token::code::body_chunk;
@@ -674,7 +683,7 @@ inline void request::next()
                 if (token_size_ == 0)
                     return next();
 
-                code_ = token::code::skip;
+                code_ = token::code::chunk_ext;
                 return;
             }
             token_size_ = i - idx;

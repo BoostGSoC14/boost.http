@@ -416,7 +416,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
@@ -450,7 +450,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
@@ -485,7 +485,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
@@ -529,7 +529,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
@@ -673,7 +673,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
@@ -707,7 +707,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
@@ -742,7 +742,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
@@ -786,7 +786,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
@@ -933,7 +933,7 @@ TEST_CASE("Parse a few pipelined non-fragmented/whole requests",
 
     REQUIRE(parser.code() == http::token::code::skip);
     REQUIRE(parser.token_size() == 1);
-    REQUIRE(parser.expected_token() == http::token::code::skip);
+    REQUIRE(parser.expected_token() == http::token::code::chunk_ext);
 
     parser.next();
 
