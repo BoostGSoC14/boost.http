@@ -2,6 +2,8 @@
 
 include::message_framework_tutorial.adoc[]
 
+include::poly_handlers.adoc[]
+
 include::parsing_tutorial1.adoc[]
 
 include::parsing_tutorial2.adoc[]

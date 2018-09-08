@@ -1,0 +1,115 @@
+=== Polymorphic handlers (`std::function` alternative)
+
+Boost.Asio uses handlers with signatures similar to the following to notify
+about the completion of tasks:
+
+[source,cpp]
+----
+void(boost::system::error_code)
+----
+
+If you intend to wrap the template heavy usage of Boost.Asio behind a stable
+interface that can be accessed through dynamically loaded plug-ins, you may be
+tempted to use `std::function`:
+
+[source,cpp]
+----
+include::poly_handlers1.cpp[]
+----
+
+However, this approach is wrong. `std::function` does type erasure of functors,
+but it won't do type erasure of associated allocators and associated executors
+which are a core part of Boost.Asio. This extra information will be discarded.
+
+If there is an associated executor with a completion handler, this associated
+executor should be used and propagated by every intermediate handler in the
+chain.
+
+If I try the following, the propagation will stop at the `my_socket` boundary as
+`std::function` discards the associated executor:
+
+[source,cpp]
+----
+include::poly_handlers2.cpp[]
+----
+
+One way to verify this assertion is with a simple test case. Create two
+execution contexts, `ctx1` and `ctx2`. Post a handler to `ctx1` and then call
+`ctx1.run()`. You should expect the handler to be called. Now modify `handler`
+to be wrapped and associated with an executor from `ctx2`. If only this change
+is done, you should expect the program to exit without ever calling the
+handler. The following code illustrates this situation:
+
+[source,cpp]
+----
+include::poly_handlers3.cpp[]
+----
+
+If you also change the code to call `ctx2.run()` after `ctx1.run()`, you should
+expect the handler to be called. But this is just an exercise for the
+reader. We're sticking with the previous code of no handler called as the
+desired behaviour. To be more specific, we're interested in making sure that we
+can _observe_ that execution scheduling is done through a specific executor
+(i.e. associated executors are respected). And, for this executor in particular,
+the observed output is of no handler called.
+
+If you wrap our handler within a `std::function` object, the associated
+executors will be discarded and you should expect the handler to be called
+again:
+
+[source,cpp]
+----
+include::poly_handlers4.cpp[]
+----
+
+That's why we provide `boost::http::asio::experimental::poly_handler` as an
+alternative to `std::function`:
+
+[source,cpp]
+----
+include::poly_handlers5.cpp[]
+----
+
+If you call `boost::asio::get_associated_executor` on
+`boost::http::asio::experimental::poly_handler`, you'll get a type erased
+(i.e. `boost::asio::executor`) executor:
+
+[source,cpp]
+----
+auto phandler
+    = boost::http::asio::experimental::poly_handler<void()>{handler};
+auto ex = boost::asio::get_associated_executor(phandler);
+----
+
+Using `poly_handler`, we can update the previous `my_socket` definition and make
+the DLL boundary work properly:
+
+[source,cpp]
+----
+include::poly_handlers6.cpp[]
+----
+
+`poly_handler` will also preserve the associated allocators as can be verified
+with the following example:
+
+[source,cpp]
+----
+include::poly_handlers7.cpp[]
+----
+
+In the example, we associated the `MyHandler` object with `r1` just to wrap it
+under `poly_handler`. Then we asked what was the associated allocator `a` and
+passed `r2` as the fallback in case there was no such `a`. The expected output
+would be for `r1` to be the same as `a`. And that's just what you'll see if you
+run the example. If you want the example to fail (as in discarding the
+associated allocator and showing a different output), just replace
+`poly_handler` with `std::function`.
+
+IMPORTANT: If you try to use an associated allocator whose type doesn't match
+`std::experimental::pmr::polymorphic_allocator<T>`, `poly_handler` will fail to
+wrap it and it won't compile. This behaviour is on purpose as we should not
+silently discard associated properties. The reason why I don't support other
+types of allocators for associated allocators (fallback allocators passed to
+`boost::asio::get_associated_allocator` can still be of different types) is
+because they make little sense in a generic context such as ASIO's and
+implementation complexity.
