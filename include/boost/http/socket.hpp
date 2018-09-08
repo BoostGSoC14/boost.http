@@ -144,7 +144,7 @@ public:
 
     void open();
 
-    asio::const_buffer upgrade_head() const;
+    boost::asio::const_buffer upgrade_head() const;
 
     void lock_client_to_http10();
 
@@ -183,7 +183,7 @@ private:
     bool is_open_ = true;
     http::read_state istate;
 
-    asio::mutable_buffer buffer;
+    boost::asio::mutable_buffer buffer;
     std::size_t used_size = 0;
 
     boost::variant<none_t, req_parser, res_parser> parser = none;

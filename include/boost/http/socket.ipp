@@ -64,7 +64,7 @@ basic_socket<Socket, Settings>::async_read_request(Request &request,
     static_assert(is_request_message<Request>::value,
                   "Request must fulfill the Request concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     switch (parser.which()) {
@@ -104,7 +104,7 @@ basic_socket<Socket, Settings>::async_read_response(Response &response,
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     switch (parser.which()) {
@@ -142,7 +142,7 @@ basic_socket<Socket, Settings>::async_read_some(Message &message,
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     if (istate != http::read_state::message_ready) {
@@ -165,7 +165,7 @@ basic_socket<Socket, Settings>::async_read_trailers(Message &message,
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     if (istate != http::read_state::body_ready) {
@@ -188,7 +188,7 @@ basic_socket<Socket, Settings>
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     if (parser.which() != 1) { //< !req_parser
@@ -259,8 +259,9 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(asio_handler_allocate
-                                      (size, &init.completion_handler));
+        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
+            size, &init.completion_handler)
+        );
     } catch (const std::bad_alloc&) {
         writer_helper.state = prev_state;
         throw;
@@ -339,11 +340,11 @@ basic_socket<Socket, Settings>
 
     auto handler = std::move(init.completion_handler);
     if (copy_body) {
-        asio::async_write(
-            channel, asio::buffer(buf, size),
+        boost::asio::async_write(
+            channel, boost::asio::buffer(buf, size),
             [handler,buf,size,this]
             (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
+                boost::asio::asio_handler_deallocate(buf, size, &handler);
                 is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
                 if (!is_open_)
                     channel.lowest_layer().close();
@@ -351,18 +352,19 @@ basic_socket<Socket, Settings>
             }
         );
     } else {
-        auto body_buf
-            = asio::buffer(response.body().data(), response.body().size());
-        asio::async_write(
-            channel, asio::buffer(buf, size),
+        auto body_buf = boost::asio::buffer(
+            response.body().data(), response.body().size()
+        );
+        boost::asio::async_write(
+            channel, boost::asio::buffer(buf, size),
             [handler,buf,size,body_buf,this]
             (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
+                boost::asio::asio_handler_deallocate(buf, size, &handler);
                 if (ec) {
                     handler(ec);
                     return;
                 }
-                asio::async_write(
+                boost::asio::async_write(
                     channel, body_buf,
                     [handler,this]
                     (const system::error_code &ec, std::size_t) mutable {
@@ -385,7 +387,7 @@ BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_socket<Socket, Settings>
 ::async_write_response_continue(CompletionToken &&token)
 {
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     if (!writer_helper.write_continue()) {
@@ -395,13 +397,12 @@ basic_socket<Socket, Settings>
     }
 
     auto handler = std::move(init.completion_handler);
-    asio::async_write(channel,
-                      detail::string_literal_buffer("HTTP/1.1 100"
-                                                    " Continue\r\n\r\n"),
-                      [handler]
-                      (const system::error_code &ec, std::size_t) mutable {
-        handler(ec);
-    });
+    boost::asio::async_write(
+        channel, detail::string_literal_buffer("HTTP/1.1 100 Continue\r\n\r\n"),
+        [handler](const system::error_code &ec, std::size_t) mutable {
+            handler(ec);
+        }
+    );
 
     return init.result.get();
 }
@@ -416,7 +417,7 @@ basic_socket<Socket, Settings>
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     if (parser.which() != 1) { //< !req_parser
@@ -475,8 +476,9 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(asio_handler_allocate
-                                      (size, &init.completion_handler));
+        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
+            size, &init.completion_handler)
+        );
     } catch (const std::bad_alloc&) {
         writer_helper.state = prev_state;
         throw;
@@ -530,12 +532,14 @@ basic_socket<Socket, Settings>
     assert(size == idx);
 
     auto handler = std::move(init.completion_handler);
-    asio::async_write(channel, asio::buffer(buf, size),
-                      [handler,buf,size]
-                      (const system::error_code &ec, std::size_t) mutable {
-                          asio_handler_deallocate(buf, size, &handler);
-                          handler(ec);
-                      });
+    boost::asio::async_write(
+        channel, boost::asio::buffer(buf, size),
+        [handler,buf,size]
+        (const system::error_code &ec, std::size_t) mutable {
+            boost::asio::asio_handler_deallocate(buf, size, &handler);
+            handler(ec);
+        }
+    );
 
     return init.result.get();
 }
@@ -549,7 +553,7 @@ basic_socket<Socket, Settings>
     static_assert(is_request_message<Request>::value,
                   "Request must fulfill the Request concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     switch (parser.which()) {
@@ -619,8 +623,9 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(asio_handler_allocate
-                                      (size, &init.completion_handler));
+        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
+            size, &init.completion_handler)
+        );
     } catch (const std::bad_alloc&) {
         sent_requests.pop_back();
         throw;
@@ -689,27 +694,27 @@ basic_socket<Socket, Settings>
 
     auto handler = std::move(init.completion_handler);
     if (copy_body) {
-        asio::async_write(
-            channel, asio::buffer(buf, size),
+        boost::asio::async_write(
+            channel, boost::asio::buffer(buf, size),
             [handler,buf,size]
             (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
+                boost::asio::asio_handler_deallocate(buf, size, &handler);
                 handler(ec);
             }
         );
     } else {
         auto body_buf
-            = asio::buffer(request.body().data(), request.body().size());
-        asio::async_write(
-            channel, asio::buffer(buf, size),
+            = boost::asio::buffer(request.body().data(), request.body().size());
+        boost::asio::async_write(
+            channel, boost::asio::buffer(buf, size),
             [handler,buf,size,body_buf,this]
             (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
+                boost::asio::asio_handler_deallocate(buf, size, &handler);
                 if (ec) {
                     handler(ec);
                     return;
                 }
-                asio::async_write(
+                boost::asio::async_write(
                     channel, body_buf,
                     [handler]
                     (const system::error_code &ec, std::size_t) mutable {
@@ -732,7 +737,7 @@ basic_socket<Socket, Settings>
     static_assert(is_request_message<Request>::value,
                   "Request must fulfill the Request concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     switch (parser.which()) {
@@ -803,8 +808,9 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(asio_handler_allocate
-                                      (size, &init.completion_handler));
+        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
+            size, &init.completion_handler)
+        );
     } catch (const std::bad_alloc&) {
         sent_requests.pop_back();
         writer_helper.state = write_state::empty;
@@ -847,12 +853,13 @@ basic_socket<Socket, Settings>
     assert(size == idx);
 
     auto handler = std::move(init.completion_handler);
-    asio::async_write(channel, asio::buffer(buf, size),
-                      [handler,buf,size]
-                      (const system::error_code &ec, std::size_t) mutable {
-                          asio_handler_deallocate(buf, size, &handler);
-                          handler(ec);
-                      });
+    boost::asio::async_write(
+        channel, boost::asio::buffer(buf, size),
+        [handler,buf,size](const system::error_code &ec, std::size_t) mutable {
+            boost::asio::asio_handler_deallocate(buf, size, &handler);
+            handler(ec);
+        }
+    );
 
     return init.result.get();
 }
@@ -868,7 +875,7 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
 
     using detail::string_literal_buffer;
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     auto prev_state = writer_helper.state;
@@ -901,8 +908,9 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(asio_handler_allocate
-                                      (size, &init.completion_handler));
+        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
+            size, &init.completion_handler)
+        );
     } catch (const std::bad_alloc&) {
         writer_helper.state = prev_state;
         throw;
@@ -939,27 +947,27 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
 
     auto handler = std::move(init.completion_handler);
     if (copy_body) {
-        asio::async_write(
-            channel, asio::buffer(buf, size),
+        boost::asio::async_write(
+            channel, boost::asio::buffer(buf, size),
             [handler,buf,size]
             (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
+                boost::asio::asio_handler_deallocate(buf, size, &handler);
                 handler(ec);
             }
         );
     } else {
         auto body_buf
-            = asio::buffer(message.body().data(), message.body().size());
-        asio::async_write(
-            channel, asio::buffer(buf, size),
+            = boost::asio::buffer(message.body().data(), message.body().size());
+        boost::asio::async_write(
+            channel, boost::asio::buffer(buf, size),
             [handler,buf,size,body_buf,this]
             (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
+                boost::asio::asio_handler_deallocate(buf, size, &handler);
                 if (ec) {
                     handler(ec);
                     return;
                 }
-                asio::async_write(
+                boost::asio::async_write(
                     channel, body_buf,
                     [handler,this]
                     (const system::error_code &ec, std::size_t) mutable {
@@ -968,11 +976,10 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
                             return;
                         }
                         auto crlf = string_literal_buffer("\r\n");
-                        asio::async_write(
+                        boost::asio::async_write(
                             channel, crlf,
-                            [handler]
-                            (const system::error_code &ec,
-                             std::size_t) mutable {
+                            [handler](const system::error_code &ec,
+                                      std::size_t) mutable {
                                 handler(ec);
                             }
                         );
@@ -994,7 +1001,7 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     auto prev_rstate = istate;
@@ -1034,8 +1041,9 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(asio_handler_allocate
-                                      (size, &init.completion_handler));
+        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
+            size, &init.completion_handler)
+        );
     } catch (const std::bad_alloc&) {
         istate = prev_rstate;
         writer_helper.state = prev_wstate;
@@ -1065,15 +1073,17 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
     idx += 2;
 
     auto handler = std::move(init.completion_handler);
-    asio::async_write(channel, asio::buffer(buf, size),
-                      [handler,buf,size,this]
-                      (const system::error_code &ec, std::size_t) mutable {
-        asio_handler_deallocate(buf, size, &handler);
-        is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-        if (!is_open_)
-            channel.lowest_layer().close();
-        handler(ec);
-    });
+    boost::asio::async_write(
+        channel, boost::asio::buffer(buf, size),
+        [handler,buf,size,this]
+        (const system::error_code &ec, std::size_t) mutable {
+            boost::asio::asio_handler_deallocate(buf, size, &handler);
+            is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+            if (!is_open_)
+                channel.lowest_layer().close();
+            handler(ec);
+        }
+    );
 
     return init.result.get();
 }
@@ -1086,7 +1096,7 @@ basic_socket<Socket, Settings>
 {
     using detail::string_literal_buffer;
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
+    boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
     if (!writer_helper.end()) {
@@ -1110,14 +1120,15 @@ basic_socket<Socket, Settings>
     auto last_chunk = string_literal_buffer("0\r\n\r\n");
 
     auto handler = std::move(init.completion_handler);
-    asio::async_write(channel, last_chunk,
-                      [handler,this]
-                      (const system::error_code &ec, std::size_t) mutable {
-        is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-        if (!is_open_)
-            channel.lowest_layer().close();
-        handler(ec);
-    });
+    boost::asio::async_write(
+        channel, last_chunk,
+        [handler,this](const system::error_code &ec, std::size_t) mutable {
+            is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+            if (!is_open_)
+                channel.lowest_layer().close();
+            handler(ec);
+        }
+    );
 
     return init.result.get();
 }
@@ -1167,7 +1178,7 @@ void basic_socket<Socket, Settings>::open()
 }
 
 template<class Socket, class Settings>
-asio::const_buffer basic_socket<Socket, Settings>::upgrade_head() const
+boost::asio::const_buffer basic_socket<Socket, Settings>::upgrade_head() const
 {
 #ifndef BOOST_HTTP_UPGRADE_HEAD_DISABLE_CHECK
     // res_parser
@@ -1176,7 +1187,7 @@ asio::const_buffer basic_socket<Socket, Settings>::upgrade_head() const
                                " mode");
 #endif // BOOST_HTTP_UPGRADE_HEAD_DISABLE_CHECK
 
-    return asio::buffer(buffer, used_size);
+    return boost::asio::buffer(buffer, used_size);
 }
 
 template<class Socket, class Settings>
@@ -1231,7 +1242,7 @@ void basic_socket<Socket, Settings>
     } else {
         if (server_mode) {
             // TODO (C++14): move in lambda capture list
-            channel.async_read_some(asio::buffer(buffer + used_size),
+            channel.async_read_some(boost::asio::buffer(buffer + used_size),
                                     [this,handler,&message]
                                     (const system::error_code &ec,
                                      std::size_t bytes_transferred) mutable {
@@ -1240,7 +1251,7 @@ void basic_socket<Socket, Settings>
             });
         } else {
             // TODO (C++14): move in lambda capture list
-            channel.async_read_some(asio::buffer(buffer + used_size),
+            channel.async_read_some(boost::asio::buffer(buffer + used_size),
                                     [this,handler,&message]
                                     (const system::error_code &ec,
                                      std::size_t bytes_transferred) mutable {
@@ -1347,7 +1358,7 @@ void basic_socket<Socket, Settings>
     using detail::string_literal_buffer;
 
     if (ec) {
-        if (ec == system::error_code{asio::error::eof} && !server_mode) {
+        if (ec == system::error_code{boost::asio::error::eof} && !server_mode) {
             Parser &parser = get<Parser>(this->parser);
             detail::puteof<server_mode>(parser);
             is_open_ = false;
@@ -1361,7 +1372,7 @@ void basic_socket<Socket, Settings>
     Parser &parser = get<Parser>(this->parser);
 
     used_size += bytes_transferred;
-    parser.set_buffer(asio::buffer(buffer, used_size));
+    parser.set_buffer(boost::asio::buffer(buffer, used_size));
 
     bool loop = true;
     bool cb_ready = false;
@@ -1388,14 +1399,14 @@ void basic_socket<Socket, Settings>
                                             "\r\n"
                                             "Invalid data\n");
                 if (server_mode) {
-                    asio::async_write(channel, asio::buffer(error_message),
-                                      [handler](system::error_code
-                                                /*ignored_ec*/,
-                                                std::size_t
-                                                /*bytes_transferred*/)
-                                      mutable {
-                                          handler(http_errc::parsing_error);
-                                      });
+                    boost::asio::async_write(
+                        channel, boost::asio::buffer(error_message),
+                        [handler](system::error_code /*ignored_ec*/,
+                                  std::size_t /*bytes_transferred*/)
+                        mutable {
+                            handler(http_errc::parsing_error);
+                        }
+                    );
                 } else {
                     handler(http_errc::parsing_error);
                 }
@@ -1412,14 +1423,14 @@ void basic_socket<Socket, Settings>
                                             "\r\n"
                                             "Host missing\n");
                 if (server_mode) {
-                    asio::async_write(channel, asio::buffer(error_message),
-                                      [handler](system::error_code
-                                                /*ignored_ec*/,
-                                                std::size_t
-                                                /*bytes_transferred*/)
-                                      mutable {
-                                          handler(http_errc::parsing_error);
-                                      });
+                    boost::asio::async_write(
+                        channel, boost::asio::buffer(error_message),
+                        [handler](system::error_code /*ignored_ec*/,
+                                  std::size_t /*bytes_transferred*/)
+                        mutable {
+                            handler(http_errc::parsing_error);
+                        }
+                    );
                 } else {
                     handler(http_errc::parsing_error);
                 }
@@ -1437,14 +1448,14 @@ void basic_socket<Socket, Settings>
                                             "\r\n"
                                             "Invalid content-length\n");
                 if (server_mode) {
-                    asio::async_write(channel, asio::buffer(error_message),
-                                      [handler](system::error_code
-                                                /*ignored_ec*/,
-                                                std::size_t
-                                                /*bytes_transferred*/)
-                                      mutable {
-                                          handler(http_errc::parsing_error);
-                                      });
+                    boost::asio::async_write(
+                        channel, boost::asio::buffer(error_message),
+                        [handler](system::error_code /*ignored_ec*/,
+                                  std::size_t /*bytes_transferred*/)
+                        mutable {
+                            handler(http_errc::parsing_error);
+                        }
+                    );
                 } else {
                     handler(http_errc::parsing_error);
                 }
@@ -1461,14 +1472,14 @@ void basic_socket<Socket, Settings>
                                             "\r\n"
                                             "Invalid transfer-encoding\n");
                 if (server_mode) {
-                    asio::async_write(channel, asio::buffer(error_message),
-                                      [handler](system::error_code
-                                                /*ignored_ec*/,
-                                                std::size_t
-                                                /*bytes_transferred*/)
-                                      mutable {
-                                          handler(http_errc::parsing_error);
-                                      });
+                    boost::asio::async_write(
+                        channel, boost::asio::buffer(error_message),
+                        [handler](system::error_code /*ignored_ec*/,
+                                  std::size_t /*bytes_transferred*/)
+                        mutable {
+                            handler(http_errc::parsing_error);
+                        }
+                    );
                 } else {
                     handler(http_errc::parsing_error);
                 }
@@ -1485,14 +1496,14 @@ void basic_socket<Socket, Settings>
                                             "\r\n"
                                             "Can't process chunk size\n");
                 if (server_mode) {
-                    asio::async_write(channel, asio::buffer(error_message),
-                                      [handler](system::error_code
-                                                /*ignored_ec*/,
-                                                std::size_t
-                                                /*bytes_transferred*/)
-                                      mutable {
-                                          handler(http_errc::parsing_error);
-                                      });
+                    boost::asio::async_write(
+                        channel, boost::asio::buffer(error_message),
+                        [handler](system::error_code /*ignored_ec*/,
+                                  std::size_t /*bytes_transferred*/)
+                        mutable {
+                            handler(http_errc::parsing_error);
+                        }
+                    );
                 } else {
                     handler(http_errc::parsing_error);
                 }
@@ -1682,8 +1693,9 @@ void basic_socket<Socket, Settings>
         auto nparsed = parser.parsed_count();
         if (parser.code() == token::code::end_of_message) {
             const auto token_size = parser.token_size();
-            parser.set_buffer(asio::buffer(buffer + nparsed,
-                                           parser.token_size()));
+            parser.set_buffer(
+                boost::asio::buffer(buffer + nparsed, parser.token_size())
+            );
             parser.next();
             assert(parser.code() == token::code::error_use_another_connection
                    || parser.code() == token::code::error_insufficient_data);
@@ -1704,13 +1716,13 @@ void basic_socket<Socket, Settings>
         }
 
         // TODO (C++14): move in lambda capture list
-        channel.async_read_some(asio::buffer(buffer + used_size),
-                                [this,handler,&message]
-                                (const system::error_code &ec,
-                                 std::size_t bytes_transferred) mutable {
-            on_async_read_message<server_mode, Parser>(std::move(handler),
-                                                       message, ec,
-                                                       bytes_transferred);
+        channel.async_read_some(
+            boost::asio::buffer(buffer + used_size),
+            [this,handler,&message](const system::error_code &ec,
+                                    std::size_t bytes_transferred) mutable {
+            on_async_read_message<server_mode, Parser>(
+                std::move(handler), message, ec, bytes_transferred
+            );
         });
     }
 }
@@ -1741,8 +1753,8 @@ template <typename Handler,
 void basic_socket<Socket, Settings>::invoke_handler(Handler&& handler,
                                                     ErrorCode error)
 {
-    auto ex(asio::get_associated_executor(handler, get_executor()));
-    auto alloc(asio::get_associated_allocator(handler));
+    auto ex(boost::asio::get_associated_executor(handler, get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
     ex.post([handler, error] () mutable { handler(make_error_code(error)); },
             alloc);
 }
@@ -1751,8 +1763,8 @@ template<class Socket, class Settings>
 template <class Handler>
 void basic_socket<Socket, Settings>::invoke_handler(Handler&& handler)
 {
-    auto ex(asio::get_associated_executor(handler, get_executor()));
-    auto alloc(asio::get_associated_allocator(handler));
+    auto ex(boost::asio::get_associated_executor(handler, get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
     ex.post([handler] () mutable { handler(system::error_code{}); }, alloc);
 }
 
