@@ -1,0 +1,7 @@
+[[poly_socket_base_header]]
+==== `<boost/http/poly_socket_base.hpp>`
+
+Import the following symbols:
+
+* <<basic_poly_socket_base,`basic_poly_socket_base`>>
+* <<poly_socket_base,`poly_socket_base`>>

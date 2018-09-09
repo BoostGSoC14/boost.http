@@ -1,0 +1,119 @@
+[[basic_poly_server_socket]]
+==== `basic_poly_server_socket`
+
+[source,cpp]
+----
+#include <boost/http/poly_server_socket.hpp>
+----
+
+This class inherits <<basic_poly_socket_base,`basic_poly_socket_base<Message>`>>
+and extends its interface with virtual functions useful for server sockets. This
+class itself is also an abstract class with no state (i.e. an _interface_).
+
+References for objects of this class are expected to fulfill the
+<<server_socket_concept,`ServerSocket` concept>>.
+
+This class is inherited by <<server_socket_adaptor,`server_socket_adaptor`>>.
+
+===== Template parameters
+
+`Request`::
+
+  The request type.
+
+`Response`::
+
+  The response type.
+
+`Message = request_response_wrapper<Request, Response>`::
+
+  The message type.
+
+===== Member types
+
+These are the types chosen _set in stone_ to guarantee ABI stability across
+binaries (including possible plugins).
+
+`typedef Request request_server_type`::
+
+  The `server_type` suffix is used to avoid name clashing with a possible HTTP
+  client abstraction.
+
+`typedef Response response_server_type`::
+
+  The `server_type` suffix is used to avoid name clashing with a possible HTTP
+  client abstraction.
+
+===== Member functions
+
+====== Overwritable functions
+
+These are the functions that subclasses need to implement in order to lose the
+`abstract class` property.
+
+`virtual bool write_response_native_stream() const = 0`::
+
+  This function presents no differences (besides mandatory virtual) from the one
+  with the same name found on the <<server_socket_concept, `ServerSocket`
+  concept>>.
+
+`virtual void async_read_request(request_server_type &request, handler_type handler) = 0`::
+
+  The only difference between this function (besides mandatory virtual) and the
+  one with the same name found on the <<server_socket_concept, `ServerSocket`
+  concept>> is the lack of support for completion tokens and the use of a type
+  erased handler instead.
+
+`virtual void async_write_response(const response_server_type &response, handler_type handler) = 0`::
+
+  The only difference between this function (besides mandatory virtual) and the
+  one with the same name found on the <<server_socket_concept, `ServerSocket`
+  concept>> is the lack of support for completion tokens and the use of a type
+  erased handler instead.
+
+`virtual void async_write_response_continue(handler_type handler) = 0`::
+
+  The only difference between this function (besides mandatory virtual) and the
+  one with the same name found on the <<server_socket_concept, `ServerSocket`
+  concept>> is the lack of support for completion tokens and the use of a type
+  erased handler instead.
+
+`virtual void async_write_response_metadata(const response_server_type &response, handler_type handler) = 0`::
+
+  The only difference between this function (besides mandatory virtual) and the
+  one with the same name found on the <<server_socket_concept, `ServerSocket`
+  concept>> is the lack of support for completion tokens and the use of a type
+  erased handler instead.
+
+`virtual ~basic_poly_server_socket()`::
+
+  Destructor.
+
+====== Wrappers to fulfill the ASIO extensible model
+
+These functions rewrite usual function calls in terms of the ABI stable
+interface. They also enable the ASIO extensible model within this hierarchy.
+
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_read_request(request_server_type &request, CompletionToken &&token)`::
+
+  Handle the token and dispatch the operation to the ABI stable
+  `async_read_request`.
+
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_response(const response_server_type &response, CompletionToken &&token)`::
+
+  Handle the token and dispatch the operation to the ABI stable
+  `async_write_response`.
+
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_response_continue(CompletionToken &&token)`::
+
+  Handle the token and dispatch the operation to the ABI stable
+  `async_write_response_continue`.
+
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_response_metadata(const response_server_type &response, CompletionToken &&token)`::
+
+  Handle the token and dispatch the operation to the ABI stable
+  `async_write_response_metadata`.
+
+===== See also
+
+* <<poly_server_socket,`poly_server_socket`>>

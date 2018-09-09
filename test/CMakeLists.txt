@@ -94,7 +94,7 @@ foreach(test ${tests})
 endforeach()
 
 foreach(test ${tests11})
-  add_test_target("${test}" 11)
+  add_test_target("${test}" 17)
 endforeach()
 
 include(CTest)

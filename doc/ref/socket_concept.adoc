@@ -221,6 +221,9 @@ BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
 
 * <<basic_socket,`basic_socket`>>
 * <<basic_buffered_socket,`basic_buffered_socket`>>
+* <<poly_socket_base,`poly_socket_base`>>
+* <<poly_server_socket,`poly_server_socket`>>
+* <<server_socket_adaptor,`server_socket_adaptor`>>
 
 ===== See also
 

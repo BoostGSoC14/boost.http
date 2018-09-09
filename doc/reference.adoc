@@ -12,6 +12,8 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * <<response,`response`>>
 * <<socket,`socket`>>
 * <<buffered_socket,`buffered_socket`>>
+* <<poly_socket_base,`poly_socket_base`>>
+* <<poly_server_socket,`poly_server_socket`>>
 * Tokens
 ** <<token_skip,`token::skip`>>
 ** <<token_field_name,`token::field_name`>>
@@ -38,6 +40,9 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * <<basic_socket,`basic_socket`>>
 * <<basic_buffered_socket,`basic_buffered_socket`>>
 * <<request_response_wrapper,`request_response_wrapper`>>
+* <<basic_poly_socket_base,`basic_poly_socket_base`>>
+* <<basic_poly_server_socket,`basic_poly_server_socket`>>
+* <<server_socket_adaptor,`server_socket_adaptor`>>
 * <<is_message,`is_message`>>
 * <<is_request_message,`is_request_message`>>
 * <<is_response_message,`is_response_message`>>
@@ -110,7 +115,10 @@ namespace. For brevity, this prefix is *not* repeated on the documentation.
 * <<request_header,`<boost/http/request.hpp>`>>
 * <<response_header,`<boost/http/response.hpp>`>>
 * <<request_response_wrapper_header,`<boost/http/request_response_wrapper.hpp>`>>
+* <<poly_server_socket_header,`<boost/http/poly_server_socket.hpp>`>>
+* <<poly_socket_base_header,`<boost/http/poly_socket_base.hpp>`>>
 * <<read_state_header,`<boost/http/read_state.hpp>`>>
+* <<server_socket_adaptor_header,`<boost/http/server_socket_adaptor.hpp>`>>
 * <<socket_header,`<boost/http/socket.hpp>`>>
 * <<buffered_socket_header,`<boost/http/buffered_socket.hpp>`>>
 * <<status_code_header,`<boost/http/status_code.hpp>`>>
@@ -172,6 +180,14 @@ include::ref/buffered_socket.adoc[]
 
 include::ref/request_response_wrapper.adoc[]
 
+include::ref/basic_poly_socket_base.adoc[]
+
+include::ref/basic_poly_server_socket.adoc[]
+
+include::ref/poly_socket_base.adoc[]
+
+include::ref/poly_server_socket.adoc[]
+
 include::ref/basic_request.adoc[]
 
 include::ref/basic_response.adoc[]
@@ -179,6 +195,8 @@ include::ref/basic_response.adoc[]
 include::ref/basic_socket.adoc[]
 
 include::ref/basic_buffered_socket.adoc[]
+
+include::ref/server_socket_adaptor.adoc[]
 
 include::ref/header_to_ptime.adoc[]
 
@@ -246,7 +264,13 @@ include::ref/response_header.adoc[]
 
 include::ref/request_response_wrapper_header.adoc[]
 
+include::ref/poly_server_socket_header.adoc[]
+
+include::ref/poly_socket_base_header.adoc[]
+
 include::ref/read_state_header.adoc[]
+
+include::ref/server_socket_adaptor_header.adoc[]
 
 include::ref/socket_header.adoc[]
 

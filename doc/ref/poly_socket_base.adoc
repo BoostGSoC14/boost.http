@@ -1,0 +1,23 @@
+[[poly_socket_base]]
+==== `poly_socket_base`
+
+[source,cpp]
+----
+#include <boost/http/poly_socket_base.hpp>
+----
+
+`poly_socket_base` is a simple typedef for
+<<basic_poly_socket_base,`basic_poly_socket_base`>>. It's defined as follows:
+
+[source,cpp]
+----
+typedef basic_poly_socket_base<request_response_wrapper<request, response>>
+  poly_socket_base;
+----
+
+===== See also
+
+* <<basic_poly_socket_base,`basic_poly_socket_base`>>
+* <<request,`request`>>
+* <<response,`response`>>
+* <<request_response_wrapper,`request_response_wrapper`>>

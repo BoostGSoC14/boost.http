@@ -1,0 +1,22 @@
+[[poly_server_socket]]
+==== `poly_server_socket`
+
+[source,cpp]
+----
+#include <boost/http/poly_server_socket.hpp>
+----
+
+`poly_server_socket` is a simple typedef for
+<<basic_poly_server_socket,`basic_poly_server_socket`>>. It's
+defined as follows:
+
+[source,cpp]
+----
+typedef basic_poly_server_socket<request, response>
+  poly_server_socket;
+----
+
+===== See also
+
+* <<basic_poly_server_socket,`basic_poly_server_socket`>>
+* <<message,`message`>>

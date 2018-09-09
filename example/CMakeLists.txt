@@ -25,6 +25,8 @@ set(examples
   "regex_router"
   "basic_router"
   "spawn-chunked"
+  "spawn-with-runtime"
+  "spawn-with-runtime2"
   "spawn-fileserver"
   "spawn-fileserver2"
   "spawn-settings"
@@ -33,7 +35,7 @@ set(examples
 macro(add_example_target target)
   add_executable("${target}" "${target}.cpp")
 
-  set_property(TARGET "${target}" PROPERTY CXX_STANDARD 11)
+  set_property(TARGET "${target}" PROPERTY CXX_STANDARD 17)
   set_property(TARGET "${target}" PROPERTY CXX_STANDARD_REQUIRED ON)
 
   if(WIN32)

@@ -15,7 +15,10 @@
 #include "mocksocket.hpp"
 
 using namespace boost;
-using namespace std;
+
+using std::invalid_argument;
+using std::vector;
+using std::max;
 
 template<class F>
 void feed_with_buffer(std::size_t min_buf_size, F &&f)
