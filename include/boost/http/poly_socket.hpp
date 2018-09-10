@@ -22,18 +22,6 @@ public:
     using typename basic_poly_socket_base<Message>::executor_type;
     using typename basic_poly_socket_base<Message>::message_type;
     using typename basic_poly_socket_base<Message>::handler_type;
-    using typename basic_poly_server_socket<
-        Request, Response, Message>
-    ::request_server_type;
-    using typename basic_poly_server_socket<
-        Request, Response, Message>
-    ::response_server_type;
-    using typename basic_poly_client_socket<
-        Request, Response, Message
-    >::request_client_type;
-    using typename basic_poly_client_socket<
-        Request, Response, Message>
-    ::response_client_type;
     using request_type = Request;
     using response_type = Response;
 };

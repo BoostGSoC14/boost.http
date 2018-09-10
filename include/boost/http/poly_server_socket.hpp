@@ -24,18 +24,17 @@ public:
     using typename basic_poly_socket_base<Message>::executor_type;
     using typename basic_poly_socket_base<Message>::message_type;
     using typename basic_poly_socket_base<Message>::handler_type;
-    using request_server_type = Request;
-    using response_server_type = Response;
+    using request_type = Request;
+    using response_type = Response;
 
     // ### ABI-stable interface ###
     virtual bool write_response_native_stream() const = 0;
-    virtual void async_read_request(request_server_type &request,
+    virtual void async_read_request(request_type &request,
                                     handler_type handler) = 0;
-    virtual void async_write_response(const response_server_type &response,
+    virtual void async_write_response(const response_type &response,
                                       handler_type handler) = 0;
     virtual void async_write_response_continue(handler_type handler) = 0;
-    virtual void async_write_response_metadata(const response_server_type
-                                               &response,
+    virtual void async_write_response_metadata(const response_type &response,
                                                handler_type handler) = 0;
 
     ~basic_poly_server_socket() override = default;
@@ -43,11 +42,11 @@ public:
     // ### wrappers for the ASIO's extensible model ###
     template<class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_request(request_server_type &request, CompletionToken &&token);
+    async_read_request(request_type &request, CompletionToken &&token);
 
     template<class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_response(const response_server_type &response,
+    async_write_response(const response_type &response,
                          CompletionToken &&token);
 
     template<class CompletionToken>
@@ -56,7 +55,7 @@ public:
 
     template<class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_response_metadata(const response_server_type &response,
+    async_write_response_metadata(const response_type &response,
                                   CompletionToken &&token);
 };
 

@@ -28,16 +28,10 @@ public:
     using typename basic_poly_socket<Request, Response, Message>::executor_type;
     using typename basic_poly_socket<
         Request, Response, Message
-    >::request_server_type;
+    >::request_type;
     using typename basic_poly_socket<
         Request, Response, Message
-    >::response_server_type;
-    using typename basic_poly_socket<
-        Request, Response, Message
-    >::request_client_type;
-    using typename basic_poly_socket<
-        Request, Response, Message
-    >::response_client_type;
+    >::response_type;
     using typename basic_poly_socket<
         Request, Response, Message
     >::message_type;
@@ -59,22 +53,22 @@ public:
     http::read_state read_state() const override;
     http::write_state write_state() const override;
     bool write_response_native_stream() const override;
-    void async_read_request(request_server_type &request,
+    void async_read_request(request_type &request,
                             handler_type handler) override;
-    void async_read_response(response_client_type &response,
+    void async_read_response(response_type &response,
                              handler_type handler) override;
     void async_read_some(message_type &message, handler_type handler) override;
     void async_read_trailers(message_type &message,
                              handler_type handler) override;
-    void async_write_response(const response_server_type &response,
+    void async_write_response(const response_type &response,
                               handler_type handler) override;
     void async_write_response_continue(handler_type handler) override;
-    void async_write_response_metadata(const response_server_type &response,
+    void async_write_response_metadata(const response_type &response,
                                        handler_type handler) override;
-    void async_write_request(const request_client_type &request,
+    void async_write_request(const request_type &request,
                              handler_type handler) override;
     void async_write_request_metadata(
-        const request_client_type &request, handler_type handler
+        const request_type &request, handler_type handler
     ) override;
     void async_write(const message_type &message,
                      handler_type handler) override;
@@ -98,16 +92,10 @@ public:
     >::executor_type;
     using typename basic_poly_socket<
         Request, Response, Message
-    >::request_server_type;
+    >::request_type;
     using typename basic_poly_socket<
         Request, Response, Message
-    >::response_server_type;
-    using typename basic_poly_socket<
-        Request, Response, Message
-    >::request_client_type;
-    using typename basic_poly_socket<
-        Request, Response, Message
-    >::response_client_type;
+    >::response_type;
     using typename basic_poly_socket<
         Request, Response, Message
     >::message_type;
@@ -130,22 +118,22 @@ public:
     http::read_state read_state() const override;
     http::write_state write_state() const override;
     bool write_response_native_stream() const override;
-    void async_read_request(request_server_type &request,
+    void async_read_request(request_type &request,
                             handler_type handler) override;
-    void async_read_response(response_client_type &response,
+    void async_read_response(response_type &response,
                              handler_type handler) override;
     void async_read_some(message_type &message, handler_type handler) override;
     void async_read_trailers(message_type &message,
                              handler_type handler) override;
-    void async_write_response(const response_server_type &response,
+    void async_write_response(const response_type &response,
                               handler_type handler) override;
     void async_write_response_continue(handler_type handler) override;
-    void async_write_response_metadata(const response_server_type &response,
+    void async_write_response_metadata(const response_type &response,
                                        handler_type handler) override;
-    void async_write_request(const request_client_type &request,
+    void async_write_request(const request_type &request,
                              handler_type handler) override;
     void async_write_request_metadata(
-        const request_client_type &request, handler_type handler
+        const request_type &request, handler_type handler
     ) override;
     void async_write(const message_type &message,
                      handler_type handler) override;

@@ -37,15 +37,13 @@ Response, Message>`>>, <<client_socket_adaptor,`client_socket_adaptor`>> and
 These are the types chosen _set in stone_ to guarantee ABI stability across
 binaries (including possible plugins).
 
-`typedef Request request_client_type`::
+`typedef Request request_type`::
 
-  The `client_type` suffix is used to avoid name clashing with HTTP server
-  abstraction.
+  The request type.
 
-`typedef Response response_client_type`::
+`typedef Response response_type`::
 
-  The `client_type` suffix is used to avoid name clashing with HTTP server
-  abstraction.
+  The response type.
 
 ===== Member functions
 
@@ -54,19 +52,19 @@ binaries (including possible plugins).
 These are the functions that subclasses need to implement in order to lose the
 `abstract class` property.
 
-`virtual void async_write_request(const request_client_type &request, handler_type handler) = 0`::
+`virtual void async_write_request(const request_type &request, handler_type handler) = 0`::
 
   This function presents no differences (besides mandatory virtual) from the one
   with the same name found on the <<client_socket_concept, `ClientSocket`
   concept>>.
 
-`virtual void async_write_request_metadata(const request_client_type &request, handler_type handler) = 0`::
+`virtual void async_write_request_metadata(const request_type &request, handler_type handler) = 0`::
 
   This function presents no differences (besides mandatory virtual) from the one
   with the same name found on the <<client_socket_concept, `ClientSocket`
   concept>>.
 
-`virtual void async_read_response(response_client_type &response, handler_type handler) = 0`::
+`virtual void async_read_response(response_type &response, handler_type handler) = 0`::
 
   This function presents no differences (besides mandatory virtual) from the one
   with the same name found on the <<client_socket_concept, `ClientSocket`
@@ -81,17 +79,17 @@ These are the functions that subclasses need to implement in order to lose the
 These functions rewrite usual function calls in terms of the ABI stable
 interface. They also enable the ASIO extensible model within this hierarchy.
 
-`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_request(const request_client_type &request, CompletionToken &&token)`::
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_request(const request_type &request, CompletionToken &&token)`::
 
   Handle the token and dispatch the operation to the ABI stable
   `async_write_request`.
 
-`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_request_metadata(const request_client_type &request, CompletionToken &&token)`::
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_request_metadata(const request_type &request, CompletionToken &&token)`::
 
   Handle the token and dispatch the operation to the ABI stable
   `async_write_request_metadata`.
 
-`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_read_response(response_client_type &response, CompletionToken &&token)`::
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_read_response(response_type &response, CompletionToken &&token)`::
 
   Handle the token and dispatch the operation to the ABI stable
   `async_read_response`.

@@ -10,7 +10,7 @@ template<class Request, class Response, class Message>
 template<class CompletionToken>
 BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_poly_server_socket<Request, Response, Message>
-::async_read_request(request_server_type &request, CompletionToken &&token)
+::async_read_request(request_type &request, CompletionToken &&token)
 {
     boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
@@ -22,8 +22,7 @@ template<class Request, class Response, class Message>
 template<class CompletionToken>
 BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_poly_server_socket<Request, Response, Message>
-::async_write_response(const response_server_type &response,
-                       CompletionToken &&token)
+::async_write_response(const response_type &response, CompletionToken &&token)
 {
     boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
@@ -47,7 +46,7 @@ template<class Request, class Response, class Message>
 template<class CompletionToken>
 BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_poly_server_socket<Request, Response, Message>
-::async_write_response_metadata(const response_server_type &response,
+::async_write_response_metadata(const response_type &response,
                                 CompletionToken &&token)
 {
     boost::asio::async_completion<CompletionToken, void(system::error_code)>

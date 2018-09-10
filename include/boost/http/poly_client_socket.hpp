@@ -24,16 +24,16 @@ public:
     using typename basic_poly_socket_base<Message>::executor_type;
     using typename basic_poly_socket_base<Message>::message_type;
     using typename basic_poly_socket_base<Message>::handler_type;
-    using request_client_type = Request;
-    using response_client_type = Response;
+    using request_type = Request;
+    using response_type = Response;
 
     // ### ABI-stable interface ###
-    virtual void async_write_request(const request_client_type &request,
+    virtual void async_write_request(const request_type &request,
                                      handler_type handler) = 0;
     virtual void async_write_request_metadata(
-        const request_client_type &request, handler_type handler
+        const request_type &request, handler_type handler
     ) = 0;
-    virtual void async_read_response(response_client_type &response,
+    virtual void async_read_response(response_type &response,
                                      handler_type handler) = 0;
 
     ~basic_poly_client_socket() override = default;
@@ -41,16 +41,14 @@ public:
     // ### wrappers for the ASIO's extensible model ###
     template<class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_request(const request_client_type &request,
-                        CompletionToken &&token);
+    async_write_request(const request_type &request, CompletionToken &&token);
     template<class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_request_metadata(const request_client_type &request,
+    async_write_request_metadata(const request_type &request,
                                  CompletionToken &&token);
     template<class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_response(response_client_type &response,
-                        CompletionToken &&token);
+    async_read_response(response_type &response, CompletionToken &&token);
 };
 
 using poly_client_socket = basic_poly_client_socket<request, response>;

@@ -59,7 +59,7 @@ client_socket_adaptor<Socket, Request, Response, Message>::write_state() const
 
 template<class Socket, class Request, class Response, class Message>
 void client_socket_adaptor<Socket, Request, Response, Message>
-::async_read_response(response_client_type &response, handler_type handler)
+::async_read_response(response_type &response, handler_type handler)
 {
     Socket::async_read_response(response, handler);
 }
@@ -80,14 +80,14 @@ void client_socket_adaptor<Socket, Request, Response, Message>
 
 template<class Socket, class Request, class Response, class Message>
 void client_socket_adaptor<Socket, Request, Response, Message>
-::async_write_request(const request_client_type &request, handler_type handler)
+::async_write_request(const request_type &request, handler_type handler)
 {
     Socket::async_write_request(request, handler);
 }
 
 template<class Socket, class Request, class Response, class Message>
 void client_socket_adaptor<Socket, Request, Response, Message>
-::async_write_request_metadata(const request_client_type &request,
+::async_write_request_metadata(const request_type &request,
                                handler_type handler)
 {
     Socket::async_write_request_metadata(request, handler);
@@ -184,7 +184,7 @@ template<class Socket, class Request, class Response, class Message>
 void
 client_socket_adaptor<std::reference_wrapper<Socket>, Request, Response,
                       Message>
-::async_read_response(response_client_type &response, handler_type handler)
+::async_read_response(response_type &response, handler_type handler)
 {
     wrapped_socket.get().async_read_response(response, handler);
 }
@@ -211,7 +211,7 @@ template<class Socket, class Request, class Response, class Message>
 void
 client_socket_adaptor<std::reference_wrapper<Socket>, Request, Response,
                       Message>
-::async_write_request(const request_client_type &request, handler_type handler)
+::async_write_request(const request_type &request, handler_type handler)
 {
     wrapped_socket.get().async_write_request(request, handler);
 }
@@ -220,7 +220,7 @@ template<class Socket, class Request, class Response, class Message>
 void
 client_socket_adaptor<std::reference_wrapper<Socket>, Request, Response,
                       Message>
-::async_write_request_metadata(const request_client_type &request,
+::async_write_request_metadata(const request_type &request,
                                handler_type handler)
 {
     wrapped_socket.get().async_write_request_metadata(request, handler);

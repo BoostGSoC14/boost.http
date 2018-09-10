@@ -29,8 +29,8 @@ This class doesn't restrict the message, method, path and reason phrase types.
 Therefore, the following members are *not* defined:
 
 * `message_type`
-* `request_server_type`
-* `response_server_type`
+* `request_type`
+* `response_type`
 --
 
 WARNING: The API from this class is implemented in terms of composed
