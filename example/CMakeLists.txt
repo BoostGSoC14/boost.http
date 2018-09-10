@@ -27,6 +27,8 @@ set(examples
   "spawn-chunked"
   "spawn-with-runtime"
   "spawn-with-runtime2"
+  "spawn-with-runtime3"
+  "spawn-with-runtime4"
   "spawn-fileserver"
   "spawn-fileserver2"
   "spawn-settings"

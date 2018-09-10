@@ -6,14 +6,17 @@
 #include <boost/http/poly_server_socket.hpp>
 ----
 
-This class inherits <<basic_poly_socket_base,`basic_poly_socket_base<Message>`>>
-and extends its interface with virtual functions useful for server sockets. This
-class itself is also an abstract class with no state (i.e. an _interface_).
+This class virtual-inherits
+<<basic_poly_socket_base,`basic_poly_socket_base<Message>`>> and extends its
+interface with virtual functions useful for server sockets. This class itself is
+also an abstract class with no state (i.e. an _interface_).
 
 References for objects of this class are expected to fulfill the
 <<server_socket_concept,`ServerSocket` concept>>.
 
-This class is inherited by <<server_socket_adaptor,`server_socket_adaptor`>>.
+This class is inherited by <<basic_poly_socket,`basic_poly_socket<Request,
+Response, Message>`>>, <<server_socket_adaptor,`server_socket_adaptor`>> and
+<<socket_adaptor,`socket_adaptor`>>.
 
 ===== Template parameters
 
@@ -36,13 +39,13 @@ binaries (including possible plugins).
 
 `typedef Request request_server_type`::
 
-  The `server_type` suffix is used to avoid name clashing with a possible HTTP
-  client abstraction.
+  The `server_type` suffix is used to avoid name clashing with HTTP client
+  abstraction.
 
 `typedef Response response_server_type`::
 
-  The `server_type` suffix is used to avoid name clashing with a possible HTTP
-  client abstraction.
+  The `server_type` suffix is used to avoid name clashing with HTTP client
+  abstraction.
 
 ===== Member functions
 

@@ -1,0 +1,7 @@
+[[socket_adaptor_header]]
+==== `<boost/http/socket_adaptor.hpp>`
+
+Import the following symbols:
+
+* <<socket_adaptor,`socket_adaptor`>>
+* <<poly_socket,`poly_socket`>>

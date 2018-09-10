@@ -13,7 +13,7 @@ namespace http {
 
 template<class Request, class Response,
          class Message = request_response_wrapper<Request, Response>>
-class basic_poly_server_socket : public basic_poly_socket_base<Message>
+class basic_poly_server_socket : virtual public basic_poly_socket_base<Message>
 {
 public:
     static_assert(is_request_message<Request>::value,

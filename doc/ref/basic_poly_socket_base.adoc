@@ -14,13 +14,37 @@ that only contains functionality useful for simultaneously both channel ends
 References for objects of this class are expected to fulfill the
 <<socket_concept,`Socket` concept>>.
 
-This class has no state to ease multiple inheritance and it is inherited by
-<<basic_poly_server_socket,`basic_poly_server_socket`>>.
+This class has no state to ease multiple inheritance and it is virtual-inherited
+by <<basic_poly_server_socket,`basic_poly_server_socket`>> and
+<<basic_poly_client_socket,`basic_poly_client_socket`>>.
 
 The design for the hierarchy started with this class was a little inspired by
 _{cpp}'s iostream_ and
 http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3525.pdf[N3525:
 Polymorphic Allocators].
+
+[plantuml,poly_socket_hierarchy,title="`poly_socket_base` hierarchy"]
+----
+interface poly_socket_base
+interface poly_server_socket
+interface poly_client_socket
+interface poly_socket
+
+poly_socket_base <|-- poly_server_socket : virtual
+poly_socket_base <|-- poly_client_socket : virtual
+poly_server_socket <|-- poly_socket
+poly_client_socket <|-- poly_socket
+
+poly_server_socket <|-- server_socket_adaptor
+poly_client_socket <|-- client_socket_adaptor
+poly_socket <|-- socket_adaptor
+
+class "ServerSocket + ClientSocket" as RendezvousSocket
+
+socket_adaptor *- RendezvousSocket
+server_socket_adaptor *- ServerSocket
+client_socket_adaptor *- ClientSocket
+----
 
 ===== Template parameters
 

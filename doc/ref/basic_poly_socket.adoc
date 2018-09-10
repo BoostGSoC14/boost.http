@@ -1,0 +1,50 @@
+[[basic_poly_socket]]
+==== `basic_poly_socket`
+
+[source,cpp]
+----
+#include <boost/http/poly_socket.hpp>
+----
+
+This class inherits
+<<basic_poly_server_socket,`basic_poly_server_socket<Request, Response,
+Message>`>> and <<basic_poly_client_socket,`basic_poly_client_socket<Request,
+Response, Message>`>>. This class itself is also an abstract class with no state
+(i.e. an _interface_).
+
+References for objects of this class are expected to fulfill the
+<<server_socket_concept,`ServerSocket` concept>> and the
+<<client_socket_concept,`ClientSocket` concept>>.
+
+This class is inherited by <<socket_adaptor,`socket_adaptor`>>.
+
+===== Template parameters
+
+`Request`::
+
+  The request type.
+
+`Response`::
+
+  The response type.
+
+`Message = request_response_wrapper<Request, Response>`::
+
+  The message type.
+
+===== Member types
+
+These are the types chosen _set in stone_ to guarantee ABI stability across
+binaries (including possible plugins).
+
+`typedef Request request_type`::
+
+  Request message type.
+
+`typedef Response response_type`::
+
+  Response message type.
+
+===== See also
+
+* <<poly_socket,`poly_socket`>>

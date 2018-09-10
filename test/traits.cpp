@@ -2,6 +2,8 @@
 #include <boost/http/response.hpp>
 #include <boost/http/buffered_socket.hpp>
 #include <boost/http/server_socket_adaptor.hpp>
+#include <boost/http/client_socket_adaptor.hpp>
+#include <boost/http/socket_adaptor.hpp>
 
 using namespace boost;
 using namespace std;
@@ -109,9 +111,32 @@ static_assert(http::is_socket<http::poly_server_socket>::value,
 static_assert(http::is_socket<http::basic_poly_server_socket<int, int>>::value,
               "http::basic_poly_server_socket<int> is not a socket?!");
 
+static_assert(!http::is_server_socket<http::poly_client_socket>::value,
+              "http::poly_client_socket is a client_socket?!");
+static_assert(!http::is_server_socket<http::basic_poly_client_socket<int, int>>
+              ::value,
+              "http::basic_poly_client_socket<int> is a server_socket?!");
+
+static_assert(http::is_socket<http::poly_client_socket>::value,
+              "http::poly_client_socket is not a socket?!");
+static_assert(http::is_socket<http::basic_poly_client_socket<int, int>>::value,
+              "http::basic_poly_client_socket<int> is not a socket?!");
+
 static_assert(http::is_server_socket<http::server_socket_adaptor<int>>::value,
               "http::server_socket_adaptor<int> is not a server_socket?!");
 static_assert(http::is_socket<http::server_socket_adaptor<int>>::value,
               "http::server_socket_adaptor<int> is not a socket?!");
+
+static_assert(http::is_client_socket<http::client_socket_adaptor<int>>::value,
+              "http::client_socket_adaptor<int> is not a client_socket?!");
+static_assert(http::is_socket<http::client_socket_adaptor<int>>::value,
+              "http::client_socket_adaptor<int> is not a socket?!");
+
+static_assert(http::is_server_socket<http::socket_adaptor<int>>::value,
+              "http::socket_adaptor<int> is not a server_socket?!");
+static_assert(http::is_client_socket<http::socket_adaptor<int>>::value,
+              "http::socket_adaptor<int> is not a client_socket?!");
+static_assert(http::is_socket<http::socket_adaptor<int>>::value,
+              "http::socket_adaptor<int> is not a socket?!");
 
 int main() {}

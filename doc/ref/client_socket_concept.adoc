@@ -213,3 +213,7 @@ library and the `ClientSocket` and can differ from the communication between the
 
 * <<basic_socket,`basic_socket`>>
 * <<basic_buffered_socket,`basic_buffered_socket`>>
+* <<poly_client_socket,`poly_client_socket`>>
+* <<poly_socket,`poly_socket`>>
+* <<client_socket_adaptor,`client_socket_adaptor`>>
+* <<socket_adaptor,`socket_adaptor`>>

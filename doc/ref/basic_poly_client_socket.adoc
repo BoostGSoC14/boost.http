@@ -1,0 +1,101 @@
+[[basic_poly_client_socket]]
+==== `basic_poly_client_socket`
+
+[source,cpp]
+----
+#include <boost/http/poly_client_socket.hpp>
+----
+
+This class virtual-inherits
+<<basic_poly_socket_base,`basic_poly_socket_base<Message>`>> and extends its
+interface with virtual functions useful for client sockets. This class itself is
+also an abstract class with no state (i.e. an _interface_).
+
+References for objects of this class are expected to fulfill the
+<<client_socket_concept,`ClientSocket` concept>>.
+
+This class is inherited by <<basic_poly_socket,`basic_poly_socket<Request,
+Response, Message>`>>, <<client_socket_adaptor,`client_socket_adaptor`>> and
+<<socket_adaptor,`socket_adaptor`>>.
+
+===== Template parameters
+
+`Request`::
+
+  The request type.
+
+`Response`::
+
+  The response type.
+
+`Message = request_response_wrapper<Request, Response>`::
+
+  The message type.
+
+===== Member types
+
+These are the types chosen _set in stone_ to guarantee ABI stability across
+binaries (including possible plugins).
+
+`typedef Request request_client_type`::
+
+  The `client_type` suffix is used to avoid name clashing with HTTP server
+  abstraction.
+
+`typedef Response response_client_type`::
+
+  The `client_type` suffix is used to avoid name clashing with HTTP server
+  abstraction.
+
+===== Member functions
+
+====== Overwritable functions
+
+These are the functions that subclasses need to implement in order to lose the
+`abstract class` property.
+
+`virtual void async_write_request(const request_client_type &request, handler_type handler) = 0`::
+
+  This function presents no differences (besides mandatory virtual) from the one
+  with the same name found on the <<client_socket_concept, `ClientSocket`
+  concept>>.
+
+`virtual void async_write_request_metadata(const request_client_type &request, handler_type handler) = 0`::
+
+  This function presents no differences (besides mandatory virtual) from the one
+  with the same name found on the <<client_socket_concept, `ClientSocket`
+  concept>>.
+
+`virtual void async_read_response(response_client_type &response, handler_type handler) = 0`::
+
+  This function presents no differences (besides mandatory virtual) from the one
+  with the same name found on the <<client_socket_concept, `ClientSocket`
+  concept>>.
+
+`virtual ~basic_poly_client_socket()`::
+
+  Destructor.
+
+====== Wrappers to fulfill the ASIO extensible model
+
+These functions rewrite usual function calls in terms of the ABI stable
+interface. They also enable the ASIO extensible model within this hierarchy.
+
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_request(const request_client_type &request, CompletionToken &&token)`::
+
+  Handle the token and dispatch the operation to the ABI stable
+  `async_write_request`.
+
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_request_metadata(const request_client_type &request, CompletionToken &&token)`::
+
+  Handle the token and dispatch the operation to the ABI stable
+  `async_write_request_metadata`.
+
+`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_read_response(response_client_type &response, CompletionToken &&token)`::
+
+  Handle the token and dispatch the operation to the ABI stable
+  `async_read_response`.
+
+===== See also
+
+* <<poly_client_socket,`poly_client_socket`>>

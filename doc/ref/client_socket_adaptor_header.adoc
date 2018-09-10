@@ -1,0 +1,8 @@
+[[client_socket_adaptor_header]]
+==== `<boost/http/client_socket_adaptor.hpp>`
+
+Import the following symbols:
+
+* <<client_socket_adaptor,`client_socket_adaptor`>>
+* <<poly_client_socket,`poly_client_socket`>>
+* <<poly_socket_base,`poly_socket_base`>>
