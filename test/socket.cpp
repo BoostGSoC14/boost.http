@@ -53,77 +53,51 @@ bool check_wrong_direction(const system::system_error &e)
     return system::error_code(http::http_errc::wrong_direction) == e.code();
 }
 
-struct outer_storage
+// inspired by
+// https://github.com/facebook/folly/blob/master/folly/fibers/Baton.h
+// (it's just a 1:1 semaphore)
+class fiber_baton
 {
-    outer_storage(asio::yield_context &yield)
-        : init(yield)
+public:
+    fiber_baton(boost::asio::io_context &ctx)
+        : executor(ctx.get_executor())
     {}
 
-    asio::async_completion<asio::yield_context, void(system::error_code)> init;
-};
+    fiber_baton(const fiber_baton&) = delete;
 
-struct use_yielded_future_t
-{
-    typedef BOOST_ASIO_HANDLER_TYPE(asio::yield_context,
-                                    void(system::error_code))
-        coro_handler_t;
-
-    struct Handler
+    void post()
     {
-        Handler(use_yielded_future_t use_yielded_future)
-            : storage(use_yielded_future.storage)
-            , coro_handler(std::move(use_yielded_future.storage.init
-                                     .completion_handler))
-        {}
-
-        void operator()(system::error_code ec)
-        {
-            coro_handler(ec);
+        if (!pending) {
+            posted = true;
+            return;
         }
 
-        outer_storage &storage;
-        coro_handler_t coro_handler;
-    };
-
-    use_yielded_future_t(outer_storage &storage) : storage(storage) {}
-
-    outer_storage &storage;
-};
-
-struct yielded_future
-{
-    yielded_future(outer_storage &storage) : storage(storage) {}
-
-    void get()
-    {
-        storage.init.result.get();
+        std::allocator<void> alloc;
+        auto p = std::move(pending);
+        pending = nullptr;
+        executor.dispatch(std::move(p), alloc);
     }
 
-    outer_storage &storage;
-};
-
-namespace boost {
-namespace asio {
-
-template<>
-struct async_result<use_yielded_future_t, void(system::error_code)>
-{
-    typedef use_yielded_future_t::Handler completion_handler_type;
-    typedef yielded_future return_type;
-
-    async_result(use_yielded_future_t::Handler &handler)
-        : storage(handler.storage)
-    {}
-
-    yielded_future get()
+    void wait(asio::yield_context &yield)
     {
-        return yielded_future(storage);
+        if (posted) {
+            posted = false;
+            return;
+        }
+
+        // suspend
+        boost::asio::async_completion<
+            decltype(yield), void(boost::system::error_code)
+        > init{yield};
+        pending = std::move(init.completion_handler);
+        init.result.get();
     }
 
-    outer_storage &storage;
+private:
+    boost::asio::io_context::executor_type executor;
+    bool posted = false;
+    std::function<void()> pending;
 };
-
-} } // namespace boost::asio
 
 BOOST_AUTO_TEST_CASE(socket_ctor) {
     bool captured = false;
@@ -171,21 +145,17 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
                 BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
                 {
-                    socket.async_read_request(request, yield);
-
-                    // TODO: FIX use_yielded_future_t and re-enable this test
-                    //
-                    // DETAILS: define
-                    // BOOST_HTTP_SOCKET_DEFAULT_BODY_COPY_THRESHOLD to 1 when
-                    // testing changes to use_yielded_future_t
-
-                    //outer_storage storage(yield);
-                    //auto fut = socket
-                    //    .async_read_request(request,
-                    //                        use_yielded_future_t(storage));
-                    //BOOST_REQUIRE(socket.write_state()
-                    //              == http::write_state::finished);
-                    //fut.get();
+                    fiber_baton baton(ios);
+                    socket.async_read_request(
+                        request,
+                        [&baton](const system::error_code &ec) {
+                            BOOST_REQUIRE(!ec);
+                            baton.post();
+                        }
+                    );
+                    BOOST_REQUIRE(socket.write_state()
+                                  == http::write_state::finished);
+                    baton.wait(yield);
                 }
                 BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
 
