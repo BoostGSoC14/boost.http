@@ -112,7 +112,7 @@ struct reader_discards_trailers: private T
     }
 };
 
-struct socket_settings
+struct socket_settings: boost::http::default_socket_settings
 {
     typedef reader_discards_trailers<
         reader_discards_useless_headers<http::reader::request>
