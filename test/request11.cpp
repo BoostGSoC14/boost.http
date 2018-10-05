@@ -112,6 +112,16 @@ struct field_value
     std::size_t size;
 };
 
+struct chunk_ext
+{
+    bool operator==(const chunk_ext &o) const
+    {
+        return value == o.value;
+    }
+
+    std::string value;
+};
+
 struct body_chunk
 {
     bool operator==(const body_chunk &o) const
@@ -219,6 +229,7 @@ typedef variant<
     error,
     field_name,
     field_value,
+    chunk_ext,
     body_chunk,
     trailer_name,
     trailer_value,
@@ -249,6 +260,9 @@ std::ostream& operator<<(std::ostream &os, const value &v)
             [&os](const field_value &v) {
                 os << "field_value(value = \"" << v.value << "\", size = "
                 << v.size << ")";
+            },
+            [&os](const chunk_ext &v) {
+                os << "chunk_ext(value = \"" << v.value << "\")";
             },
             [&os](const body_chunk &v) {
                 os << "body_chunk(size = " << v.value.size() << ")";
@@ -384,6 +398,13 @@ my_token::value make_trailer_value(const char (&value)[N])
     my_token::trailer_value t;
     t.value = std::string(value, N - 1);
     t.size = N - 1;
+    return t;
+}
+
+my_token::value make_chunk_ext(boost::string_view value)
+{
+    my_token::chunk_ext t;
+    t.value = std::string(&value.front(), value.size());
     return t;
 }
 
@@ -553,6 +574,12 @@ void my_tester(const char (&input)[N],
                 break;
             case http::token::code::end_of_headers:
                 output.push_back(make_end_of_headers(parser.token_size()));
+                break;
+            case http::token::code::chunk_ext:
+                {
+                    auto value = parser.value<http::token::chunk_ext>();
+                    output.push_back(make_chunk_ext(value));
+                }
                 break;
             case http::token::code::end_of_body:
                 output.push_back(make_end_of_body(parser.token_size()));
@@ -1014,5 +1041,53 @@ TEST_CASE("Lots of messages described declaratively and tested with varying"
                   make_version(1),
                   make_skip(2),
                   make_error(http::token::code::error_no_host)
+              });
+}
+
+TEST_CASE("chunk_ext")
+{
+    my_tester("POST /american_jesus HTTP/1.1\r\n"
+              "Transfer-Encoding:chunked\t \t \t\r\n"
+              "host:         \tlocalhost\t\t  \r\n"
+              "\r\n"
+
+              "4\r\n"
+              "Wiki\r\n"
+
+              "5;end-of-sentence\r\n"
+              "pedia\r\n"
+
+              "e\r\n"
+              " in\r\n\r\nchunks.\r\n"
+
+              "0\r\n"
+              "\r\n",
+              {
+                  make_method("POST"),
+                  make_skip(1),
+                  make_request_target("/american_jesus"),
+                  make_skip(8),
+                  make_version(1),
+                  make_skip(2),
+                  make_field_name("Transfer-Encoding"),
+                  make_skip(1),
+                  make_field_value("chunked", 12),
+                  make_skip(2),
+                  make_field_name("host"),
+                  make_skip(11),
+                  make_field_value("localhost", 13),
+                  make_skip(2),
+                  make_end_of_headers(2),
+                  make_skip(3),
+                  make_body_chunk("Wiki"),
+                  make_skip(3),
+                  make_chunk_ext(";end-of-sentence"),
+                  make_skip(2),
+                  make_body_chunk("pedia"),
+                  make_skip(5),
+                  make_body_chunk(" in\r\n\r\nchunks."),
+                  make_skip(3),
+                  make_end_of_body(2),
+                  make_end_of_message(2)
               });
 }

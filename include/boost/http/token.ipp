@@ -38,6 +38,8 @@ inline symbol::value symbol::convert(code::value v)
         return field_value;
     case code::end_of_headers:
         return end_of_headers;
+    case code::chunk_ext:
+        return chunk_ext;
     case code::body_chunk:
         return body_chunk;
     case code::end_of_body:
@@ -72,6 +74,7 @@ inline category::value category::convert(code::value v)
     case code::reason_phrase:
     case code::field_name:
     case code::field_value:
+    case code::chunk_ext:
     case code::body_chunk:
     case code::trailer_name:
     case code::trailer_value:
@@ -96,6 +99,7 @@ inline category::value category::convert(symbol::value v)
     case symbol::reason_phrase:
     case symbol::field_name:
     case symbol::field_value:
+    case symbol::chunk_ext:
     case symbol::body_chunk:
     case symbol::trailer_name:
     case symbol::trailer_value:

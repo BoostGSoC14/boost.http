@@ -40,6 +40,7 @@ struct code
         field_name,
         field_value,
         end_of_headers,
+        chunk_ext,
         body_chunk,
         end_of_body,
         trailer_name,
@@ -66,6 +67,7 @@ struct symbol
 
         end_of_headers,
 
+        chunk_ext,
         body_chunk,
 
         end_of_body,
@@ -113,9 +115,15 @@ struct field_value
     static const token::code::value code = token::code::field_value;
 };
 
+struct chunk_ext
+{
+    typedef boost::string_view type;
+    static const token::code::value code = token::code::chunk_ext;
+};
+
 struct body_chunk
 {
-    typedef asio::const_buffer type;
+    typedef boost::asio::const_buffer type;
     static const token::code::value code = token::code::body_chunk;
 };
 

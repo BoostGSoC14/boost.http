@@ -51,7 +51,7 @@ inline void response::reset()
     code_ = token::code::error_insufficient_data;
     idx = 0;
     token_size_ = 0;
-    ibuffer = asio::const_buffer();
+    ibuffer = boost::asio::const_buffer();
 }
 
 inline void response::puteof()
@@ -116,10 +116,18 @@ inline response::view_type response::value<token::field_value>() const
 }
 
 template<>
-inline asio::const_buffer response::value<token::body_chunk>() const
+inline response::view_type response::value<token::chunk_ext>() const
+{
+    assert(code_ == token::chunk_ext::code);
+    return view_type(static_cast<const char*>(ibuffer.data()) + idx,
+                     token_size_);
+}
+
+template<>
+inline boost::asio::const_buffer response::value<token::body_chunk>() const
 {
     assert(code_ == token::body_chunk::code);
-    return asio::buffer(ibuffer + idx, token_size_);
+    return boost::asio::buffer(ibuffer + idx, token_size_);
 }
 
 template<>
@@ -152,7 +160,6 @@ inline token::code::value response::expected_token() const
     case EXPECT_OWS_AFTER_COLON:
     case EXPECT_CRLF_AFTER_FIELD_VALUE:
     case EXPECT_CHUNK_SIZE:
-    case EXPECT_CHUNK_EXT:
     case EXPEXT_CRLF_AFTER_CHUNK_EXT:
     case EXPECT_CRLF_AFTER_CHUNK_DATA:
     case EXPECT_TRAILER_COLON:
@@ -170,6 +177,8 @@ inline token::code::value response::expected_token() const
         return token::code::field_name;
     case EXPECT_FIELD_VALUE:
         return token::code::field_value;
+    case EXPECT_CHUNK_EXT:
+        return token::code::chunk_ext;
     case EXPECT_BODY:
     case EXPECT_UNSAFE_BODY:
     case EXPECT_CHUNK_DATA:
@@ -187,7 +196,7 @@ inline token::code::value response::expected_token() const
     }
 }
 
-inline void response::set_buffer(asio::const_buffer ibuffer)
+inline void response::set_buffer(boost::asio::const_buffer ibuffer)
 {
     this->ibuffer = ibuffer;
     idx = 0;
@@ -253,7 +262,7 @@ inline void response::next()
         return;
     }
 
-    asio::const_buffer rest_buf = ibuffer + idx;
+    boost::asio::const_buffer rest_buf = ibuffer + idx;
     basic_string_view<unsigned char>
         rest_view(static_cast<const unsigned char*>(rest_buf.data()),
                   rest_buf.size());
@@ -721,7 +730,7 @@ inline void response::next()
                 if (token_size_ == 0)
                     return next();
 
-                code_ = token::code::skip;
+                code_ = token::code::chunk_ext;
                 return;
             }
             token_size_ = i - idx;
