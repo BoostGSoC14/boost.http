@@ -55,6 +55,7 @@ namespace Catch {
         case boost::http::token::code::reason_phrase:
             return "reason_phrase";
         }
+        return "";
     }
 }
 
