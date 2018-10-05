@@ -77,7 +77,7 @@ public:
      * the beginning of \p inbuffer (i.e. you MUST NOT discard unread bytes from
      * previous buffer).
      */
-    void set_buffer(asio::const_buffer inbuffer);
+    void set_buffer(boost::asio::const_buffer inbuffer);
 
     size_type parsed_count() const;
 

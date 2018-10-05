@@ -18,7 +18,7 @@ inline void request::reset()
     code_ = token::code::error_insufficient_data;
     idx = 0;
     token_size_ = 0;
-    ibuffer = asio::const_buffer();
+    ibuffer = boost::asio::const_buffer();
 }
 
 inline token::code::value request::code() const
@@ -94,10 +94,10 @@ inline request::view_type request::value<token::chunk_ext>() const
 }
 
 template<>
-asio::const_buffer request::value<token::body_chunk>() const
+inline boost::asio::const_buffer request::value<token::body_chunk>() const
 {
     assert(code_ == token::body_chunk::code);
-    return asio::buffer(ibuffer + idx, token_size_);
+    return boost::asio::buffer(ibuffer + idx, token_size_);
 }
 
 template<>
@@ -162,7 +162,7 @@ inline token::code::value request::expected_token() const
     }
 }
 
-inline void request::set_buffer(asio::const_buffer ibuffer)
+inline void request::set_buffer(boost::asio::const_buffer ibuffer)
 {
     this->ibuffer = ibuffer;
     idx = 0;
@@ -210,7 +210,7 @@ inline void request::next()
     if (idx == ibuffer.size())
         return;
 
-    asio::const_buffer rest_buf = ibuffer + idx;
+    boost::asio::const_buffer rest_buf = ibuffer + idx;
     basic_string_view<unsigned char>
         rest_view(static_cast<const unsigned char*>(rest_buf.data()),
                   rest_buf.size());

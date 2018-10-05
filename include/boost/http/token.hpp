@@ -123,7 +123,7 @@ struct chunk_ext
 
 struct body_chunk
 {
-    typedef asio::const_buffer type;
+    typedef boost::asio::const_buffer type;
     static const token::code::value code = token::code::body_chunk;
 };
 
