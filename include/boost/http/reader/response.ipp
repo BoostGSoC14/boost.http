@@ -194,6 +194,8 @@ inline token::code::value response::expected_token() const
     case EXPECT_END_OF_CONNECTION_ERROR:
         return token::code::error_use_another_connection;
     }
+    assert(false);
+    return token::code::error_insufficient_data;
 }
 
 inline void response::set_buffer(boost::asio::const_buffer ibuffer)

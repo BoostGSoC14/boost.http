@@ -160,6 +160,8 @@ inline token::code::value request::expected_token() const
     case EXPECT_END_OF_MESSAGE:
         return token::code::end_of_message;
     }
+    assert(false);
+    return token::code::error_insufficient_data;
 }
 
 inline void request::set_buffer(boost::asio::const_buffer ibuffer)
