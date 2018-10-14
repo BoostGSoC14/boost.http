@@ -116,11 +116,15 @@ inline response::view_type response::value<token::field_value>() const
 }
 
 template<>
-inline response::view_type response::value<token::chunk_ext>() const
+inline token::chunk_ext::type response::value<token::chunk_ext>() const
 {
     assert(code_ == token::chunk_ext::code);
-    return view_type(static_cast<const char*>(ibuffer.data()) + idx,
-                     token_size_);
+    token::chunk_ext::type ret;
+    ret.chunk_size = body_size;
+    ret.ext = view_type(
+        static_cast<const char*>(ibuffer.data()) + idx, token_size_
+    );
+    return ret;
 }
 
 template<>

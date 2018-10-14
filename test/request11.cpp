@@ -116,9 +116,10 @@ struct chunk_ext
 {
     bool operator==(const chunk_ext &o) const
     {
-        return value == o.value;
+        return chunk_size == o.chunk_size && value == o.value;
     }
 
+    std::uint_least64_t chunk_size;
     std::string value;
 };
 
@@ -401,9 +402,11 @@ my_token::value make_trailer_value(const char (&value)[N])
     return t;
 }
 
-my_token::value make_chunk_ext(boost::string_view value)
+my_token::value make_chunk_ext(std::uint_least64_t chunk_size,
+                               boost::string_view value)
 {
     my_token::chunk_ext t;
+    t.chunk_size = chunk_size;
     t.value = std::string(&value.front(), value.size());
     return t;
 }
@@ -578,7 +581,9 @@ void my_tester(const char (&input)[N],
             case http::token::code::chunk_ext:
                 {
                     auto value = parser.value<http::token::chunk_ext>();
-                    output.push_back(make_chunk_ext(value));
+                    output.push_back(make_chunk_ext(
+                        value.chunk_size, value.ext
+                    ));
                 }
                 break;
             case http::token::code::end_of_body:
@@ -1081,7 +1086,7 @@ TEST_CASE("chunk_ext")
                   make_skip(3),
                   make_body_chunk("Wiki"),
                   make_skip(3),
-                  make_chunk_ext(";end-of-sentence"),
+                  make_chunk_ext(5, ";end-of-sentence"),
                   make_skip(2),
                   make_body_chunk("pedia"),
                   make_skip(5),
