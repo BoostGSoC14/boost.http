@@ -117,7 +117,11 @@ struct field_value
 
 struct chunk_ext
 {
-    typedef boost::string_view type;
+    struct type
+    {
+        uint_least64_t chunk_size;
+        boost::string_view ext;
+    };
     static const token::code::value code = token::code::chunk_ext;
 };
 
