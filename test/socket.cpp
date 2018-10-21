@@ -12,7 +12,7 @@
 #include <boost/http/request.hpp>
 #include <boost/http/response.hpp>
 
-#include "mocksocket.hpp"
+#include "utils/mocksocket.hpp"
 
 using namespace boost;
 

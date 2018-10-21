@@ -3,7 +3,7 @@
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 
-#include "mocksocket.hpp"
+#include "utils/mocksocket.hpp"
 
 #include <boost/asio/spawn.hpp>
 

@@ -4,7 +4,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <boost/http/file_server.hpp>
-#include "mocksocket.hpp"
+#include "utils/mocksocket.hpp"
 
 using namespace boost;
 using namespace std;
