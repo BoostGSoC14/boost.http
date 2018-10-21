@@ -19,6 +19,7 @@ public:
             return;
         }
 
+        executor.on_work_finished();
         std::allocator<void> alloc;
         auto p = std::move(pending);
         pending = nullptr;
@@ -37,6 +38,7 @@ public:
             decltype(yield), void(boost::system::error_code)
         > init{yield};
         pending = std::move(init.completion_handler);
+        executor.on_work_started();
         init.result.get();
     }
 
