@@ -14,3 +14,4 @@ You can check any breaking changes here.
 ** Names go from `polymorphic_*` to `poly_*`.
 ** Use `poly_handler<F>` instead `std::function<F>`.
 ** Add polymorphic helpers for `ClientSocket`.
+* Add `socket::async_{read,write}_chunkext`.

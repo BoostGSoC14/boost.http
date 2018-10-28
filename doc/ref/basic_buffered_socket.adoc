@@ -99,6 +99,14 @@ layer.
 
   Lock HTTP to `HTTP/1.0` version if socket is used as a client socket.
 
+`template<class Message, class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,void(system::error_code, std::size_t)) async_read_chunkext(Message &message, typename Message::headers_type &chunkext, CompletionToken &&token)`::
+
+  See documentation in <<basic_socket,`basic_socket`>>.
+
+`template<class Message, class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_chunkext(const Message &message, const typename Message::headers_type &chunkext, CompletionToken &&token)`::
+
+  See documentation in <<basic_socket,`basic_socket`>>.
+
 ====== `Socket` concept
 
 See the <<socket_concept,`Socket` concept>>.

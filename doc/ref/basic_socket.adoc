@@ -129,6 +129,39 @@ behaviour is invoked.
 
   Lock HTTP to `HTTP/1.0` version if socket is used as a client socket.
 
+`template<class Message, class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,void(system::error_code, std::size_t)) async_read_chunkext(Message &message, typename Message::headers_type &chunkext, CompletionToken &&token)`::
+
+  Initiate an asynchronous operation to read a part of the message body. Handler
+  is called when at least one byte is read (called with no error set and value
+  `0`), when chunk extensions are found (called with no error set and some value
+  different than `0`), when the end of message is reached (called with no error
+  set and value `0`) or when some error occurs.
++
+`message.body()`, `message.trailers()` and `chunkext` are left in an unspecified
+state while the operation is in progress. `chunkext.clear()` will be called by
+this function before the read operation is scheduled.
++
+When valid chunk extensions are found, they are stored in `chunkext` and handler
+is called before the chunk bytes are stored in `message.body()`. The chunk size
+is passed to the handler and `chunkext` data refers to the *next* bytes that
+will be pushed into `message.body()` (i.e. you need to initiate another read
+to get the chunk data referred by `chunkext`).
++
+This design is simple (no need for extra error code, simple to explain, simple
+to program for, ...) and does expose relevant information to the user (e.g. you
+can extract message boundaries) without compromising security (read is still
+limited by buffer size and you will *not* be exposed to — for instance —
+infinite appends into `message.body()`).
+
+`template<class Message, class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_chunkext(const Message &message, const typename Message::headers_type &chunkext, CompletionToken &&token)`::
+
+  Initiate an asynchronous operation to write a chunk of the HTTP body data
+  payload (chunked message). Handler is called with an appropriate argument when
+  the operation completes.
++
+`message.body()` and `chunkext` MUST *NOT* be modified while the operation is in
+progress.
+
 ====== `Socket` concept
 
 See the <<socket_concept,`Socket` concept>>.

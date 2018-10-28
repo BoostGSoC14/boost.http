@@ -54,6 +54,7 @@ set(tests11
   "request_response_wrapper"
   "socket_state"
   "client_socket"
+  "socket_chunkext"
 )
 
 macro(add_test_target target version)

@@ -17,6 +17,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <limits>
 
 #include <boost/none.hpp>
 #include <boost/variant.hpp>
@@ -88,6 +89,13 @@ public:
     async_read_some(Message &message, CompletionToken &&token);
 
     template<class Message, class CompletionToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
+                                  void(system::error_code, std::size_t))
+    async_read_chunkext(Message &message,
+                        typename Message::headers_type &chunkext,
+                        CompletionToken &&token);
+
+    template<class Message, class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_read_trailers(Message &message, CompletionToken &&token);
 
@@ -120,6 +128,12 @@ public:
     template<class Message, class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_write(const Message &message, CompletionToken &&token);
+
+    template<class Message, class CompletionToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
+    async_write_chunkext(const Message &message,
+                         const typename Message::headers_type &chunkext,
+                         CompletionToken &&token);
 
     template<class Message, class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
@@ -158,11 +172,22 @@ private:
         OTHER_METHOD
     };
 
-    template<class Message, class Handler>
-    void schedule_on_async_read_message(Handler &&handler, Message &message);
+    template<bool enable_chunkext, class Message, class Handler>
+    void schedule_on_async_read_message(
+        Handler &&handler, Message &message,
+        typename Message::headers_type *chunkext = NULL
+    );
 
-    template<bool server_mode, class Parser, class Message, class Handler>
+    // `enable_chunkext` is not really required as we can just test for
+    // `chunkext != NULL`, but on my tests the extra code to handle this piece
+    // of data added a slight (but noticeable — ~1%) slowdown (I guess it
+    // affected code cache) even to code not requiring such data. So I use this
+    // template argument and rely on dead code optimization to not impose this
+    // cost to everybody.
+    template<bool server_mode, bool enable_chunkext, class Parser,
+             class Message, class Handler>
     void on_async_read_message(Handler &&handler, Message &message,
+                               typename Message::headers_type *chunkext,
                                const system::error_code &ec,
                                std::size_t bytes_transferred);
 
@@ -178,6 +203,9 @@ private:
 
     template<class Handler>
     void invoke_handler(Handler &&handler);
+
+    template<class Handler, class ErrorCode, class Value>
+    void invoke_handler(Handler &&handler, ErrorCode error, Value value);
 
     Socket channel;
     bool is_open_ = true;
