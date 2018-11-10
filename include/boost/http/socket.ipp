@@ -1901,7 +1901,7 @@ void basic_socket<Socket, Settings>
 
             {
                 auto er = message.headers().equal_range("expect");
-                if (std::distance(er.first, er.second) > 1)
+                if (er.first != er.second)
                     message.headers().erase(er.first, er.second);
             }
 
@@ -1961,7 +1961,7 @@ void basic_socket<Socket, Settings>
                         chunkext->emplace(name, val);
                 }
 
-                if (chunkext->size() > 0) {
+                if (!chunkext->empty()) {
                     cb_value = value.chunk_size;
                     cb_ready = true;
                     loop = false;
