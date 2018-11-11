@@ -1901,8 +1901,13 @@ void basic_socket<Socket, Settings>
 
             {
                 auto er = message.headers().equal_range("expect");
-                if (er.first != er.second)
-                    message.headers().erase(er.first, er.second);
+                if (er.first != er.second) {
+                    auto x = er.first;
+                    ++x;
+                    // (std::distance(er.first, er.second) > 1
+                    if (x != er.second)
+                        message.headers().erase(er.first, er.second);
+                }
             }
 
             if (keep_alive == KEEP_ALIVE_UNKNOWN) {
