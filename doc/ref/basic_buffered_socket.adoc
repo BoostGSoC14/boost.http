@@ -90,6 +90,16 @@ layer.
 
   Returns a reference to the underlying stream.
 
+`void open()`::
+
+  Change socket state to open.
++
+NOTE: See `is_open()`
++
+WARNING: You MUST cancel current ongoing operations and wait for their
+completion handlers to be called before call this function. Otherwise, undefined
+behaviour is invoked.
+
 `boost::asio::const_buffer upgrade_head() const`::
 
   Return the buffer representing the first few bytes of the upgraded stream (may

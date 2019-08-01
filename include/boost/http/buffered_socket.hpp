@@ -36,6 +36,7 @@ public:
     typedef Socket next_layer_type;
 
     using typename Parent::executor_type;
+    using Parent::open;
     using Parent::is_open;
     using Parent::read_state;
     using Parent::write_state;
