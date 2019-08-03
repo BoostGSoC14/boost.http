@@ -1444,7 +1444,7 @@ namespace detail {
 template<bool server_mode, class Message, class Parser>
 typename std::enable_if<!is_request_message<Message>::value || !server_mode,
                         boost::string_view>::type
-fill_method(Message &request, const Parser &parser)
+fill_method(Message& /*request*/, const Parser& /*parser*/)
 {
     return ""; //< no-op
 }
@@ -1462,7 +1462,7 @@ fill_method(Request &request, const Parser &parser)
 template<bool server_mode, class Message, class Parser>
 typename std::enable_if<!is_request_message<Message>::value || !server_mode>
 ::type
-fill_target(Message &request, const Parser &parser)
+fill_target(Message& /*request*/, const Parser& /*parser*/)
 {} //< no-op
 
 template<bool server_mode, class Request, class Parser>
