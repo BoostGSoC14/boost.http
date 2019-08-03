@@ -73,13 +73,6 @@ void client_socket_adaptor<Socket, Request, Response, Message>
 
 template<class Socket, class Request, class Response, class Message>
 void client_socket_adaptor<Socket, Request, Response, Message>
-::async_read_trailers(message_type &message, handler_type handler)
-{
-    Socket::async_read_trailers(message, handler);
-}
-
-template<class Socket, class Request, class Response, class Message>
-void client_socket_adaptor<Socket, Request, Response, Message>
 ::async_write_request(const request_type &request, handler_type handler)
 {
     Socket::async_write_request(request, handler);
@@ -196,15 +189,6 @@ client_socket_adaptor<std::reference_wrapper<Socket>, Request, Response,
 ::async_read_some(message_type &message, handler_type handler)
 {
     wrapped_socket.get().async_read_some(message, handler);
-}
-
-template<class Socket, class Request, class Response, class Message>
-void
-client_socket_adaptor<std::reference_wrapper<Socket>, Request, Response,
-                      Message>
-::async_read_trailers(message_type &message, handler_type handler)
-{
-    wrapped_socket.get().async_read_trailers(message, handler);
 }
 
 template<class Socket, class Request, class Response, class Message>

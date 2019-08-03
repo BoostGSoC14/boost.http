@@ -120,35 +120,26 @@ BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(boost::system::error_code))
 |
 
 |`a.async_read_some(m, token)`|`AsyncResultType`
-|`a.read_state() == read_state::message_ready`
-|Initiate an asynchronous operation to read a part of the message body. Handler
- is called when at least one byte is read (called with no error set), when the
- end of message is reached (called with no error set) or when some error occurs.
+|`a.read_state() == read_state::message_ready \|\| a.read_state() == read_state::body_ready`
+a|
+Initiate an asynchronous operation to read a part of the message body. Handler
+is called when:
 
- `m.body()` and `m.trailers()` are left in an unspecified state while the
- operation is in progress.
+* If `a.read_state() == read_state::message_ready`: at least one byte is read
+  (called with no error set), or when the end of message is reached (called with
+  no error set).
+* If `a.read_state() == read_state::body_ready`: the rest of the message is
+  fully received (called with no error set).
+* When some error occurs.
+
+`m.body()` (if `a.read_state() != read_state::body_ready`) and `m.trailers()`
+are left in an unspecified state while the operation is in progress.
 |By the time the handler is called, the part of the message read (if any) is
- appended to `m.body()`, if no error happened.
+ appended to `m.body()` and the read trailers (if any) are inserted into
+ `m.trailers()`, if no error happened.
 
 |`a.async_read_some(m, token)`|`AsyncResultType`
-|`a.read_state() != read_state::message_ready`
-|No actions are done and the handler from the completion token is called with
- `boost::system::error_code {http_errc::out_of_order}`.
-|
-
-|`a.async_read_trailers(m, token)`|`AsyncResultType`
-|`a.read_state() == read_state::body_ready`
-|Initiate an asynchronous operation to read the trailers. Handler is called when
- the rest of the message is fully received (called with no error set) or when
- some error occurs.
-
- `m.trailers()` is left in an unspecified state while the operation is in
- progress.
-|By the time the handler is called, if no error happened, the read trailers (if
- any) are inserted into `m.trailers()`.
-
-|`a.async_read_trailers(m, token)`|`AsyncResultType`
-|`a.read_state() != read_state::body_ready`
+|`a.read_state() != read_state::message_ready && a.read_state() != read_state::body_ready`
 |No actions are done and the handler from the completion token is called with
  `boost::system::error_code {http_errc::out_of_order}`.
 |

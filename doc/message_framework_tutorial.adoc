@@ -137,15 +137,7 @@ whatever part of the body that has already been received.
 ----
 while (self->socket.read_state() != http::read_state::empty) {
     // ...
-    switch (self->socket.read_state()) {
-    case http::read_state::message_ready:
-        // ...
-        self->socket.async_read_some(self->request, yield);
-        break;
-    case http::read_state::body_ready:
-        // ...
-        self->socket.async_read_trailers(self->request, yield);
-        break;
+    self->socket.async_read_some(self->request, yield);
 ----
 
 You can use `self->socket.read_state()` to know which part of the request is

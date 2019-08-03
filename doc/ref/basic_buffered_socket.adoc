@@ -132,10 +132,6 @@ See the <<socket_concept,`Socket` concept>>.
 * `template<class Message, class CompletionToken>
   BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
                                 void(boost::system::error_code))
-  async_read_trailers(Message &message, CompletionToken &&token)`
-* `template<class Message, class CompletionToken>
-  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
-                                void(boost::system::error_code))
   async_write(const Message &message, CompletionToken &&token)`
 * `template<class Message, class CompletionToken>
   BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,

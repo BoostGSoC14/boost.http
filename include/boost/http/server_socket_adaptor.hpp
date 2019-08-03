@@ -56,8 +56,6 @@ public:
     void async_read_request(request_type &request,
                             handler_type handler) override;
     void async_read_some(message_type &message, handler_type handler) override;
-    void async_read_trailers(message_type &message,
-                             handler_type handler) override;
     void async_write_response(const response_type &response,
                               handler_type handler) override;
     void async_write_response_continue(handler_type handler) override;
@@ -113,8 +111,6 @@ public:
     void async_read_request(request_type &request,
                             handler_type handler) override;
     void async_read_some(message_type &message, handler_type handler) override;
-    void async_read_trailers(message_type &message,
-                             handler_type handler) override;
     void async_write_response(const response_type &response,
                               handler_type handler) override;
     void async_write_response_continue(handler_type handler) override;

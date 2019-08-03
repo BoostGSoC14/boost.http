@@ -46,7 +46,6 @@ public:
     using Parent::async_read_response;
     using Parent::async_read_some;
     using Parent::async_read_chunkext;
-    using Parent::async_read_trailers;
     using Parent::async_write_response;
     using Parent::async_write_response_continue;
     using Parent::async_write_response_metadata;

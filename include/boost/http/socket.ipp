@@ -146,7 +146,8 @@ basic_socket<Socket, Settings>::async_read_some(Message &message,
     boost::asio::async_completion<CompletionToken, void(system::error_code)>
         init{token};
 
-    if (istate != http::read_state::message_ready) {
+    if (istate != http::read_state::message_ready &&
+        istate != http::read_state::body_ready) {
         invoke_handler(std::move(init.completion_handler),
                        http_errc::out_of_order);
         return init.result.get();
@@ -183,30 +184,6 @@ basic_socket<Socket, Settings>::async_read_chunkext(
     chunkext.clear();
     schedule_on_async_read_message<true>(std::move(init.completion_handler),
                                          message, &chunkext);
-
-    return init.result.get();
-}
-
-template<class Socket, class Settings>
-template<class Message, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>::async_read_trailers(Message &message,
-                                                    CompletionToken &&token)
-{
-    static_assert(is_message<Message>::value,
-                  "Message must fulfill the Message concept");
-
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-
-    if (istate != http::read_state::body_ready) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
-    }
-
-    schedule_on_async_read_message<false>(std::move(init.completion_handler),
-                                          message);
 
     return init.result.get();
 }

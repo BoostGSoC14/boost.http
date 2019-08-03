@@ -213,11 +213,7 @@ partition "request handling" {
   else (""false"")
   endif
   while (""read_state() == read_state::finished"")
-    if (""read_state()"") then (""read_state::message_ready"")
-      :""async_read_some()"";
-    else (""read_state::body_ready"")
-      :""async_read_trailers()"";
-    endif
+    :""async_read_some()"";
   endwhile
   -> ""true"";
   fork

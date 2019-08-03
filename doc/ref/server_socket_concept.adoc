@@ -204,7 +204,7 @@ semantics/postconditions:
 |===
 |Expression|Precondition|Extra semantics|Extra postcondition
 
-|`a.async_read_trailers(m, token)`
+|`a.async_read_some(m, token)`
 |`a.read_state() == read_state::body_ready`
 |
 |By the time the handler is called, if no error happened, `a.read_state() ==

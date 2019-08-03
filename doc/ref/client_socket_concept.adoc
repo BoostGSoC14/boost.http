@@ -153,7 +153,7 @@ semantics/postconditions:
 |===
 |Expression|Precondition|Extra semantics|Extra postcondition
 
-|`a.async_read_trailers(m, token)`
+|`a.async_read_some(m, token)`
 |`a.read_state() == read_state::body_ready`
 |
 |By the time the handler is called, if no error happened, `a.read_state() ==
@@ -176,10 +176,10 @@ semantics/postconditions:
 . Any HTTP field name received through the wire is normalized (i.e. uppercase
   characters are converted to lowercase) before they're inserted into objects of
   type `Response::headers_type`.
-. Upon receiving a message (i.e. `async_read_response`, `async_read_some` or
-  `async_read_trailers`), if connection is gracefully closed in the
-  HTTP-equivalent layer (e.g. `"connection: close"` header), `ClientSocket` MUST
-  change the state to closed (i.e. `is_open()` will return `false`).
+. Upon receiving a message (i.e. `async_read_response` or `async_read_some`), if
+  connection is gracefully closed in the HTTP-equivalent layer
+  (e.g. `"connection: close"` header), `ClientSocket` MUST change the state to
+  closed (i.e. `is_open()` will return `false`).
 +
 This behaviour is intended for the communication between the user of this
 library and the `ClientSocket` and can differ from the communication between the

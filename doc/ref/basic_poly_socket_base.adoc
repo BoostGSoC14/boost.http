@@ -103,13 +103,6 @@ These are the functions that subclasses need to implement in order to lose the
   lack of support for completion tokens and the use of a type erased handler
   instead.
 
-`virtual void async_read_trailers(message_type &message, handler_type handler) = 0`::
-
-  The only difference between this function (besides mandatory virtual) and the
-  one with the same name found on the <<socket_concept,`Socket` concept>> is the
-  lack of support for completion tokens and the use of a type erased handler
-  instead.
-
 `virtual void async_write(const message_type &message, handler_type handler) = 0`::
 
   The only difference between this function (besides mandatory virtual) and the
@@ -144,11 +137,6 @@ interface. They also enable the ASIO extensible model within this hierarchy.
 
   Handle the token and dispatch the operation to the ABI stable
   `async_read_some`.
-
-`template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_read_trailers(message_type &message, CompletionToken &&token)`::
-
-  Handle the token and dispatch the operation to the ABI stable
-  `async_read_trailers`.
 
 `template<class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write(const message_type &message, CompletionToken &&token)`::
 

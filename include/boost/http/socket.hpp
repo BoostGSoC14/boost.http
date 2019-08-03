@@ -95,10 +95,6 @@ public:
                         typename Message::headers_type &chunkext,
                         CompletionToken &&token);
 
-    template<class Message, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_trailers(Message &message, CompletionToken &&token);
-
     // ### END OF READ FUNCTIONS ###
 
     // ### WRITE FUNCTIONS ###

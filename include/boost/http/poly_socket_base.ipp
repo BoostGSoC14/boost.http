@@ -25,18 +25,6 @@ template<class Message>
 template<class CompletionToken>
 BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
 basic_poly_socket_base<Message>
-::async_read_trailers(message_type &message, CompletionToken &&token)
-{
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-    async_read_trailers(message, handler_type(init.completion_handler));
-    return init.result.get();
-}
-
-template<class Message>
-template<class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_poly_socket_base<Message>
 ::async_write(const message_type &message, CompletionToken &&token)
 {
     boost::asio::async_completion<CompletionToken, void(system::error_code)>

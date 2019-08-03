@@ -152,6 +152,10 @@ to program for, ...) and does expose relevant information to the user (e.g. you
 can extract message boundaries) without compromising security (read is still
 limited by buffer size and you will *not* be exposed to — for instance —
 infinite appends into `message.body()`).
++
+NOTE: `read_state::body_ready` is not a valid state to call this function. Once
+`read_state::body_ready` is reached, call `async_read_some()` to read the
+trailers.
 
 `template<class Message, class CompletionToken> BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code)) async_write_chunkext(const Message &message, const typename Message::headers_type &chunkext, CompletionToken &&token)`::
 
@@ -174,10 +178,6 @@ See the <<socket_concept,`Socket` concept>>.
   BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
                                 void(boost::system::error_code))
   async_read_some(Message &message, CompletionToken &&token)`
-* `template<class Message, class CompletionToken>
-  BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
-                                void(boost::system::error_code))
-  async_read_trailers(Message &message, CompletionToken &&token)`
 * `template<class Message, class CompletionToken>
   BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
                                 void(boost::system::error_code))

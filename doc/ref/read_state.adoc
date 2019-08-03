@@ -39,7 +39,7 @@ message_ready --> message_ready : read_some
 message_ready --> body_ready : read_some
 message_ready --> finished : read_some
 
-body_ready --> finished : read_trailers
+body_ready --> finished : read_some
 @enduml
 ----
 
@@ -67,7 +67,7 @@ headers.
   This state is reached from the `message_ready`, once the http producer
   (e.g. embedded server) fully received the message body.
 +
-From this state, you can only issue the `read_trailers` action.
+From this state, you can only issue the `read_some` action.
 +
 Once this state is reached, you can safely assume that no more body parts will
 be received.
@@ -105,7 +105,7 @@ message_ready --> message_ready : read_some
 message_ready --> body_ready : read_some
 message_ready --> empty : read_some
 
-body_ready --> empty : read_trailers
+body_ready --> empty : read_some
 @enduml
 ----
 
@@ -117,9 +117,9 @@ There are two ways to interpret this state. It might mean that the response
 object wasn't read yet.
 +
 Another interpretation is that it was reached from the `body_ready` state
-(directly — through a call to `read_trailers` — or indirectly — through a call
-to `read_some` or `read_response`), after all trailers have been received. It's
-safe to assume that all message data is available if this is the case.
+(directly — through a call to `read_some` — or indirectly — through a call to
+`read_response`), after all trailers have been received. It's safe to assume
+that all message data is available if this is the case.
 +
 At this state, you can only issue a `read_response` action.
 
@@ -141,7 +141,7 @@ headers.
   This state is reached from the `message_ready`, once the http producer
   (e.g. an http client) fully received the message body.
 +
-From this state, you can only issue the `read_trailers` action.
+From this state, you can only issue the `read_some` action.
 +
 Once this state is reached, you can safely assume that no more body parts will
 be received.

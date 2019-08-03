@@ -144,20 +144,10 @@ public:
                 while (self->socket.read_state()
                        != http::read_state::finished) {
                     cout << '[' << self->counter
-                         << "] Message not fully received" << endl;
-                    switch (self->socket.read_state()) {
-                    case http::read_state::message_ready:
-                        cout << '[' << self->counter
-                             << "] About to receive some body" << endl;
-                        self->socket.async_read_some(self->request, yield);
-                        break;
-                    case http::read_state::body_ready:
-                        cout << '[' << self->counter
-                             << "] About to receive trailers" << endl;
-                        self->socket.async_read_trailers(self->request, yield);
-                        break;
-                    default:;
-                    }
+                         << "] Message not fully received" << endl
+                         << '[' << self->counter
+                         << "] About to receive some data" << endl;
+                    self->socket.async_read_some(self->request, yield);
                 }
 
                 //cout << "BODY:==";

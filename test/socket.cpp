@@ -628,11 +628,8 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         BOOST_FAIL("this state should be unreachable");
                         break;
                     case http::read_state::message_ready:
-                        BOOST_REQUIRE(request.trailers().size() == 0);
-                        socket.async_read_some(request, yield);
-                        break;
                     case http::read_state::body_ready:
-                        socket.async_read_trailers(request, yield);
+                        socket.async_read_some(request, yield);
                         break;
                     }
                 }
@@ -722,11 +719,8 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         BOOST_FAIL("this state should be unreachable");
                         break;
                     case http::read_state::message_ready:
-                        BOOST_REQUIRE(request.trailers().size() == 0);
-                        socket.async_read_some(request, yield);
-                        break;
                     case http::read_state::body_ready:
-                        socket.async_read_trailers(request, yield);
+                        socket.async_read_some(request, yield);
                         break;
                     }
                 }
@@ -814,11 +808,8 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
                         BOOST_FAIL("this state should be unreachable");
                         break;
                     case http::read_state::message_ready:
-                        BOOST_REQUIRE(request.trailers().size() == 0);
-                        socket.async_read_some(request, yield);
-                        break;
                     case http::read_state::body_ready:
-                        socket.async_read_trailers(request, yield);
+                        socket.async_read_some(request, yield);
                         break;
                     }
                 }

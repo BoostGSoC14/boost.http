@@ -15,3 +15,4 @@ You can check any breaking changes here.
 ** Use `poly_handler<F>` instead `std::function<F>`.
 ** Add polymorphic helpers for `ClientSocket`.
 * Add `socket::async_{read,write}_chunkext`.
+* Remove `async_read_trailers()`. This function added no value.

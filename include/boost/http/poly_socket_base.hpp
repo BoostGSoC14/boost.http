@@ -40,8 +40,6 @@ public:
     virtual http::write_state write_state() const = 0;
     virtual void async_read_some(message_type &message,
                                  handler_type handler) = 0;
-    virtual void async_read_trailers(message_type &message,
-                                     handler_type handler) = 0;
     virtual void async_write(const message_type &message,
                              handler_type handler) = 0;
     virtual void async_write_trailers(const message_type &message,
@@ -54,10 +52,6 @@ public:
     template<class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
     async_read_some(message_type &message, CompletionToken &&token);
-
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_trailers(message_type &message, CompletionToken &&token);
 
     template<class CompletionToken>
     BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
