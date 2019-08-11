@@ -410,6 +410,72 @@ BOOST_AUTO_TEST_CASE(socket_http10_native_stream_unsupported2) {
     BOOST_REQUIRE(reached_the_end_of_the_test);
 }
 
+BOOST_AUTO_TEST_CASE(socket_http10_native_stream_unsupported3)
+{
+    // Tests:
+    //
+    // * `native_stream_unsupported`.
+    // * `stream_finished` if a second request is tried within HTTP/1.0.
+    asio::io_context ios;
+    bool reached_the_end_of_the_test = false;
+    auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
+        feed_with_buffer(38, [&](asio::mutable_buffer inbuffer) {
+            http::basic_socket<mock_socket> socket(ios, inbuffer);
+            http::request request;
+            http::response response;
+            boost::system::error_code ec;
+
+            request.method() = "GET";
+            request.target() = "/";
+            request.headers().emplace("host", "localhost:8080");
+
+            BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+            BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+
+            socket.async_write_request(request, yield);
+
+            {
+                vector<char> v;
+                fill_vector(v,
+                            "GET / HTTP/1.1\r\n"
+                            "host: localhost:8080\r\n"
+                            "\r\n");
+                BOOST_REQUIRE(socket.next_layer().output_buffer == v);
+            }
+
+            // ---
+
+            BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+            BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+
+            socket.next_layer().input_buffer.emplace_back();
+            fill_vector(socket.next_layer().input_buffer.front(),
+                        "HTTP/1.0 200 OK\r\n"
+                        "content-length: 0\r\n"
+                        "\r\n");
+            socket.next_layer().close_on_empty_input = true;
+
+            socket.async_read_response(response, yield);
+
+            BOOST_REQUIRE(socket.read_state() == http::read_state::empty);
+            BOOST_REQUIRE(socket.write_state() == http::write_state::empty);
+
+            BOOST_REQUIRE(response.status_code() == 200);
+            BOOST_REQUIRE(response.reason_phrase() == "OK");
+
+            BOOST_REQUIRE(!socket.is_open());
+
+            // ---
+
+            reached_the_end_of_the_test = true;
+        });
+    };
+
+    spawn(ios, work);
+    ios.run();
+    BOOST_REQUIRE(reached_the_end_of_the_test);
+}
+
 BOOST_AUTO_TEST_CASE(socket_upgrade_head) {
     asio::io_context ios;
     bool reached_the_end_of_the_test = false;
