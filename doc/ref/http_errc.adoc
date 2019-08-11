@@ -17,8 +17,7 @@ usable by a variety of HTTP producers.
 
 They are designed to work together <<http_errc_http_category,`http_category`>>.
 
-The traits `boost::system::is_error_code_enum` and
-`boost::system::is_error_condition_enum` are specialized to recognize
+The trait `boost::system::is_error_code_enum` is specialized to recognize
 `http_errc`.
 
 ===== Member constants
@@ -59,11 +58,6 @@ TIP: If you're using a type fulfilling the <<server_socket_concept,
 
   Creates an error code using _e_ and <<http_errc_http_category,
   `http_category`>>.
-
-`boost::system::error_condition make_error_condition(http_errc e)`::
-
-  Creates an error codition using _e_ and <<http_errc_http_category,
- `http_category`>>.
 
 [[http_errc_http_category]]
 ===== http_category

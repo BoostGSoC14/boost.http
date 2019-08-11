@@ -67,20 +67,12 @@ inline boost::system::error_code make_error_code(http_errc e)
     return boost::system::error_code(static_cast<int>(e), http_category());
 }
 
-inline boost::system::error_condition make_error_condition(http_errc e)
-{
-    return boost::system::error_condition(static_cast<int>(e), http_category());
-}
-
 } // namespace http
 
 namespace system {
 
 template<>
 struct is_error_code_enum<boost::http::http_errc>: public std::true_type {};
-
-template<>
-struct is_error_condition_enum<boost::http::http_errc>: public std::true_type {};
 
 } // namespace system
 

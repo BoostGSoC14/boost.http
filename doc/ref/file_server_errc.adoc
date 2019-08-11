@@ -17,8 +17,7 @@ file server abstraction shipped with this library.
 They're designed to work with <<file_server_errc_file_server_category,
 file_server_category>>.
 
-The traits `boost::system::is_error_code_enum` and
-`boost::system::is_error_condition_enum` are specialized to recognize
+The trait `boost::system::is_error_code_enum` is specialized to recognize
 `file_server_errc`.
 
 ===== Member constants
@@ -59,11 +58,6 @@ this error happens.
 ===== Non-member functions
 
 `boost::system::error_code make_error_code(file_server_errc e)`::
-
-  Creates an error code using _e_ and <<file_server_errc_file_server_category,
-  file_server_category>>
-
-`boost::system::error_condition make_error_condition(file_server_errc e)`::
 
   Creates an error code using _e_ and <<file_server_errc_file_server_category,
   file_server_category>>

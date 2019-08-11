@@ -16,3 +16,4 @@ You can check any breaking changes here.
 ** Add polymorphic helpers for `ClientSocket`.
 * Add `socket::async_{read,write}_chunkext`.
 * Remove `async_read_trailers()`. This function added no value.
+* `http_errc` and `file_server_errc` are no longer error conditions.

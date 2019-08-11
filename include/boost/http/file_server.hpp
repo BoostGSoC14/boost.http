@@ -97,11 +97,6 @@ template<>
 struct is_error_code_enum<boost::http::file_server_errc>: public std::true_type
 {};
 
-template<>
-struct is_error_condition_enum<boost::http::file_server_errc>
-    : public std::true_type
-{};
-
 } // namespace system
 namespace http {
 
@@ -113,11 +108,6 @@ inline const system::error_category& file_server_category()
 inline system::error_code make_error_code(file_server_errc e)
 {
     return system::error_code(static_cast<int>(e), file_server_category());
-}
-
-inline system::error_condition make_error_condition(file_server_errc e)
-{
-    return system::error_condition(static_cast<int>(e), file_server_category());
 }
 
 namespace detail {
