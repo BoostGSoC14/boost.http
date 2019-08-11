@@ -871,11 +871,6 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                             "GET /1 HTTP/1.1\r\n"
                             "Host: example.com\r\n"
                             "Connection: close\r\n"
-                            "\r\n"
-                            "GET /2 HTTP/1.1\r\n"
-                            "Host: example.com\r\n"
-                            "\r\n"
-                            "GET /3 HTTP/1.0\r\n"
                             "\r\n");
 
                 // First request
@@ -914,10 +909,6 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                 }
 
                 socket.async_write_response(reply, yield);
-                BOOST_REQUIRE(!socket.is_open());
-                socket.open();
-                BOOST_REQUIRE(socket.is_open());
-
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -931,7 +922,16 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                     BOOST_CHECK(socket.next_layer().output_buffer == v);
                 }
 
+                BOOST_REQUIRE(!socket.is_open());
+                socket.open();
+                BOOST_REQUIRE(socket.is_open());
+
                 // ### Second request (on the same connection)
+                socket.next_layer().input_buffer.emplace_back();
+                fill_vector(socket.next_layer().input_buffer.front(),
+                            "GET /2 HTTP/1.1\r\n"
+                            "Host: example.com\r\n"
+                            "\r\n");
                 socket.next_layer().output_buffer.clear();
                 clear_message(reply);
 
@@ -965,10 +965,6 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                 reply.headers().emplace("connection", "close");
 
                 socket.async_write_response(reply, yield);
-                BOOST_REQUIRE(!socket.is_open());
-                socket.open();
-                BOOST_REQUIRE(socket.is_open());
-
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -982,7 +978,15 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                     BOOST_CHECK(socket.next_layer().output_buffer == v);
                 }
 
+                BOOST_REQUIRE(!socket.is_open());
+                socket.open();
+                BOOST_REQUIRE(socket.is_open());
+
                 // ### Last request (on the very same connection)
+                socket.next_layer().input_buffer.emplace_back();
+                fill_vector(socket.next_layer().input_buffer.front(),
+                            "GET /3 HTTP/1.0\r\n"
+                            "\r\n");
                 socket.next_layer().output_buffer.clear();
                 clear_message(reply);
 
@@ -1008,8 +1012,6 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                 }
 
                 socket.async_write_response(reply, yield);
-                BOOST_REQUIRE(!socket.is_open());
-
                 BOOST_CHECK(socket.write_state()
                             == http::write_state::finished);
                 {
@@ -1022,6 +1024,8 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
                                 "nothing special");
                     BOOST_CHECK(socket.next_layer().output_buffer == v);
                 }
+
+                BOOST_REQUIRE(!socket.is_open());
             });
     };
 

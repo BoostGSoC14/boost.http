@@ -1336,6 +1336,7 @@ template<class Socket, class Settings>
 void basic_socket<Socket, Settings>::open()
 {
     is_open_ = true;
+    clear_buffer();
 }
 
 template<class Socket, class Settings>
