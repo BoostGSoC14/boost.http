@@ -1321,6 +1321,6 @@ TEST_CASE("eof before end", "[parser,bad]")
     parser.puteof();
     parser.next();
 
-    REQUIRE(parser.code() == http::token::code::error_use_another_connection);
+    REQUIRE(parser.code() == http::token::code::error_insufficient_data);
     REQUIRE(parser.token_size() == 0);
 }
