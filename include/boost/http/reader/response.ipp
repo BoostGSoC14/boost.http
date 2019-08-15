@@ -4,7 +4,7 @@ namespace reader {
 
 inline
 response::response()
-    : eof(false)
+    : eof(NO_EOF)
     , body_type(UNKNOWN_BODY)
     , state(EXPECT_VERSION_STATIC_STR)
     , code_(token::code::error_insufficient_data)
@@ -45,7 +45,7 @@ void response::set_method(view_type method)
 
 inline void response::reset()
 {
-    eof = false;
+    eof = NO_EOF;
     body_type = UNKNOWN_BODY;
     state = EXPECT_VERSION_STATIC_STR;
     code_ = token::code::error_insufficient_data;
@@ -56,7 +56,7 @@ inline void response::reset()
 
 inline void response::puteof()
 {
-    eof = true;
+    eof |= EOF_RECEIVED;
 }
 
 inline token::code::value response::code() const
@@ -231,7 +231,7 @@ inline void response::next()
         token_size_ = 0;
         return;
     case EXPECT_END_OF_MESSAGE:
-        state = (body_type == FORCE_NO_BODY_AND_STOP)
+        state = (body_type == FORCE_NO_BODY_AND_STOP || (eof & EOF_EXPECTED))
             ? EXPECT_END_OF_CONNECTION_ERROR : EXPECT_VERSION_STATIC_STR;
         body_type = UNKNOWN_BODY;
         code_ = token::code::end_of_message;
@@ -253,7 +253,7 @@ inline void response::next()
     }
 
     if (idx == ibuffer.size()) {
-        if (!eof)
+        if (!(eof & EOF_RECEIVED))
             return;
 
         if (state != EXPECT_UNSAFE_BODY) {
@@ -306,6 +306,8 @@ inline void response::next()
                 state = EXPECT_SP_AFTER_VERSION;
                 code_ = token::code::version;
                 token_size_ = 1;
+                if (c == '0')
+                    eof |= EOF_EXPECTED;
             }
             return;
         }

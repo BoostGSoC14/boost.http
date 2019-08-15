@@ -115,7 +115,13 @@ private:
         EXPECT_CRLF_AFTER_TRAILERS
     };
 
-    bool eof;
+    enum {
+        NO_EOF                    = 0,
+        EOF_RECEIVED              = 1,
+        EOF_EXPECTED              = 1 << 1,
+        EOF_EXPECTED_AND_RECEIVED = EOF_RECEIVED | EOF_EXPECTED
+    };
+    boost::uint8_t eof;
 
     // State that needs to be reset at every new request {{{
 
