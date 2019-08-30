@@ -116,12 +116,10 @@ private:
     };
 
     enum {
-        NO_EOF                    = 0,
-        EOF_RECEIVED              = 1,
-        EOF_EXPECTED              = 1 << 1,
-        EOF_EXPECTED_AND_RECEIVED = EOF_RECEIVED | EOF_EXPECTED
+        EOF_RECEIVED = 1,
+        HTTP_1_0     = 1 << 1
     };
-    boost::uint8_t eof;
+    boost::uint8_t connection_flags;
 
     // State that needs to be reset at every new request {{{
 
