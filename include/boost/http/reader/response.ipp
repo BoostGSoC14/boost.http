@@ -254,8 +254,10 @@ inline void response::next()
     }
 
     if (idx == ibuffer.size()) {
-        if (!(connection_flags & EOF_RECEIVED))
+        if (!(connection_flags & EOF_RECEIVED) ||
+            (body_type == CONTENT_LENGTH_READ && body_size != 0)) {
             return;
+        }
 
         if (state != EXPECT_UNSAFE_BODY) {
             state = ERRORED;
