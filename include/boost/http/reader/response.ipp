@@ -433,7 +433,8 @@ inline void response::next()
             if (body_type == FORCE_NO_BODY
                 || body_type == FORCE_NO_BODY_AND_STOP) {
                 // Ignore field
-            } else if (iequals(field, "Transfer-Encoding")) {
+            } else if (iequals(field, "Transfer-Encoding") &&
+                       !(connection_flags & HTTP_1_0)) {
                 switch (body_type) {
                 case CONTENT_LENGTH_READ:
                     /* Transfer-Encoding overrides Content-Length (section 3.3.3
