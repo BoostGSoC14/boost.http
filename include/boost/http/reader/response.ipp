@@ -4,7 +4,7 @@ namespace reader {
 
 inline
 response::response()
-    : eof(false)
+    : connection_flags(0)
     , body_type(UNKNOWN_BODY)
     , state(EXPECT_VERSION_STATIC_STR)
     , code_(token::code::error_insufficient_data)
@@ -45,7 +45,7 @@ void response::set_method(view_type method)
 
 inline void response::reset()
 {
-    eof = false;
+    connection_flags = 0;
     body_type = UNKNOWN_BODY;
     state = EXPECT_VERSION_STATIC_STR;
     code_ = token::code::error_insufficient_data;
@@ -56,7 +56,7 @@ inline void response::reset()
 
 inline void response::puteof()
 {
-    eof = true;
+    connection_flags |= EOF_RECEIVED;
 }
 
 inline token::code::value response::code() const
@@ -231,7 +231,8 @@ inline void response::next()
         token_size_ = 0;
         return;
     case EXPECT_END_OF_MESSAGE:
-        state = (body_type == FORCE_NO_BODY_AND_STOP)
+        state = (body_type == FORCE_NO_BODY_AND_STOP ||
+                 (connection_flags & HTTP_1_0))
             ? EXPECT_END_OF_CONNECTION_ERROR : EXPECT_VERSION_STATIC_STR;
         body_type = UNKNOWN_BODY;
         code_ = token::code::end_of_message;
@@ -253,8 +254,10 @@ inline void response::next()
     }
 
     if (idx == ibuffer.size()) {
-        if (!eof)
+        if (!(connection_flags & EOF_RECEIVED) ||
+            (body_type == CONTENT_LENGTH_READ && body_size != 0)) {
             return;
+        }
 
         if (state != EXPECT_UNSAFE_BODY) {
             state = ERRORED;
@@ -306,6 +309,8 @@ inline void response::next()
                 state = EXPECT_SP_AFTER_VERSION;
                 code_ = token::code::version;
                 token_size_ = 1;
+                if (c == '0')
+                    connection_flags |= HTTP_1_0;
             }
             return;
         }
@@ -430,7 +435,8 @@ inline void response::next()
             if (body_type == FORCE_NO_BODY
                 || body_type == FORCE_NO_BODY_AND_STOP) {
                 // Ignore field
-            } else if (iequals(field, "Transfer-Encoding")) {
+            } else if (iequals(field, "Transfer-Encoding") &&
+                       !(connection_flags & HTTP_1_0)) {
                 switch (body_type) {
                 case CONTENT_LENGTH_READ:
                     /* Transfer-Encoding overrides Content-Length (section 3.3.3

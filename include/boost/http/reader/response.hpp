@@ -115,7 +115,11 @@ private:
         EXPECT_CRLF_AFTER_TRAILERS
     };
 
-    bool eof;
+    enum {
+        EOF_RECEIVED = 1,
+        HTTP_1_0     = 1 << 1
+    };
+    boost::uint8_t connection_flags;
 
     // State that needs to be reset at every new request {{{
 
