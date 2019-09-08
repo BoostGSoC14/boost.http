@@ -1968,8 +1968,10 @@ void basic_socket<Socket, Settings>
                 istate = http::read_state::finished;
             } else {
                 istate = http::read_state::empty;
-                if (!modern_http || keep_alive == KEEP_ALIVE_CLOSE_READ)
+                if (!modern_http || keep_alive == KEEP_ALIVE_CLOSE_READ) {
                     is_open_ = false;
+                    channel.lowest_layer().close();
+                }
             }
             cb_ready = true;
             loop = false;
