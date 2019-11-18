@@ -1414,7 +1414,7 @@ void basic_socket<Socket, Settings>
             // TODO (C++14): move in lambda capture list
             channel.async_read_some(
                 boost::asio::buffer(buffer + used_size),
-                [this,handler,&message,&chunkext](
+                [this,handler,&message,chunkext](
                     const system::error_code &ec, std::size_t bytes_transferred
                 ) mutable {
                     on_async_read_message<true, enable_chunkext, req_parser>(
@@ -1427,7 +1427,7 @@ void basic_socket<Socket, Settings>
             // TODO (C++14): move in lambda capture list
             channel.async_read_some(
                 boost::asio::buffer(buffer + used_size),
-                [this,handler,&message,&chunkext](
+                [this,handler,&message,chunkext](
                     const system::error_code &ec, std::size_t bytes_transferred
                 ) mutable {
                     on_async_read_message<false, enable_chunkext, res_parser>(
