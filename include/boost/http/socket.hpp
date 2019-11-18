@@ -149,6 +149,9 @@ public:
     template<class... Args>
     basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args);
 
+    basic_socket(const basic_socket&) = delete;
+    basic_socket& operator=(const basic_socket&) = delete;
+
     next_layer_type &next_layer();
     const next_layer_type &next_layer() const;
 
