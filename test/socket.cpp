@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(socket_ctor) {
     bool captured = false;
     try {
         asio::io_context ios;
-        http::socket s(ios, asio::mutable_buffer{});
+        http::socket s(asio::mutable_buffer{}, ios);
     } catch(invalid_argument &) {
         captured = true;
     }
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(socket_simple) {
     asio::io_context ios;
     auto work = [&ios](asio::yield_context yield) {
         feed_with_buffer(36, [&ios,&yield](asio::mutable_buffer inbuffer) {
-                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                http::basic_socket<mock_socket> socket(inbuffer, ios);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
                             // first
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(socket_expect_continue) {
     asio::io_context ios;
     auto work = [&ios](asio::yield_context yield) {
         feed_with_buffer(40, [&ios,&yield](asio::mutable_buffer inbuffer) {
-                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                http::basic_socket<mock_socket> socket(inbuffer, ios);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
                             // first request
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_CASE(socket_chunked) {
     asio::io_context ios;
     auto work = [&ios](asio::yield_context yield) {
         feed_with_buffer(87, [&ios,&yield](asio::mutable_buffer inbuffer) {
-                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                http::basic_socket<mock_socket> socket(inbuffer, ios);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
                             // first request
@@ -865,7 +865,7 @@ BOOST_AUTO_TEST_CASE(socket_connection_close) {
     asio::io_context ios;
     auto work = [&ios](asio::yield_context yield) {
         feed_with_buffer(19, [&ios,&yield](asio::mutable_buffer inbuffer) {
-                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                http::basic_socket<mock_socket> socket(inbuffer, ios);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
                             "GET /1 HTTP/1.1\r\n"
@@ -1037,7 +1037,7 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
     asio::io_context ios;
     auto work = [&ios](asio::yield_context yield) {
         feed_with_buffer(26, [&ios,&yield](asio::mutable_buffer inbuffer) {
-                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                http::basic_socket<mock_socket> socket(inbuffer, ios);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
                             "GET /1 HTTP/1.1\r\n"
@@ -1216,7 +1216,7 @@ BOOST_AUTO_TEST_CASE(socket_upgrade) {
 
     auto work2 = [&ios](asio::yield_context yield) {
         feed_with_buffer(25, [&ios,&yield](asio::mutable_buffer inbuffer) {
-                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                http::basic_socket<mock_socket> socket(inbuffer, ios);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
                             "POST /pink%20floyd/the%20wall HTTP/1.1\r\n"
@@ -1297,7 +1297,7 @@ BOOST_AUTO_TEST_CASE(check_wrong_direction_test) {
     asio::io_context ios;
     auto work = [&ios](asio::yield_context yield) {
         char buf[1];
-        http::basic_socket<mock_socket> socket(ios, asio::buffer(buf));
+        http::basic_socket<mock_socket> socket(asio::buffer(buf), ios);
 
         http::request request;
         request.method() = "GET";

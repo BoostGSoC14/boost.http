@@ -72,11 +72,6 @@ layer.
 
 ===== Member functions
 
-`basic_buffered_socket(boost::asio::io_context &io_context)`::
-
-  Constructor. _io_context_ is passed to the constructor from the underlying
-  stream.
-
 `template<class... Args> basic_buffered_socket(Args&&... args)`::
 
   Constructor. _args_ are forwarded to the constructor from the underlying

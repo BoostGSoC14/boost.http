@@ -131,13 +131,11 @@ int main()
                                      asio::ip::tcp
                                      ::endpoint(asio::ip::tcp::v6(), 8080));
 
-    auto work = [&acceptor](asio::yield_context yield) {
+    auto work = [&acceptor,&ios](asio::yield_context yield) {
         int counter = 0;
         for ( ; true ; ++counter ) {
             try {
-                auto connection = connection::make_connection(
-                    acceptor.get_executor().context(), counter
-                );
+                auto connection = connection::make_connection(ios, counter);
                 cout << "About to accept a new connection" << endl;
                 acceptor.async_accept(connection->tcp_layer(), yield);
 

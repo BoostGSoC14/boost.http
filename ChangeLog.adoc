@@ -2,6 +2,16 @@
 
 You can check any breaking changes here.
 
+== v0.6
+
+* Port code to Boost 1.70.
+** I/O object constructor overloads that reference `io_context` directly were
+   removed. These constructors were present to adhere to the informal contract
+   that `io_context` is always the first parameter (take `steady_timer`
+   constructors for instance). These overloads were adding complexity not worth
+   keeping. I might change my mind later if requested.
+** Using `async_initiate` everywhere.
+
 == v0.5
 
 * Ensure `ServerSocket`'s `read_state` is `read_state::finished` once a request

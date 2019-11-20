@@ -26,6 +26,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
+#include <boost/asio/async_result.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
 
@@ -76,75 +77,69 @@ public:
 
     // ### READ FUNCTIONS ###
 
-    template<class Request, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_request(Request &request, CompletionToken &&token);
+    template<class Request, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_read_request(Request& request, CToken&& token);
 
-    template<class Response, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_response(Response &response, CompletionToken &&token);
+    template<class Response, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_read_response(Response& response, CToken&& token);
 
-    template<class Message, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_some(Message &message, CompletionToken &&token);
+    template<class Message, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_read_some(Message& message, CToken&& token);
 
-    template<class Message, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
-                                  void(system::error_code, std::size_t))
-    async_read_chunkext(Message &message,
-                        typename Message::headers_type &chunkext,
-                        CompletionToken &&token);
+    template<class Message, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code, std::size_t))
+    async_read_chunkext(
+        Message& message, typename Message::headers_type& chunkext,
+        CToken&& token);
 
     // ### END OF READ FUNCTIONS ###
 
     // ### WRITE FUNCTIONS ###
 
-    template<class Response, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_response(const Response &response, CompletionToken &&token);
+    template<class Response, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_response(const Response& response, CToken&& token);
 
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_response_continue(CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_response_continue(CToken&& token);
 
-    template<class Response, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_response_metadata(const Response &response,
-                                  CompletionToken &&token);
+    template<class Response, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_response_metadata(const Response& response, CToken&& token);
 
-    template<class Request, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_request(const Request &request, CompletionToken &&token);
+    template<class Request, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_request(const Request& request, CToken&& token);
 
-    template<class Request, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_request_metadata(const Request &request,
-                                 CompletionToken &&token);
+    template<class Request, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_request_metadata(const Request& request, CToken&& token);
 
-    template<class Message, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write(const Message &message, CompletionToken &&token);
+    template<class Message, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write(const Message& message, CToken&& token);
 
-    template<class Message, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_chunkext(const Message &message,
-                         const typename Message::headers_type &chunkext,
-                         CompletionToken &&token);
+    template<class Message, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_chunkext(
+        const Message& message, const typename Message::headers_type& chunkext,
+        CToken&& token);
 
-    template<class Message, class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_trailers(const Message &message, CompletionToken &&token);
+    template<class Message, class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_trailers(const Message& message, CToken&& token);
 
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_end_of_message(CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_end_of_message(CToken&& token);
 
     // ### END OF WRITE FUNCTIONS ###
 
     // ### START OF basic_server SPECIFIC FUNCTIONS ###
-
-    basic_socket(boost::asio::io_context &io_context,
-                 boost::asio::mutable_buffer inbuffer);
 
     template<class... Args>
     basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args);
@@ -169,6 +164,190 @@ private:
         HEAD,
         CONNECT,
         OTHER_METHOD
+    };
+
+    friend struct async_read_request_initiation;
+    struct async_read_request_initiation
+    {
+        async_read_request_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Request>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<Request> request);
+
+        basic_socket& self;
+    };
+
+    friend struct async_read_response_initiation;
+    struct async_read_response_initiation
+    {
+        async_read_response_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Response>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<Response> response);
+
+        basic_socket& self;
+    };
+
+    friend struct async_read_some_initiation;
+    struct async_read_some_initiation
+    {
+        async_read_some_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Message>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<Message> message);
+
+        basic_socket& self;
+    };
+
+    friend struct async_read_chunkext_initiation;
+    struct async_read_chunkext_initiation
+    {
+        async_read_chunkext_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Message>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<Message> message,
+            std::reference_wrapper<typename Message::headers_type> chunkext);
+
+        basic_socket& self;
+    };
+
+    friend struct async_write_response_initiation;
+    struct async_write_response_initiation
+    {
+        async_write_response_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Response>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<const Response> response);
+
+        basic_socket& self;
+    };
+
+    friend struct async_write_response_continue_initiation;
+    struct async_write_response_continue_initiation
+    {
+        async_write_response_continue_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(Handler&& handler);
+
+        basic_socket& self;
+    };
+
+    friend struct async_write_response_metadata_initiation;
+    struct async_write_response_metadata_initiation
+    {
+        async_write_response_metadata_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Response>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<const Response> response);
+
+        basic_socket& self;
+    };
+
+    friend struct async_write_request_initiation;
+    struct async_write_request_initiation
+    {
+        async_write_request_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Request>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<const Request> request);
+
+        basic_socket& self;
+    };
+
+    friend struct async_write_request_metadata_initiation;
+    struct async_write_request_metadata_initiation
+    {
+        async_write_request_metadata_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Request>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<const Request> request);
+
+        basic_socket& self;
+    };
+
+    friend struct async_write_initiation;
+    struct async_write_initiation
+    {
+        async_write_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Message>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<const Message> message);
+
+        basic_socket& self;
+    };
+
+    friend struct async_write_chunkext_initiation;
+    struct async_write_chunkext_initiation
+    {
+        async_write_chunkext_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Message>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<const Message> message,
+            std::reference_wrapper<
+                const typename Message::headers_type
+            > chunkext);
+
+        basic_socket& self;
+    };
+
+    friend struct async_write_trailers_initiation;
+    struct async_write_trailers_initiation
+    {
+        async_write_trailers_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler, class Message>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<const Message> message);
+
+        basic_socket& self;
+    };
+
+    friend struct async_write_end_of_message_initiation;
+    struct async_write_end_of_message_initiation
+    {
+        async_write_end_of_message_initiation(basic_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(Handler&& handler);
+
+        basic_socket& self;
     };
 
     template<bool enable_chunkext, class Message, class Handler>

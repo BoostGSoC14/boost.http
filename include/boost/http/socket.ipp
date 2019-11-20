@@ -56,183 +56,201 @@ basic_socket<Socket, Settings>::get_executor()
 }
 
 template<class Socket, class Settings>
-template<class Request, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>::async_read_request(Request &request,
-                                                   CompletionToken &&token)
+template<class Handler, class Request>
+void basic_socket<Socket, Settings>::async_read_request_initiation::operator()(
+    Handler&& handler, std::reference_wrapper<Request> request)
+{
+    switch (self.parser.which()) {
+    case 0: // none
+        self.parser = req_parser{};
+        self.modern_http = true; // ignore `lock_client_to_http10`
+        break;
+    case 1: // req_parser
+        break;
+    case 2: // res_parser
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::wrong_direction);
+        return;
+    }
+
+    if (self.istate != http::read_state::empty) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
+    }
+
+    request.get().method().clear();
+    request.get().target().clear();
+    clear_message(request.get());
+    self.writer_helper = http::write_state::finished;
+    self.schedule_on_async_read_message<false>(
+        std::forward<Handler>(handler), request.get());
+}
+
+template<class Socket, class Settings>
+template<class Request, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_read_request(
+    Request& request, CToken&& token)
 {
     static_assert(is_request_message<Request>::value,
                   "Request must fulfill the Request concept");
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-
-    switch (parser.which()) {
-    case 0: // none
-        parser = req_parser{};
-        modern_http = true; // ignore `lock_client_to_http10`
-        break;
-    case 1: // req_parser
-        break;
-    case 2: // res_parser
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::wrong_direction);
-        return init.result.get();
-    }
-
-    if (istate != http::read_state::empty) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
-    }
-
-    request.method().clear();
-    request.target().clear();
-    clear_message(request);
-    writer_helper = http::write_state::finished;
-    schedule_on_async_read_message<false>(std::move(init.completion_handler),
-                                          request);
-
-    return init.result.get();
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_read_request_initiation{*this}, token, std::ref(request)
+    );
 }
 
 template<class Socket, class Settings>
-template<class Response, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>::async_read_response(Response &response,
-                                                    CompletionToken &&token)
+template<class Handler, class Response>
+void basic_socket<Socket, Settings>::async_read_response_initiation::operator()(
+    Handler&& handler, std::reference_wrapper<Response> response)
+{
+    switch (self.parser.which()) {
+    case 0: // none
+        self.parser = res_parser{};
+        break;
+    case 1: // req_parser
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::wrong_direction);
+        return;
+    case 2: // res_parser
+        break;
+    }
+
+    if (self.istate != http::read_state::empty) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
+    }
+
+    response.get().reason_phrase().clear();
+    clear_message(response.get());
+    self.schedule_on_async_read_message<false>(
+        std::forward<Handler>(handler), response.get());
+}
+
+template<class Socket, class Settings>
+template<class Response, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_read_response(
+    Response& response, CToken&& token)
 {
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-
-    switch (parser.which()) {
-    case 0: // none
-        parser = res_parser{};
-        break;
-    case 1: // req_parser
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::wrong_direction);
-        return init.result.get();
-    case 2: // res_parser
-        break;
-    }
-
-    if (istate != http::read_state::empty) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
-    }
-
-    response.reason_phrase().clear();
-    clear_message(response);
-    schedule_on_async_read_message<false>(std::move(init.completion_handler),
-                                          response);
-
-    return init.result.get();
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_read_response_initiation{*this}, token, std::ref(response)
+    );
 }
 
 template<class Socket, class Settings>
-template<class Message, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>::async_read_some(Message &message,
-                                                CompletionToken &&token)
+template<class Handler, class Message>
+void basic_socket<Socket, Settings>::async_read_some_initiation::operator()(
+    Handler&& handler, std::reference_wrapper<Message> message)
+{
+    if (self.istate != http::read_state::message_ready &&
+        self.istate != http::read_state::body_ready) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
+    }
+
+    self.schedule_on_async_read_message<false>(
+        std::forward<Handler>(handler), message.get());
+}
+
+template<class Socket, class Settings>
+template<class Message, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_read_some(
+    Message& message, CToken&& token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-
-    if (istate != http::read_state::message_ready &&
-        istate != http::read_state::body_ready) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
-    }
-
-    schedule_on_async_read_message<false>(std::move(init.completion_handler),
-                                          message);
-
-    return init.result.get();
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_read_some_initiation{*this}, token, std::ref(message)
+    );
 }
 
 template<class Socket, class Settings>
-template<class Message, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken,
-                              void(system::error_code, std::size_t))
+template<class Handler, class Message>
+void basic_socket<Socket, Settings>::async_read_chunkext_initiation::operator()(
+    Handler&& handler, std::reference_wrapper<Message> message,
+    std::reference_wrapper<typename Message::headers_type> chunkext)
+{
+    if (self.istate != http::read_state::message_ready) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order,
+                            0);
+        return;
+    }
+
+    chunkext.get().clear();
+    self.schedule_on_async_read_message<true>(
+        std::forward<Handler>(handler), message.get(), &chunkext.get());
+}
+
+template<class Socket, class Settings>
+template<class Message, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code, std::size_t))
 basic_socket<Socket, Settings>::async_read_chunkext(
-    Message &message, typename Message::headers_type &chunkext,
-    CompletionToken &&token
-)
+    Message& message, typename Message::headers_type& chunkext, CToken&& token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    boost::asio::async_completion<
-        CompletionToken, void(system::error_code, std::size_t)> init{token};
-
-    if (istate != http::read_state::message_ready) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order,
-                       0);
-        return init.result.get();
-    }
-
-    chunkext.clear();
-    schedule_on_async_read_message<true>(std::move(init.completion_handler),
-                                         message, &chunkext);
-
-    return init.result.get();
+    return boost::asio::async_initiate<
+        CToken, void(system::error_code, std::size_t)
+    >(
+        async_read_chunkext_initiation{*this}, token, std::ref(message),
+        std::ref(chunkext)
+    );
 }
 
 template<class Socket, class Settings>
-template<class Response, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>
-::async_write_response(const Response &response, CompletionToken &&token)
+template<class Handler, class Response>
+void
+basic_socket<Socket, Settings>::async_write_response_initiation::operator()(
+    Handler&& handler, std::reference_wrapper<const Response> response)
 {
-    static_assert(is_response_message<Response>::value,
-                  "Response must fulfill the Response concept");
+    using boost::asio::asio_handler_allocate;
+    using boost::asio::asio_handler_deallocate;
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-
-    if (parser.which() != 1) { //< !req_parser
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::wrong_direction);
-        return init.result.get();
+    if (self.parser.which() != 1) { //< !req_parser
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::wrong_direction);
+        return;
     }
 
-    auto prev_state = writer_helper.state;
-    if (!writer_helper.write_message()) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
+    auto prev_state = self.writer_helper.state;
+    if (!self.writer_helper.write_message()) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
-    istate = http::read_state::empty;
+    self.istate = http::read_state::empty;
 
-    const auto status_code = response.status_code();
-    const auto &reason_phrase = response.reason_phrase();
-    const auto &headers = response.headers();
+    const auto status_code = response.get().status_code();
+    const auto &reason_phrase = response.get().reason_phrase();
+    const auto &headers = response.get().headers();
 
     bool implicit_content_length
         = (headers.find("content-length") != headers.end())
         || (status_code / 100 == 1) || (status_code == 204)
-        || (connect_request && (status_code / 100 == 2));
+        || (self.connect_request && (status_code / 100 == 2));
     auto has_connection_close = detail::has_connection_close(headers);
 
     if (has_connection_close)
-        keep_alive = KEEP_ALIVE_CLOSE_READ;
+        self.keep_alive = KEEP_ALIVE_CLOSE_READ;
 
-    auto use_connection_close_buf = (keep_alive == KEEP_ALIVE_CLOSE_READ)
+    auto use_connection_close_buf = (self.keep_alive == KEEP_ALIVE_CLOSE_READ)
         && !has_connection_close;
 
     const bool copy_body
-        = (response.body().size() < Settings::body_copy_threshold)
-        || (response.body().size() == 0);
+        = (response.get().body().size() < Settings::body_copy_threshold)
+        || (response.get().body().size() == 0);
 
     std::size_t size =
         // Start line (http version + status code + reason phrase) + CRLF
@@ -247,7 +265,7 @@ basic_socket<Socket, Settings>
         + 2
         // And finally, the message body
         + ((implicit_content_length || !copy_body)
-           ? 0 : response.body().size());
+           ? 0 : response.get().body().size());
     std::size_t content_length_ndigits = 0;
 
     // Headers
@@ -260,7 +278,7 @@ basic_socket<Socket, Settings>
     // "content-length" header
     if (!implicit_content_length) {
         content_length_ndigits
-            = detail::count_decdigits(response.body().size());
+            = detail::count_decdigits(response.get().body().size());
         size += string_view("content-length: \r\n").size()
             + content_length_ndigits;
     }
@@ -268,11 +286,9 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
-            size, &init.completion_handler)
-        );
+        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
     } catch (const std::bad_alloc&) {
-        writer_helper.state = prev_state;
+        self.writer_helper.state = prev_state;
         throw;
     } catch (...) {
         assert(false);
@@ -281,7 +297,7 @@ basic_socket<Socket, Settings>
     {
         string_view x;
 
-        if (modern_http)
+        if (self.modern_http)
             x = "HTTP/1.1 ";
         else
             x = "HTTP/1.0 ";
@@ -326,7 +342,7 @@ basic_socket<Socket, Settings>
         std::memcpy(buf + idx, x.data(), x.size());
         idx += x.size();
 
-        auto body_size = response.body().size();
+        auto body_size = response.get().body().size();
         for (auto i = content_length_ndigits ; i != 0 ; --i) {
             buf[idx + i - 1] = (body_size % 10) + '0';
             body_size /= 10;
@@ -341,124 +357,137 @@ basic_socket<Socket, Settings>
     idx += 2;
 
     if (!implicit_content_length && copy_body) {
-        std::copy(response.body().begin(), response.body().end(), buf + idx);
-        idx += response.body().size();
+        std::copy(response.get().body().begin(), response.get().body().end(),
+                  buf + idx);
+        idx += response.get().body().size();
     }
 
     assert(size == idx);
 
-    auto handler = std::move(init.completion_handler);
+    basic_socket& self = this->self;
     if (copy_body) {
         boost::asio::async_write(
-            channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,this]
+            self.channel, boost::asio::buffer(buf, size),
+            [handler,buf,size,&self]
             (const system::error_code &ec, std::size_t) mutable {
-                boost::asio::asio_handler_deallocate(buf, size, &handler);
-                is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-                if (!is_open_)
-                    channel.lowest_layer().close();
+                asio_handler_deallocate(buf, size, &handler);
+                self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+                if (!self.is_open_)
+                    self.channel.lowest_layer().close();
                 handler(ec);
             }
         );
     } else {
         auto body_buf = boost::asio::buffer(
-            response.body().data(), response.body().size()
+            response.get().body().data(), response.get().body().size()
         );
         boost::asio::async_write(
-            channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,body_buf,this]
+            self.channel, boost::asio::buffer(buf, size),
+            [handler,buf,size,body_buf,&self]
             (const system::error_code &ec, std::size_t) mutable {
-                boost::asio::asio_handler_deallocate(buf, size, &handler);
+                asio_handler_deallocate(buf, size, &handler);
                 if (ec) {
                     handler(ec);
                     return;
                 }
                 boost::asio::async_write(
-                    channel, body_buf,
-                    [handler,this]
+                    self.channel, body_buf,
+                    [handler,&self]
                     (const system::error_code &ec, std::size_t) mutable {
-                        is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-                        if (!is_open_)
-                            channel.lowest_layer().close();
+                        self.is_open_
+                            = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+                        if (!self.is_open_)
+                            self.channel.lowest_layer().close();
                         handler(ec);
                     }
                 );
             }
         );
     }
-
-    return init.result.get();
 }
 
 template<class Socket, class Settings>
-template<class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>
-::async_write_response_continue(CompletionToken &&token)
-{
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-
-    if (!writer_helper.write_continue()) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
-    }
-
-    auto handler = std::move(init.completion_handler);
-    boost::asio::async_write(
-        channel, detail::string_literal_buffer("HTTP/1.1 100 Continue\r\n\r\n"),
-        [handler](const system::error_code &ec, std::size_t) mutable {
-            handler(ec);
-        }
-    );
-
-    return init.result.get();
-}
-
-template<class Socket, class Settings>
-template<class Response, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>
-::async_write_response_metadata(const Response &response,
-                                CompletionToken &&token)
+template<class Response, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_write_response(
+    const Response& response, CToken&& token)
 {
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_write_response_initiation{*this}, token, std::cref(response)
+    );
+}
 
-    if (parser.which() != 1) { //< !req_parser
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::wrong_direction);
-        return init.result.get();
+template<class Socket, class Settings>
+template<class Handler>
+void basic_socket<Socket, Settings>::async_write_response_continue_initiation
+::operator()(Handler&& handler)
+{
+    if (!self.writer_helper.write_continue()) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
 
-    auto prev_state = writer_helper.state;
-    if (!writer_helper.write_metadata()) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
+    boost::asio::async_write(
+        self.channel,
+        detail::string_literal_buffer("HTTP/1.1 100 Continue\r\n\r\n"),
+        [handler](const system::error_code &ec, std::size_t) mutable {
+            handler(ec);
+        }
+    );
+}
+
+template<class Socket, class Settings>
+template<class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_write_response_continue(CToken&& token)
+{
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_write_response_continue_initiation{*this}, token
+    );
+}
+
+template<class Socket, class Settings>
+template<class Handler, class Response>
+void basic_socket<Socket, Settings>::async_write_response_metadata_initiation
+::operator()(Handler&& handler, std::reference_wrapper<const Response> response)
+{
+    using boost::asio::asio_handler_allocate;
+    using boost::asio::asio_handler_deallocate;
+
+    if (self.parser.which() != 1) { //< !req_parser
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::wrong_direction);
+        return;
     }
 
-    if (!modern_http) {
-        writer_helper = prev_state;
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::native_stream_unsupported);
-        return init.result.get();
+    auto prev_state = self.writer_helper.state;
+    if (!self.writer_helper.write_metadata()) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
 
-    const auto status_code = response.status_code();
-    const auto &reason_phrase = response.reason_phrase();
-    const auto &headers = response.headers();
+    if (!self.modern_http) {
+        self.writer_helper = prev_state;
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::native_stream_unsupported);
+        return;
+    }
+
+    const auto status_code = response.get().status_code();
+    const auto &reason_phrase = response.get().reason_phrase();
+    const auto &headers = response.get().headers();
 
     auto has_connection_close = detail::has_connection_close(headers);
 
     if (has_connection_close)
-        keep_alive = KEEP_ALIVE_CLOSE_READ;
+        self.keep_alive = KEEP_ALIVE_CLOSE_READ;
 
-    auto use_connection_close_buf = (keep_alive == KEEP_ALIVE_CLOSE_READ)
+    auto use_connection_close_buf = (self.keep_alive == KEEP_ALIVE_CLOSE_READ)
         && !has_connection_close;
 
     std::size_t size =
@@ -485,11 +514,9 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
-            size, &init.completion_handler)
-        );
+        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
     } catch (const std::bad_alloc&) {
-        writer_helper.state = prev_state;
+        self.writer_helper.state = prev_state;
         throw;
     } catch (...) {
         assert(false);
@@ -540,52 +567,60 @@ basic_socket<Socket, Settings>
 
     assert(size == idx);
 
-    auto handler = std::move(init.completion_handler);
     boost::asio::async_write(
-        channel, boost::asio::buffer(buf, size),
+        self.channel, boost::asio::buffer(buf, size),
         [handler,buf,size]
         (const system::error_code &ec, std::size_t) mutable {
-            boost::asio::asio_handler_deallocate(buf, size, &handler);
+            asio_handler_deallocate(buf, size, &handler);
             handler(ec);
         }
     );
-
-    return init.result.get();
 }
 
 template<class Socket, class Settings>
-template<class Request, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>
-::async_write_request(const Request &request, CompletionToken &&token)
+template<class Response, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_write_response_metadata(
+    const Response& response, CToken&& token)
 {
-    static_assert(is_request_message<Request>::value,
-                  "Request must fulfill the Request concept");
+    static_assert(is_response_message<Response>::value,
+                  "Response must fulfill the Response concept");
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_write_response_metadata_initiation{*this}, token,
+        std::cref(response)
+    );
+}
 
-    switch (parser.which()) {
+template<class Socket, class Settings>
+template<class Handler, class Request>
+void basic_socket<Socket, Settings>::async_write_request_initiation::operator()(
+    Handler&& handler, std::reference_wrapper<const Request> request)
+{
+    using boost::asio::asio_handler_allocate;
+    using boost::asio::asio_handler_deallocate;
+
+    switch (self.parser.which()) {
     case 0: // none
-        parser = res_parser{};
+        self.parser = res_parser{};
         break;
     case 1: // req_parser
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::wrong_direction);
-        return init.result.get();
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::wrong_direction);
+        return;
     case 2: // res_parser
         break;
     }
 
-    if (write_state() != http::write_state::empty) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
+    if (self.write_state() != http::write_state::empty) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
 
-    const auto &method = request.method();
-    const auto &target = request.target();
-    const auto &headers = request.headers();
+    const auto &method = request.get().method();
+    const auto &target = request.get().target();
+    const auto &headers = request.get().headers();
 
     {
         SentMethod sent_method;
@@ -596,12 +631,12 @@ basic_socket<Socket, Settings>
         } else {
             sent_method = OTHER_METHOD;
         }
-        sent_requests.push_back(sent_method);
+        self.sent_requests.push_back(sent_method);
     }
 
     const bool copy_body
-        = (request.body().size() < Settings::body_copy_threshold)
-        || (request.body().size() == 0);
+        = (request.get().body().size() < Settings::body_copy_threshold)
+        || (request.get().body().size() == 0);
 
     std::size_t size =
         // Request line
@@ -611,7 +646,7 @@ basic_socket<Socket, Settings>
         // Final CRLF
         + 2
         // Body
-        + (copy_body ? request.body().size() : 0);
+        + (copy_body ? request.get().body().size() : 0);
     std::size_t content_length_ndigits = 0;
 
     // Headers
@@ -622,9 +657,9 @@ basic_socket<Socket, Settings>
     }
 
     // "content-length" header
-    if (request.body().size()) {
+    if (request.get().body().size()) {
         content_length_ndigits
-            = detail::count_decdigits(request.body().size());
+            = detail::count_decdigits(request.get().body().size());
         size += string_view("content-length: \r\n").size()
             + content_length_ndigits;
     }
@@ -632,11 +667,9 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
-            size, &init.completion_handler)
-        );
+        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
     } catch (const std::bad_alloc&) {
-        sent_requests.pop_back();
+        self.sent_requests.pop_back();
         throw;
     } catch (...) {
         assert(false);
@@ -653,7 +686,7 @@ basic_socket<Socket, Settings>
     {
         string_view x;
 
-        if (modern_http)
+        if (self.modern_http)
             x = " HTTP/1.1\r\n";
         else
             x = " HTTP/1.0\r\n";
@@ -662,12 +695,12 @@ basic_socket<Socket, Settings>
         idx += x.size();
     }
 
-    if (request.body().size()) {
+    if (request.get().body().size()) {
         string_view x("content-length: ");
         std::memcpy(buf + idx, x.data(), x.size());
         idx += x.size();
 
-        auto body_size = request.body().size();
+        auto body_size = request.get().body().size();
         for (auto i = content_length_ndigits ; i != 0 ; --i) {
             buf[idx + i - 1] = (body_size % 10) + '0';
             body_size /= 10;
@@ -696,35 +729,36 @@ basic_socket<Socket, Settings>
     idx += 2;
 
     if (copy_body) {
-        std::copy(request.body().begin(), request.body().end(), buf + idx);
-        idx += request.body().size();
+        std::copy(request.get().body().begin(), request.get().body().end(),
+                  buf + idx);
+        idx += request.get().body().size();
     }
     assert(size == idx);
 
-    auto handler = std::move(init.completion_handler);
     if (copy_body) {
         boost::asio::async_write(
-            channel, boost::asio::buffer(buf, size),
+            self.channel, boost::asio::buffer(buf, size),
             [handler,buf,size]
             (const system::error_code &ec, std::size_t) mutable {
-                boost::asio::asio_handler_deallocate(buf, size, &handler);
+                asio_handler_deallocate(buf, size, &handler);
                 handler(ec);
             }
         );
     } else {
-        auto body_buf
-            = boost::asio::buffer(request.body().data(), request.body().size());
+        auto body_buf = boost::asio::buffer(
+            request.get().body().data(), request.get().body().size());
+        basic_socket& self = this->self;
         boost::asio::async_write(
-            channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,body_buf,this]
+            self.channel, boost::asio::buffer(buf, size),
+            [handler,buf,size,body_buf,&self]
             (const system::error_code &ec, std::size_t) mutable {
-                boost::asio::asio_handler_deallocate(buf, size, &handler);
+                asio_handler_deallocate(buf, size, &handler);
                 if (ec) {
                     handler(ec);
                     return;
                 }
                 boost::asio::async_write(
-                    channel, body_buf,
+                    self.channel, body_buf,
                     [handler]
                     (const system::error_code &ec, std::size_t) mutable {
                         handler(ec);
@@ -733,57 +767,65 @@ basic_socket<Socket, Settings>
             }
         );
     }
-
-    return init.result.get();
 }
 
 template<class Socket, class Settings>
-template<class Request, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>
-::async_write_request_metadata(const Request &request, CompletionToken &&token)
+template<class Request, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_write_request(
+    const Request& request, CToken&& token)
 {
     static_assert(is_request_message<Request>::value,
                   "Request must fulfill the Request concept");
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_write_request_initiation{*this}, token, std::cref(request)
+    );
+}
 
-    switch (parser.which()) {
+template<class Socket, class Settings>
+template<class Handler, class Request>
+void basic_socket<Socket, Settings>::async_write_request_metadata_initiation
+::operator()(Handler&& handler, std::reference_wrapper<const Request> request)
+{
+    using boost::asio::asio_handler_allocate;
+    using boost::asio::asio_handler_deallocate;
+
+    switch (self.parser.which()) {
     case 0: // none
-        parser = res_parser{};
+        self.parser = res_parser{};
         break;
     case 1: // req_parser
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::wrong_direction);
-        return init.result.get();
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::wrong_direction);
+        return;
     case 2: // res_parser
         break;
     }
 
-    if (write_state() != http::write_state::empty) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
+    if (self.write_state() != http::write_state::empty) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
 
-    if (writer_helper.state != write_state::empty) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
+    if (self.writer_helper.state != write_state::empty) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
 
-    if (!modern_http) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::native_stream_unsupported);
-        return init.result.get();
+    if (!self.modern_http) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::native_stream_unsupported);
+        return;
     }
 
-    writer_helper.state = write_state::metadata_issued;
+    self.writer_helper.state = write_state::metadata_issued;
 
-    const auto &method = request.method();
-    const auto &target = request.target();
-    const auto &headers = request.headers();
+    const auto &method = request.get().method();
+    const auto &target = request.get().target();
+    const auto &headers = request.get().headers();
 
     {
         SentMethod sent_method;
@@ -794,7 +836,7 @@ basic_socket<Socket, Settings>
         } else {
             sent_method = OTHER_METHOD;
         }
-        sent_requests.push_back(sent_method);
+        self.sent_requests.push_back(sent_method);
     }
 
     std::size_t size =
@@ -817,12 +859,10 @@ basic_socket<Socket, Settings>
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
-            size, &init.completion_handler)
-        );
+        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
     } catch (const std::bad_alloc&) {
-        sent_requests.pop_back();
-        writer_helper.state = write_state::empty;
+        self.sent_requests.pop_back();
+        self.writer_helper.state = write_state::empty;
         throw;
     } catch (...) {
         assert(false);
@@ -861,49 +901,56 @@ basic_socket<Socket, Settings>
 
     assert(size == idx);
 
-    auto handler = std::move(init.completion_handler);
     boost::asio::async_write(
-        channel, boost::asio::buffer(buf, size),
+        self.channel, boost::asio::buffer(buf, size),
         [handler,buf,size](const system::error_code &ec, std::size_t) mutable {
-            boost::asio::asio_handler_deallocate(buf, size, &handler);
+            asio_handler_deallocate(buf, size, &handler);
             handler(ec);
         }
     );
-
-    return init.result.get();
 }
 
 template<class Socket, class Settings>
-template<class Message, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>::async_write(const Message &message,
-                                            CompletionToken &&token)
+template<class Request, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>
+::async_write_request_metadata(const Request& request, CToken&& token)
 {
-    static_assert(is_message<Message>::value,
-                  "Message must fulfill the Message concept");
+    static_assert(is_request_message<Request>::value,
+                  "Request must fulfill the Request concept");
 
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_write_request_metadata_initiation{*this}, token,
+        std::cref(request)
+    );
+}
+
+template<class Socket, class Settings>
+template<class Handler, class Message>
+void basic_socket<Socket, Settings>::async_write_initiation::operator()(
+    Handler&& handler, std::reference_wrapper<const Message> message)
+{
+    using boost::asio::asio_handler_allocate;
+    using boost::asio::asio_handler_deallocate;
     using detail::string_literal_buffer;
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-
-    auto prev_state = writer_helper.state;
-    if (!writer_helper.write()) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
+    auto prev_state = self.writer_helper.state;
+    if (!self.writer_helper.write()) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
 
-    if (message.body().size() == 0) {
-        invoke_handler(std::move(init.completion_handler));
-        return init.result.get();
+    if (message.get().body().size() == 0) {
+        self.invoke_handler(std::forward<Handler>(handler));
+        return;
     }
 
     const bool copy_body
-        = message.body().size() < Settings::body_copy_threshold;
+        = message.get().body().size() < Settings::body_copy_threshold;
 
     std::size_t content_length_nhexdigits
-        = detail::count_hexdigits(message.body().size());
+        = detail::count_hexdigits(message.get().body().size());
     std::size_t size =
         // hex string
         content_length_nhexdigits
@@ -911,24 +958,22 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
         + 2
         // body chunk + crlf
         + (copy_body
-           ? (message.body().size() + 2)
+           ? (message.get().body().size() + 2)
            : 0);
 
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
-            size, &init.completion_handler)
-        );
+        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
     } catch (const std::bad_alloc&) {
-        writer_helper.state = prev_state;
+        self.writer_helper.state = prev_state;
         throw;
     } catch (...) {
         assert(false);
     }
 
     {
-        auto body_size = message.body().size();
+        auto body_size = message.get().body().size();
         for (auto i = content_length_nhexdigits ; i != 0 ; --i) {
             char hexdigit = body_size % 16;
             if (hexdigit > 10)
@@ -945,8 +990,9 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
     idx += 2;
 
     if (copy_body) {
-        std::copy(message.body().begin(), message.body().end(), buf + idx);
-        idx += message.body().size();
+        std::copy(message.get().body().begin(), message.get().body().end(),
+                  buf + idx);
+        idx += message.get().body().size();
 
         std::memcpy(buf + idx, "\r\n", 2);
         idx += 2;
@@ -954,31 +1000,31 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
 
     assert(size == idx);
 
-    auto handler = std::move(init.completion_handler);
     if (copy_body) {
         boost::asio::async_write(
-            channel, boost::asio::buffer(buf, size),
+            self.channel, boost::asio::buffer(buf, size),
             [handler,buf,size]
             (const system::error_code &ec, std::size_t) mutable {
-                boost::asio::asio_handler_deallocate(buf, size, &handler);
+                asio_handler_deallocate(buf, size, &handler);
                 handler(ec);
             }
         );
     } else {
-        auto body_buf
-            = boost::asio::buffer(message.body().data(), message.body().size());
+        auto body_buf = boost::asio::buffer(
+            message.get().body().data(), message.get().body().size());
+        basic_socket& self = this->self;
         boost::asio::async_write(
-            channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,body_buf,this]
+            self.channel, boost::asio::buffer(buf, size),
+            [handler,buf,size,body_buf,&self]
             (const system::error_code &ec, std::size_t) mutable {
-                boost::asio::asio_handler_deallocate(buf, size, &handler);
+                asio_handler_deallocate(buf, size, &handler);
                 if (ec) {
                     handler(ec);
                     return;
                 }
                 boost::asio::async_write(
-                    channel, body_buf,
-                    [handler,this]
+                    self.channel, body_buf,
+                    [handler,&self]
                     (const system::error_code &ec, std::size_t) mutable {
                         if (ec) {
                             handler(ec);
@@ -986,7 +1032,7 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
                         }
                         auto crlf = string_literal_buffer("\r\n");
                         boost::asio::async_write(
-                            channel, crlf,
+                            self.channel, crlf,
                             [handler](const system::error_code &ec,
                                       std::size_t) mutable {
                                 handler(ec);
@@ -997,43 +1043,50 @@ basic_socket<Socket, Settings>::async_write(const Message &message,
             }
         );
     }
-
-    return init.result.get();
 }
 
 template<class Socket, class Settings>
-template<class Message, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>::async_write_chunkext(
-    const Message &message, const typename Message::headers_type &chunkext,
-    CompletionToken &&token
-)
+template<class Message, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_write(
+    const Message& message, CToken&& token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_write_initiation{*this}, token, std::cref(message)
+    );
+}
+
+template<class Socket, class Settings>
+template<class Handler, class Message>
+void basic_socket<Socket, Settings>::async_write_chunkext_initiation
+::operator()(
+    Handler&& handler, std::reference_wrapper<const Message> message,
+    std::reference_wrapper<const typename Message::headers_type> chunkext)
+{
+    using boost::asio::asio_handler_allocate;
+    using boost::asio::asio_handler_deallocate;
     using detail::string_literal_buffer;
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-
-    auto prev_state = writer_helper.state;
-    if (!writer_helper.write()) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
+    auto prev_state = self.writer_helper.state;
+    if (!self.writer_helper.write()) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
 
-    if (message.body().size() == 0) {
-        invoke_handler(std::move(init.completion_handler));
-        return init.result.get();
+    if (message.get().body().size() == 0) {
+        self.invoke_handler(std::forward<Handler>(handler));
+        return;
     }
 
     const bool copy_body
-        = message.body().size() < Settings::body_copy_threshold;
+        = message.get().body().size() < Settings::body_copy_threshold;
 
     std::size_t content_length_nhexdigits
-        = detail::count_hexdigits(message.body().size());
+        = detail::count_hexdigits(message.get().body().size());
     std::size_t size =
         // hex string
         content_length_nhexdigits
@@ -1041,10 +1094,10 @@ basic_socket<Socket, Settings>::async_write_chunkext(
         + 2
         // body chunk + crlf
         + (copy_body
-           ? (message.body().size() + 2)
+           ? (message.get().body().size() + 2)
            : 0);
 
-    for (const auto &e: chunkext) {
+    for (const auto &e: chunkext.get()) {
         // Each chunkext is 4 buffer pieces: SEMICOLON + key + EQUALS_SIGN +
         // value. EQUALS_SIGN + value is optional.
         //
@@ -1058,18 +1111,16 @@ basic_socket<Socket, Settings>::async_write_chunkext(
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
-            size, &init.completion_handler)
-        );
+        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
     } catch (const std::bad_alloc&) {
-        writer_helper.state = prev_state;
+        self.writer_helper.state = prev_state;
         throw;
     } catch (...) {
         assert(false);
     }
 
     {
-        auto body_size = message.body().size();
+        auto body_size = message.get().body().size();
         for (auto i = content_length_nhexdigits ; i != 0 ; --i) {
             char hexdigit = body_size % 16;
             if (hexdigit > 10)
@@ -1082,7 +1133,7 @@ basic_socket<Socket, Settings>::async_write_chunkext(
         idx += content_length_nhexdigits;
     }
 
-    for (const auto &e: chunkext) {
+    for (const auto &e: chunkext.get()) {
         buf[idx++] = ';';
         std::memcpy(buf + idx, e.first.data(), e.first.size());
         idx += e.first.size();
@@ -1097,8 +1148,9 @@ basic_socket<Socket, Settings>::async_write_chunkext(
     idx += 2;
 
     if (copy_body) {
-        std::copy(message.body().begin(), message.body().end(), buf + idx);
-        idx += message.body().size();
+        std::copy(message.get().body().begin(), message.get().body().end(),
+                  buf + idx);
+        idx += message.get().body().size();
 
         std::memcpy(buf + idx, "\r\n", 2);
         idx += 2;
@@ -1106,31 +1158,31 @@ basic_socket<Socket, Settings>::async_write_chunkext(
 
     assert(size == idx);
 
-    auto handler = std::move(init.completion_handler);
     if (copy_body) {
         boost::asio::async_write(
-            channel, boost::asio::buffer(buf, size),
+            self.channel, boost::asio::buffer(buf, size),
             [handler,buf,size]
             (const system::error_code &ec, std::size_t) mutable {
-                boost::asio::asio_handler_deallocate(buf, size, &handler);
+                asio_handler_deallocate(buf, size, &handler);
                 handler(ec);
             }
         );
     } else {
-        auto body_buf
-            = boost::asio::buffer(message.body().data(), message.body().size());
+        auto body_buf = boost::asio::buffer(
+            message.get().body().data(), message.get().body().size());
+        basic_socket& self = this->self;
         boost::asio::async_write(
-            channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,body_buf,this]
+            self.channel, boost::asio::buffer(buf, size),
+            [handler,buf,size,body_buf,&self]
             (const system::error_code &ec, std::size_t) mutable {
-                boost::asio::asio_handler_deallocate(buf, size, &handler);
+                asio_handler_deallocate(buf, size, &handler);
                 if (ec) {
                     handler(ec);
                     return;
                 }
                 boost::asio::async_write(
-                    channel, body_buf,
-                    [handler,this]
+                    self.channel, body_buf,
+                    [handler,&self]
                     (const system::error_code &ec, std::size_t) mutable {
                         if (ec) {
                             handler(ec);
@@ -1138,7 +1190,7 @@ basic_socket<Socket, Settings>::async_write_chunkext(
                         }
                         auto crlf = string_literal_buffer("\r\n");
                         boost::asio::async_write(
-                            channel, crlf,
+                            self.channel, crlf,
                             [handler](const system::error_code &ec,
                                       std::size_t) mutable {
                                 handler(ec);
@@ -1149,39 +1201,49 @@ basic_socket<Socket, Settings>::async_write_chunkext(
             }
         );
     }
-
-    return init.result.get();
 }
 
 template<class Socket, class Settings>
-template<class Message, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
-                                                     CompletionToken &&token)
+template<class Message, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_write_chunkext(
+    const Message& message, const typename Message::headers_type& chunkext,
+    CToken&& token)
 {
     static_assert(is_message<Message>::value,
                   "Message must fulfill the Message concept");
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_write_chunkext_initiation{*this}, token, std::cref(message),
+        std::cref(chunkext)
+    );
+}
 
-    auto prev_rstate = istate;
-    auto prev_wstate = writer_helper.state;
-    if (!writer_helper.write_trailers()) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
+template<class Socket, class Settings>
+template<class Handler, class Message>
+void basic_socket<Socket, Settings>::async_write_trailers_initiation
+::operator()(Handler&& handler, std::reference_wrapper<const Message> message)
+{
+    using boost::asio::asio_handler_allocate;
+    using boost::asio::asio_handler_deallocate;
+
+    auto prev_rstate = self.istate;
+    auto prev_wstate = self.writer_helper.state;
+    if (!self.writer_helper.write_trailers()) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
 
-    switch (parser.which()) {
+    switch (self.parser.which()) {
     case 0: // none
         assert(false);
         break;
     case 1: // req_parser
-        istate = http::read_state::empty;
+        self.istate = http::read_state::empty;
         break;
     case 2: // res_parser
-        writer_helper.state = write_state::empty;
+        self.writer_helper.state = write_state::empty;
         break;
     }
 
@@ -1193,7 +1255,7 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
         // Final CRLF for end of trailers
         + 2;
 
-    for (const auto &e: message.trailers()) {
+    for (const auto &e: message.get().trailers()) {
         // Each header is 4 buffer pieces: key + sep + value + crlf
         // sep (": ") + crlf is always 4 bytes.
         size += 4 + e.first.size() + e.second.size();
@@ -1202,12 +1264,10 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
     char *buf = NULL;
     std::size_t idx = 0;
     try {
-        buf = reinterpret_cast<char*>(boost::asio::asio_handler_allocate(
-            size, &init.completion_handler)
-        );
+        buf = reinterpret_cast<char*>(asio_handler_allocate(size, &handler));
     } catch (const std::bad_alloc&) {
-        istate = prev_rstate;
-        writer_helper.state = prev_wstate;
+        self.istate = prev_rstate;
+        self.writer_helper.state = prev_wstate;
         throw;
     } catch (...) {
         assert(false);
@@ -1216,7 +1276,7 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
     std::memcpy(buf + idx, "0\r\n", 3);
     idx += 3;
 
-    for (const auto &e: message.trailers()) {
+    for (const auto &e: message.get().trailers()) {
         std::memcpy(buf + idx, e.first.data(), e.first.size());
         idx += e.first.size();
 
@@ -1233,78 +1293,81 @@ basic_socket<Socket, Settings>::async_write_trailers(const Message &message,
     std::memcpy(buf + idx, "\r\n", 2);
     idx += 2;
 
-    auto handler = std::move(init.completion_handler);
+    basic_socket& self = this->self;
     boost::asio::async_write(
-        channel, boost::asio::buffer(buf, size),
-        [handler,buf,size,this]
+        self.channel, boost::asio::buffer(buf, size),
+        [handler,buf,size,&self]
         (const system::error_code &ec, std::size_t) mutable {
-            boost::asio::asio_handler_deallocate(buf, size, &handler);
-            is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-            if (!is_open_)
-                channel.lowest_layer().close();
+            asio_handler_deallocate(buf, size, &handler);
+            self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+            if (!self.is_open_)
+                self.channel.lowest_layer().close();
             handler(ec);
         }
     );
-
-    return init.result.get();
 }
 
 template<class Socket, class Settings>
-template<class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-basic_socket<Socket, Settings>
-::async_write_end_of_message(CompletionToken &&token)
+template<class Message, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_write_trailers(
+    const Message& message, CToken&& token)
+{
+    static_assert(is_message<Message>::value,
+                  "Message must fulfill the Message concept");
+
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_write_trailers_initiation{*this}, token, std::cref(message)
+    );
+}
+
+template<class Socket, class Settings>
+template<class Handler>
+void basic_socket<Socket, Settings>::async_write_end_of_message_initiation
+::operator()(Handler&& handler)
 {
     using detail::string_literal_buffer;
 
-    boost::asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-
-    if (!writer_helper.end()) {
-        invoke_handler(std::move(init.completion_handler),
-                       http_errc::out_of_order);
-        return init.result.get();
+    if (!self.writer_helper.end()) {
+        self.invoke_handler(std::forward<Handler>(handler),
+                            http_errc::out_of_order);
+        return;
     }
 
-    switch (parser.which()) {
+    switch (self.parser.which()) {
     case 0: // none
         assert(false);
         break;
     case 1: // req_parser
-        istate = http::read_state::empty;
+        self.istate = http::read_state::empty;
         break;
     case 2: // res_parser
-        writer_helper.state = write_state::empty;
+        self.writer_helper.state = write_state::empty;
         break;
     }
 
     auto last_chunk = string_literal_buffer("0\r\n\r\n");
 
-    auto handler = std::move(init.completion_handler);
+    basic_socket& self = this->self;
     boost::asio::async_write(
-        channel, last_chunk,
-        [handler,this](const system::error_code &ec, std::size_t) mutable {
-            is_open_ = keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-            if (!is_open_)
-                channel.lowest_layer().close();
+        self.channel, last_chunk,
+        [handler,&self](const system::error_code &ec, std::size_t) mutable {
+            self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+            if (!self.is_open_)
+                self.channel.lowest_layer().close();
             handler(ec);
         }
     );
-
-    return init.result.get();
 }
 
 template<class Socket, class Settings>
-basic_socket<Socket, Settings>
-::basic_socket(boost::asio::io_context &io_context,
-               boost::asio::mutable_buffer inbuffer) :
-    channel(io_context),
-    istate(http::read_state::empty),
-    buffer(inbuffer),
-    writer_helper(http::write_state::empty)
+template<class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+basic_socket<Socket, Settings>::async_write_end_of_message(CToken&& token)
 {
-    if (buffer.size() == 0)
-        throw std::invalid_argument("buffers must not be 0-sized");
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        async_write_end_of_message_initiation{*this}, token
+    );
 }
 
 template<class Socket, class Settings>

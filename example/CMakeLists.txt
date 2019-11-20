@@ -4,7 +4,7 @@ project(examples)
 # Dependencies
 cmake_minimum_required(VERSION 3.1.0)
 
-find_package(Boost 1.55 COMPONENTS
+find_package(Boost 1.70 COMPONENTS
   date_time
   filesystem
   system

@@ -59,16 +59,14 @@ struct outer_storage
 
 struct use_yielded_future_t
 {
-    typedef BOOST_ASIO_HANDLER_TYPE(asio::yield_context,
-                                    void(system::error_code))
-        coro_handler_t;
+    using coro_handler_t = BOOST_ASIO_HANDLER_TYPE(
+        asio::yield_context, void(system::error_code));
 
     struct Handler
     {
-        Handler(use_yielded_future_t use_yielded_future)
-            : storage(use_yielded_future.storage)
-            , coro_handler(std::move(use_yielded_future.storage.init
-                                     .completion_handler))
+        Handler(outer_storage &storage)
+            : storage(storage)
+            , coro_handler(std::move(storage.init.completion_handler))
         {}
 
         void operator()(system::error_code ec)
@@ -89,6 +87,9 @@ struct yielded_future
 {
     yielded_future(outer_storage &storage) : storage(storage) {}
 
+    // For the tests to be meaningful, the future must represent a concurrent
+    // operation. We cannot cheat using Boost.Asio 1.70 newer interface to defer
+    // the initiation up until `get()` gets called.
     void get()
     {
         storage.init.result.get();
@@ -103,19 +104,16 @@ namespace asio {
 template<>
 struct async_result<use_yielded_future_t, void(system::error_code)>
 {
-    typedef use_yielded_future_t::Handler completion_handler_type;
     typedef yielded_future return_type;
 
-    async_result(use_yielded_future_t::Handler &handler)
-        : storage(handler.storage)
-    {}
-
-    yielded_future get()
+    template<class Initiation, class RawCompletionToken, class... Args>
+    static return_type initiate(
+        Initiation&& initiation, RawCompletionToken&& token, Args&&... args)
     {
-        return yielded_future(storage);
+        use_yielded_future_t::Handler handler{token.storage};
+        initiation(std::move(handler), std::forward<Args>(args)...);
+        return yielded_future(token.storage);
     }
-
-    outer_storage &storage;
 };
 
 } } // namespace boost::asio
@@ -129,7 +127,7 @@ BOOST_AUTO_TEST_CASE(double_read_request_call) {
     asio::io_context ios;
     auto work = [&ios](asio::yield_context yield) {
         feed_with_buffer(36, [&ios,&yield](asio::mutable_buffer inbuffer) {
-                http::basic_socket<mock_socket> socket(ios, inbuffer);
+                http::basic_socket<mock_socket> socket(inbuffer, ios);
                 socket.next_layer().input_buffer.emplace_back();
                 fill_vector(socket.next_layer().input_buffer.front(),
                             // first

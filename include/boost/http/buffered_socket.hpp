@@ -56,10 +56,6 @@ public:
     using Parent::async_write_trailers;
     using Parent::async_write_end_of_message;
 
-    basic_buffered_socket(boost::asio::io_context &io_context)
-        : Parent(io_context, boost::asio::buffer(BufferParent::buffer))
-    {}
-
     template<class... Args>
     basic_buffered_socket(Args&&... args)
         : Parent(boost::asio::buffer(BufferParent::buffer),

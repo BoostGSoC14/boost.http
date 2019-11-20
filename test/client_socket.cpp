@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(socket_basic) {
     bool reached_the_end_of_the_test = false;
     auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
         feed_with_buffer(38, [&](asio::mutable_buffer inbuffer) {
-            http::basic_socket<mock_socket> socket(ios, inbuffer);
+            http::basic_socket<mock_socket> socket(inbuffer, ios);
             http::request request;
             http::response response;
 
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(socket_http10_native_stream_unsupported) {
     bool reached_the_end_of_the_test = false;
     auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
         feed_with_buffer(38, [&](asio::mutable_buffer inbuffer) {
-            http::basic_socket<mock_socket> socket(ios, inbuffer);
+            http::basic_socket<mock_socket> socket(inbuffer, ios);
             http::request request;
             http::response response;
             boost::system::error_code ec;
@@ -345,7 +345,7 @@ BOOST_AUTO_TEST_CASE(socket_http10_native_stream_unsupported2) {
     bool reached_the_end_of_the_test = false;
     auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
         feed_with_buffer(38, [&](asio::mutable_buffer inbuffer) {
-            http::basic_socket<mock_socket> socket(ios, inbuffer);
+            http::basic_socket<mock_socket> socket(inbuffer, ios);
             http::request request;
             http::response response;
             boost::system::error_code ec;
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(socket_http10_native_stream_unsupported3)
     bool reached_the_end_of_the_test = false;
     auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
         feed_with_buffer(38, [&](asio::mutable_buffer inbuffer) {
-            http::basic_socket<mock_socket> socket(ios, inbuffer);
+            http::basic_socket<mock_socket> socket(inbuffer, ios);
             http::request request;
             http::response response;
             boost::system::error_code ec;
@@ -481,7 +481,7 @@ BOOST_AUTO_TEST_CASE(socket_upgrade_head) {
     bool reached_the_end_of_the_test = false;
     auto work = [&ios,&reached_the_end_of_the_test](asio::yield_context yield) {
         feed_with_buffer(131, [&](asio::mutable_buffer inbuffer) {
-            http::basic_socket<mock_socket> socket(ios, inbuffer);
+            http::basic_socket<mock_socket> socket(inbuffer, ios);
             http::request request;
             http::response response;
             boost::system::error_code ec;

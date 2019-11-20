@@ -82,16 +82,6 @@ struct
 
 ===== Member functions
 
-`basic_socket(boost::asio::io_context &io_context, boost::asio::mutable_buffer inbuffer)`::
-
-  Constructor. _io_context_ is passed to the constructor from the underlying
-  stream.
-+
-.Exceptions:
---
-* `std::invalid_argument`: If buffer size is zero.
---
-
 `template<class... Args> basic_socket(boost::asio::mutable_buffer inbuffer, Args&&... args)`::
 
   Constructor. _args_ are forwarded to the constructor from the underlying
