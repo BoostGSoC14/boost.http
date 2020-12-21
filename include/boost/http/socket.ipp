@@ -1462,14 +1462,24 @@ void basic_socket<Socket, Settings>
     if (used_size) {
         // Have cached some bytes from a previous read
         if (server_mode) {
-            on_async_read_message<true, enable_chunkext, req_parser>(
-                std::forward<Handler>(handler), message, chunkext,
-                system::error_code{}, 0
+            boost::asio::post(
+                get_executor(),
+                [this,handler,&message,chunkext]() mutable {
+                    on_async_read_message<true, enable_chunkext, req_parser>(
+                        std::forward<Handler>(handler), message, chunkext,
+                        system::error_code{}, 0
+                    );
+                }
             );
         } else {
-            on_async_read_message<false, enable_chunkext, res_parser>(
-                std::forward<Handler>(handler), message, chunkext,
-                system::error_code{}, 0
+            boost::asio::post(
+                get_executor(),
+                [this,handler,&message,chunkext]() mutable {
+                    on_async_read_message<false, enable_chunkext, res_parser>(
+                        std::forward<Handler>(handler), message, chunkext,
+                        system::error_code{}, 0
+                    );
+                }
             );
         }
     } else {
