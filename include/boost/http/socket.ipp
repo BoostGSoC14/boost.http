@@ -1299,9 +1299,12 @@ void basic_socket<Socket, Settings>::async_write_trailers_initiation
         [handler,buf,size,&self]
         (const system::error_code &ec, std::size_t) mutable {
             asio_handler_deallocate(buf, size, &handler);
-            self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-            if (!self.is_open_)
-                self.channel.lowest_layer().close();
+            if (self.parser.which() == 1) {
+                // server mode
+                self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+                if (!self.is_open_)
+                    self.channel.lowest_layer().close();
+            }
             handler(ec);
         }
     );
@@ -1352,9 +1355,12 @@ void basic_socket<Socket, Settings>::async_write_end_of_message_initiation
     boost::asio::async_write(
         self.channel, last_chunk,
         [handler,&self](const system::error_code &ec, std::size_t) mutable {
-            self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-            if (!self.is_open_)
-                self.channel.lowest_layer().close();
+            if (self.parser.which() == 1) {
+                // server mode
+                self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+                if (!self.is_open_)
+                    self.channel.lowest_layer().close();
+            }
             handler(ec);
         }
     );
