@@ -156,6 +156,25 @@ void basic_socket<Socket, Settings>::async_read_some_initiation::operator()(
         return;
     }
 
+    switch (self.parser.which()) {
+    case 0: // none
+        break;
+    case 1: // req_parser
+        if (!is_request_message<Message>::value) {
+            self.invoke_handler(std::forward<Handler>(handler),
+                                http_errc::wrong_direction);
+            return;
+        }
+        break;
+    case 2: // res_parser
+        if (!is_response_message<Message>::value) {
+            self.invoke_handler(std::forward<Handler>(handler),
+                                http_errc::wrong_direction);
+            return;
+        }
+        break;
+    }
+
     self.schedule_on_async_read_message<false>(
         std::forward<Handler>(handler), message.get());
 }
