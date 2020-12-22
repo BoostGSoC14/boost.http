@@ -1467,26 +1467,21 @@ void basic_socket<Socket, Settings>
 
     if (used_size) {
         // Have cached some bytes from a previous read
+        auto ex(boost::asio::get_associated_executor(handler, get_executor()));
         if (server_mode) {
-            boost::asio::post(
-                get_executor(),
-                [this,handler,&message,chunkext]() mutable {
-                    on_async_read_message<true, enable_chunkext, req_parser>(
-                        std::forward<Handler>(handler), message, chunkext,
-                        system::error_code{}, 0
-                    );
-                }
-            );
+            boost::asio::post(ex, [this,handler,&message,chunkext]() mutable {
+                on_async_read_message<true, enable_chunkext, req_parser>(
+                    std::forward<Handler>(handler), message, chunkext,
+                    system::error_code{}, 0
+                );
+            });
         } else {
-            boost::asio::post(
-                get_executor(),
-                [this,handler,&message,chunkext]() mutable {
-                    on_async_read_message<false, enable_chunkext, res_parser>(
-                        std::forward<Handler>(handler), message, chunkext,
-                        system::error_code{}, 0
-                    );
-                }
-            );
+            boost::asio::post(ex, [this,handler,&message,chunkext]() mutable {
+                on_async_read_message<false, enable_chunkext, res_parser>(
+                    std::forward<Handler>(handler), message, chunkext,
+                    system::error_code{}, 0
+                );
+            });
         }
     } else {
         if (server_mode) {
