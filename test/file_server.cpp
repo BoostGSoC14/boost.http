@@ -17,7 +17,7 @@ bool check_not_found(const system::system_error &e)
 
 BOOST_AUTO_TEST_CASE(resolve_dots_or_throw_not_found) {
     using http::detail::resolve_dots_or_throw_not_found;
-    using filesystem::path;
+    using boost::filesystem::path;
 
     // string-based tests (the URL read from the HTTP request)
     BOOST_CHECK_EQUAL(resolve_dots_or_throw_not_found("/"), path{});

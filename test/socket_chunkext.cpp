@@ -3,6 +3,11 @@
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 
+// Boost.Coroutine 1.72 workaround {{{
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
+// }}}
+
 #include <boost/asio/spawn.hpp>
 
 #include <boost/http/buffered_socket.hpp>

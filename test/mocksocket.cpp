@@ -5,6 +5,11 @@
 
 #include "utils/mocksocket.hpp"
 
+// Boost.Coroutine 1.72 workaround {{{
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
+// }}}
+
 #include <boost/asio/spawn.hpp>
 
 using namespace boost;
