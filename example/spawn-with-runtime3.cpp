@@ -3,6 +3,11 @@
 
 #include <boost/utility/string_view.hpp>
 
+// Boost.Coroutine 1.72 workaround {{{
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
+// }}}
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/spawn.hpp>
 

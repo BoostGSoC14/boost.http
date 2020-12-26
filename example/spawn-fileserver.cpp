@@ -1,6 +1,11 @@
 #include <iostream>
 #include <algorithm>
 
+// Boost.Coroutine 1.72 workaround {{{
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
+// }}}
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/http/buffered_socket.hpp>
