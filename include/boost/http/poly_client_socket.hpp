@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 Vinícius dos Santos Oliveira
+/* Copyright (c) 2018, 2020 Vinícius dos Santos Oliveira
 
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
@@ -39,16 +39,60 @@ public:
     ~basic_poly_client_socket() override = default;
 
     // ### wrappers for the ASIO's extensible model ###
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_request(const request_type &request, CompletionToken &&token);
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_request_metadata(const request_type &request,
-                                 CompletionToken &&token);
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_response(response_type &response, CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_request(const request_type& request, CToken&& token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_request_metadata(const request_type& request, CToken&& token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_read_response(response_type& response, CToken&& token);
+
+private:
+    friend struct async_write_request_initiation;
+    struct async_write_request_initiation
+    {
+        async_write_request_initiation(basic_poly_client_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(
+            Handler&& handler,
+            std::reference_wrapper<const request_type> request);
+
+        basic_poly_client_socket& self;
+    };
+
+    friend struct async_write_request_metadata_initiation;
+    struct async_write_request_metadata_initiation
+    {
+        async_write_request_metadata_initiation(basic_poly_client_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(
+            Handler&& handler,
+            std::reference_wrapper<const request_type> request);
+
+        basic_poly_client_socket& self;
+    };
+
+    friend struct async_read_response_initiation;
+    struct async_read_response_initiation
+    {
+        async_read_response_initiation(basic_poly_client_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<response_type> response);
+
+        basic_poly_client_socket& self;
+    };
 };
 
 using poly_client_socket = basic_poly_client_socket<request, response>;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2017, 2018 Vinícius dos Santos Oliveira
+/* Copyright (c) 2014, 2017, 2018, 2020 Vinícius dos Santos Oliveira
 
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
@@ -40,23 +40,80 @@ public:
     ~basic_poly_server_socket() override = default;
 
     // ### wrappers for the ASIO's extensible model ###
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_request(request_type &request, CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_read_request(request_type& request, CToken&& token);
 
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_response(const response_type &response,
-                         CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_response(const response_type& response, CToken&& token);
 
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_response_continue(CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_response_continue(CToken&& token);
 
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_response_metadata(const response_type &response,
-                                  CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_response_metadata(const response_type& response,
+                                  CToken&& token);
+
+private:
+    friend struct async_read_request_initiation;
+    struct async_read_request_initiation
+    {
+        async_read_request_initiation(basic_poly_server_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<request_type> request);
+
+        basic_poly_server_socket& self;
+    };
+
+    friend struct async_write_response_initiation;
+    struct async_write_response_initiation
+    {
+        async_write_response_initiation(basic_poly_server_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(
+            Handler&& handler,
+            std::reference_wrapper<const response_type> response);
+
+        basic_poly_server_socket& self;
+    };
+
+    friend struct async_write_response_continue_initiation;
+    struct async_write_response_continue_initiation
+    {
+        async_write_response_continue_initiation(basic_poly_server_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(Handler&& handler);
+
+        basic_poly_server_socket& self;
+    };
+
+    friend struct async_write_response_metadata_initiation;
+    struct async_write_response_metadata_initiation
+    {
+        async_write_response_metadata_initiation(basic_poly_server_socket& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(
+            Handler&& handler,
+            std::reference_wrapper<const response_type> response);
+
+        basic_poly_server_socket& self;
+    };
 };
 
 using poly_server_socket = basic_poly_server_socket<request, response>;

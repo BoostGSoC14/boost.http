@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, 2017, 2018 Vinícius dos Santos Oliveira
+/* Copyright (c) 2014, 2017, 2018, 2020 Vinícius dos Santos Oliveira
 
    Distributed under the Boost Software License, Version 1.0. (See accompanying
    file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt) */
@@ -49,21 +49,79 @@ public:
     virtual ~basic_poly_socket_base() = 0;
 
     // ### wrappers for the ASIO's extensible model ###
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_read_some(message_type &message, CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_read_some(message_type& message, CToken&& token);
 
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write(const message_type &message, CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write(const message_type& message, CToken&& token);
 
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_trailers(const message_type &message, CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_trailers(const message_type& message, CToken&& token);
 
-    template<class CompletionToken>
-    BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-    async_write_end_of_message(CompletionToken &&token);
+    template<class CToken>
+    BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+    async_write_end_of_message(CToken&& token);
+
+private:
+    friend struct async_read_some_initiation;
+    struct async_read_some_initiation
+    {
+        async_read_some_initiation(basic_poly_socket_base& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(
+            Handler&& handler, std::reference_wrapper<message_type> message);
+
+        basic_poly_socket_base& self;
+    };
+
+    friend struct async_write_initiation;
+    struct async_write_initiation
+    {
+        async_write_initiation(basic_poly_socket_base& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(
+            Handler&& handler,
+            std::reference_wrapper<const message_type> message);
+
+        basic_poly_socket_base& self;
+    };
+
+    friend struct async_write_trailers_initiation;
+    struct async_write_trailers_initiation
+    {
+        async_write_trailers_initiation(basic_poly_socket_base& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(
+            Handler&& handler,
+            std::reference_wrapper<const message_type> message);
+
+        basic_poly_socket_base& self;
+    };
+
+    friend struct async_write_end_of_message_initiation;
+    struct async_write_end_of_message_initiation
+    {
+        async_write_end_of_message_initiation(basic_poly_socket_base& self)
+            : self(self)
+        {}
+
+        template<class Handler>
+        void operator()(Handler&& handler);
+
+        basic_poly_socket_base& self;
+    };
 };
 
 using poly_socket_base = basic_poly_socket_base<
