@@ -6,7 +6,6 @@
 #ifndef BOOST_HTTP_FILE_SERVER_HPP
 #define BOOST_HTTP_FILE_SERVER_HPP
 
-// TODO (Boost 1.5X): replace by AFIO?
 #include <boost/filesystem/fstream.hpp>
 #include <memory>
 #include <array>
@@ -297,9 +296,9 @@ struct on_async_response_transmit_file
     : public std::enable_shared_from_this<
         on_async_response_transmit_file<Socket,Message,Handler>>
 {
-    on_async_response_transmit_file(Socket &socket, Message &omessage,
-                                    Handler &&handler,
-                                    const filesystem::path &file,
+    on_async_response_transmit_file(Socket& socket, Message& omessage,
+                                    Handler handler,
+                                    const filesystem::path& file,
                                     std::uintmax_t remaining)
         : socket(socket)
         , message(omessage)
@@ -340,9 +339,9 @@ struct on_async_response_transmit_file
                 message.body().resize(next_read);
 
             auto self = this->shared_from_this();
-            socket.async_write(message, [self](const system::error_code &ec) {
-                    self->process(ec);
-                });
+            socket.async_write(
+                message,
+                [self](const system::error_code &ec) { self->process(ec); });
         } catch (const std::ios_base::failure&) {
             handler(file_server_errc::irrecoverable_io_error);
         }
@@ -377,15 +376,15 @@ struct on_async_response_transmit_file_multi
         STATE_FINAL_BOUNDARY
     };
 
-    on_async_response_transmit_file_multi
-        (Socket &socket, Message &omessage, String &&content_type,
-         Handler &&handler, const filesystem::path &file,
-         std::vector<std::pair<std::uintmax_t, std::uintmax_t>> &&remaining,
-         const uintmax_t &file_size)
+    on_async_response_transmit_file_multi(
+        Socket& socket, Message& omessage, String&& content_type,
+        Handler handler, const filesystem::path& file,
+        std::vector<std::pair<std::uintmax_t, std::uintmax_t>>&& remaining,
+        const uintmax_t& file_size)
         : socket(socket)
         , message(omessage)
         , content_type(std::move(content_type))
-        , handler(handler)
+        , handler(std::move(handler))
         , stream(file, std::ios::binary)
         , range_set(remaining)
         , file_size(std::to_string(file_size))
@@ -901,29 +900,23 @@ inline bool path_contains_file(const filesystem::path &dir,
     return std::equal(dir.begin(), dir.end(), file.begin());
 }
 
-} // namespace detail
-
-template<class ServerSocket, class Request, class Response,
-         class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-async_response_transmit_file(ServerSocket &socket, const Request &imessage,
-                             Response &omessage, const filesystem::path &file,
-                             CompletionToken &&token);
-
-template<class ServerSocket, class Request, class Response,
-         class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-async_response_transmit_file(ServerSocket &socket, const Request &imessage,
-                             Response &omessage, const filesystem::path &file,
-                             bool is_head_request, CompletionToken &&token)
+struct async_response_transmit_file_initiation
 {
-    static_assert(is_server_socket<ServerSocket>::value,
-                  "ServerSocket must fulfill the ServerSocket concept");
-    static_assert(is_request_message<Request>::value,
-                  "Request must fulfill the Request concept");
-    static_assert(is_response_message<Response>::value,
-                  "Response must fulfill the Response concept");
+    template<class Handler, class ServerSocket, class Request, class Response>
+    void operator()(Handler&& handler,
+                    std::reference_wrapper<ServerSocket> socket,
+                    std::reference_wrapper<const Request> imessage,
+                    std::reference_wrapper<Response> omessage,
+                    const filesystem::path& file, bool is_head_request);
+};
 
+template<class Handler, class ServerSocket, class Request, class Response>
+void async_response_transmit_file_initiation::operator()(
+    Handler&& handler, std::reference_wrapper<ServerSocket> socketw,
+    std::reference_wrapper<const Request> request,
+    std::reference_wrapper<Response> response, const filesystem::path& file,
+    bool is_head_request)
+{
     typedef typename Request::headers_type::value_type headers_value_type;
     typedef typename Request::headers_type::mapped_type::value_type ReqCharT;
     typedef basic_string_view<ReqCharT> req_string_view_type;
@@ -931,25 +924,23 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
     typedef typename String::value_type ResCharT;
     typedef basic_string_view<ResCharT> res_string_view_type;
     typedef typename Response::body_type::value_type body_value_type;
-    typedef BOOST_ASIO_HANDLER_TYPE(CompletionToken, void(system::error_code))
-        Handler;
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-    auto ex(asio::get_associated_executor(init.completion_handler,
-                                          socket.get_executor()));
-    auto alloc(asio::get_associated_allocator(init.completion_handler));
+    auto& socket = socketw.get();
+    const auto& imessage = request.get();
+    auto& omessage = response.get();
+
+    auto ex(asio::get_associated_executor(handler, socket.get_executor()));
+    auto alloc(asio::get_associated_allocator(handler));
 
     {
         auto state = socket.write_state();
         if (state != write_state::empty
             && state != write_state::continue_issued) {
-            auto handler = std::move(init.completion_handler);
-            ex.post([handler]() mutable {
+            ex.post([handler=std::forward<Handler>(handler)]() mutable {
                     handler(system::error_code(file_server_errc
                                                ::write_state_not_supported));
                 }, alloc);
-            return init.result.get();
+            return;
         }
     }
 
@@ -974,8 +965,9 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
         if (size == 0) {
             omessage.status_code() = 200;
             omessage.reason_phrase() = "OK";
-            socket.async_write_response(omessage, init.completion_handler);
-            return init.result.get();
+            socket.async_write_response(
+                omessage, std::forward<Handler>(handler));
+            return;
         }
 
         auto etag = [](const typename Response::headers_type &headers) {
@@ -1053,8 +1045,9 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                                 none_of_predicate)) {
                 omessage.status_code() = 412;
                 omessage.reason_phrase() = "Precondition Failed";
-                socket.async_write_response(omessage, init.completion_handler);
-                return init.result.get();
+                socket.async_write_response(
+                    omessage, std::forward<Handler>(handler));
+                return;
             }
         } else {
             // Check "if-unmodified-since" header
@@ -1068,9 +1061,9 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                     if (last_modified > query_datetime) {
                         omessage.status_code() = 412;
                         omessage.reason_phrase() = "Precondition Failed";
-                        socket.async_write_response(omessage,
-                                                    init.completion_handler);
-                        return init.result.get();
+                        socket.async_write_response(
+                            omessage, std::forward<Handler>(handler));
+                        return;
                     }
                 }
             }
@@ -1097,8 +1090,9 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                                any_of_predicate)) {
                 omessage.status_code() = 304;
                 omessage.reason_phrase() = "Not Modified";
-                socket.async_write_response(omessage, init.completion_handler);
-                return init.result.get();
+                socket.async_write_response(
+                    omessage, std::forward<Handler>(handler));
+                return;
             }
         } else {
             // Check "if-modified-since" header
@@ -1112,9 +1106,9 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                     if (last_modified <= query_datetime) {
                         omessage.status_code() = 304;
                         omessage.reason_phrase() = "Not Modified";
-                        socket.async_write_response(omessage,
-                                                    init.completion_handler);
-                        return init.result.get();
+                        socket.async_write_response(
+                            omessage, std::forward<Handler>(handler));
+                        return;
                     }
                 }
             }
@@ -1146,8 +1140,9 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                 omessage.reason_phrase() = "Range Not Satisfiable";
                 omessage.headers().emplace("content-range",
                                            "bytes */" + std::to_string(size));
-                socket.async_write_response(omessage, init.completion_handler);
-                return init.result.get();
+                socket.async_write_response(
+                    omessage, std::forward<Handler>(handler));
+                return;
             }
 
             assert(range_set.size() > 0);
@@ -1165,12 +1160,11 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                 if (socket.write_response_native_stream()) {
                     omessage.body().resize(buffer_size);
 
-                    typedef detail
-                        ::on_async_response_transmit_file
-                        <ServerSocket, Response, Handler> pointee;
+                    typedef detail::on_async_response_transmit_file<
+                        ServerSocket, Response, std::decay_t<Handler>> pointee;
 
                     auto loop = std::make_shared<pointee>
-                        (socket, omessage, std::move(init.completion_handler),
+                        (socket, omessage, std::forward<Handler>(handler),
                          file, range.second);
                     loop->stream.seekg(range.first);
 
@@ -1183,12 +1177,13 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                     socket.async_write_response_metadata(omessage, callback);
                 } else {
                     if (range.second > omessage.body().max_size()) {
-                        auto handler = std::move(init.completion_handler);
-                        ex.post([handler]() mutable {
+                        ex.post(
+                            [handler=std::forward<Handler>(handler)]() mutable {
                                 handler(system::error_code
                                         {file_server_errc::io_error});
-                            }, alloc);
-                        return init.result.get();
+                            },
+                            alloc);
+                        return;
                     }
 
                     omessage.body().resize(range.second);
@@ -1204,10 +1199,10 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
 
                     omessage.status_code() = 206;
                     omessage.reason_phrase() = "Partial Content";
-                    socket.async_write_response(omessage,
-                                                init.completion_handler);
+                    socket.async_write_response(
+                        omessage, std::forward<Handler>(handler));
                 }
-                return init.result.get();
+                return;
             } else {
                 // range_set.size() > 1
                 // TODO: use string_view?
@@ -1226,15 +1221,13 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                 if (socket.write_response_native_stream()) {
                     omessage.body().resize(buffer_size);
 
-                    typedef detail
-                        ::on_async_response_transmit_file_multi<ServerSocket,
-                                                                Response,
-                                                                String, Handler>
+                    typedef detail::on_async_response_transmit_file_multi<
+                        ServerSocket, Response, String, std::decay_t<Handler>>
                         pointee;
 
                     auto loop = std::make_shared<pointee>
                         (socket, omessage, std::move(content_type),
-                         std::move(init.completion_handler), file,
+                         std::forward<Handler>(handler), file,
                          std::move(range_set), size);
 
                     auto callback = [loop](const system::error_code &ec) {
@@ -1314,12 +1307,15 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                             auto newsiz = detail::safe_add(index, range.second);
                             omessage.body().resize(newsiz);
                         } catch (const std::overflow_error&) {
-                            auto handler = std::move(init.completion_handler);
-                            ex.post([handler]() mutable {
+                            ex.post(
+                                [
+                                    handler=std::forward<Handler>(handler)
+                                ]() mutable {
                                     handler(system::error_code{file_server_errc
                                                 ::io_error});
-                                }, alloc);
-                            return init.result.get();
+                                },
+                                alloc);
+                            return;
                         }
                         stream.seekg(range.first);
                         stream.read(reinterpret_cast<filesystem::ifstream
@@ -1332,10 +1328,10 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
                          back_inserter(omessage.body()));
                     omessage.status_code() = 206;
                     omessage.reason_phrase() = "Partial Content";
-                    socket.async_write_response(omessage,
-                                                init.completion_handler);
+                    socket.async_write_response(
+                        omessage, std::forward<Handler>(handler));
                 }
-                return init.result.get();
+                return;
             }
         }
 
@@ -1343,8 +1339,9 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
             omessage.status_code() = 200;
             omessage.reason_phrase() = "OK";
             omessage.headers().emplace("content-length", std::to_string(size));
-            socket.async_write_response(omessage, init.completion_handler);
-            return init.result.get();
+            socket.async_write_response(
+                omessage, std::forward<Handler>(handler));
+            return;
         }
 
         // non-byte-range-request
@@ -1352,13 +1349,11 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
         if (socket.write_response_native_stream()) {
             omessage.body().resize(buffer_size);
 
-            typedef detail
-                ::on_async_response_transmit_file<ServerSocket, Response,
-                                                  Handler> pointee;
+            typedef detail::on_async_response_transmit_file<
+                ServerSocket, Response, std::decay_t<Handler>> pointee;
 
             auto loop = std::make_shared<pointee>
-                (socket, omessage, std::move(init.completion_handler), file,
-                 size);
+                (socket, omessage, std::forward<Handler>(handler), file, size);
 
             auto callback = [loop](const system::error_code &ec) {
                 loop->process(ec);
@@ -1369,11 +1364,10 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
             socket.async_write_response_metadata(omessage, callback);
         } else {
             if (size > omessage.body().max_size()) {
-                auto handler = std::move(init.completion_handler);
-                ex.post([handler]() mutable {
+                ex.post([handler=std::forward<Handler>(handler)]() mutable {
                         handler(system::error_code{file_server_errc::io_error});
                     }, alloc);
-                return init.result.get();
+                return;
             }
 
             omessage.body().resize(size);
@@ -1388,25 +1382,30 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
 
             omessage.status_code() = 200;
             omessage.reason_phrase() = "OK";
-            socket.async_write_response(omessage, init.completion_handler);
+            socket.async_write_response(
+                omessage, std::forward<Handler>(handler));
         }
     } catch (const std::ios_base::failure&) {
-        auto handler = std::move(init.completion_handler);
-        ex.post([handler]() mutable {
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
                 handler(system::error_code{file_server_errc::io_error});
             }, alloc);
-        return init.result.get();
+        return;
     }
-
-    return init.result.get();
 }
 
-template<class ServerSocket, class Request, class Response,
-         class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-async_response_transmit_file(ServerSocket &socket, const Request &imessage,
-                             Response &omessage, const filesystem::path &file,
-                             CompletionToken &&token)
+} // namespace detail
+
+template<class ServerSocket, class Request, class Response, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+async_response_transmit_file(ServerSocket& socket, const Request& imessage,
+                             Response& omessage, const filesystem::path& file,
+                             CToken&& token);
+
+template<class ServerSocket, class Request, class Response, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+async_response_transmit_file(ServerSocket& socket, const Request& imessage,
+                             Response& omessage, const filesystem::path& file,
+                             bool is_head_request, CToken&& token)
 {
     static_assert(is_server_socket<ServerSocket>::value,
                   "ServerSocket must fulfill the ServerSocket concept");
@@ -1415,28 +1414,18 @@ async_response_transmit_file(ServerSocket &socket, const Request &imessage,
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
 
-    return async_response_transmit_file(socket, imessage, omessage, file,
-                                        /*is_head_request=*/false,
-                                        std::forward<CompletionToken>(token));
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        detail::async_response_transmit_file_initiation{}, token,
+        std::ref(socket), std::ref(imessage), std::ref(omessage), file,
+        is_head_request
+    );
 }
 
-template<class ServerSocket, class ConvertibleToPath, class Request,
-         class Response, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-async_response_transmit_dir(ServerSocket &socket,
-                            const ConvertibleToPath &ipath,
-                            const Request &imessage, Response &omessage,
-                            const filesystem::path &root_dir,
-                            CompletionToken &&token);
-
-template<class ServerSocket, class ConvertibleToPath, class Request,
-         class Response, class Predicate, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-async_response_transmit_dir(ServerSocket &socket,
-                            const ConvertibleToPath &ipath,
-                            const Request &imessage, Response &omessage,
-                            const filesystem::path &root_dir, Predicate filter,
-                            CompletionToken &&token)
+template<class ServerSocket, class Request, class Response, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+async_response_transmit_file(ServerSocket& socket, const Request& imessage,
+                             Response& omessage, const filesystem::path& file,
+                             CToken&& token)
 {
     static_assert(is_server_socket<ServerSocket>::value,
                   "ServerSocket must fulfill the ServerSocket concept");
@@ -1445,18 +1434,56 @@ async_response_transmit_dir(ServerSocket &socket,
     static_assert(is_response_message<Response>::value,
                   "Response must fulfill the Response concept");
 
-    asio::async_completion<CompletionToken, void(system::error_code)>
-        init{token};
-    auto ex(asio::get_associated_executor(init.completion_handler,
-                                          socket.get_executor()));
-    auto alloc(asio::get_associated_allocator(init.completion_handler));
+    return async_response_transmit_file(
+        socket, imessage, omessage, file, /*is_head_request=*/false,
+        std::forward<CToken>(token));
+}
+
+template<class ServerSocket, class ConvertibleToPath, class Request,
+         class Response, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+async_response_transmit_dir(ServerSocket& socket,
+                            const ConvertibleToPath& ipath,
+                            const Request& imessage, Response& omessage,
+                            const filesystem::path& root_dir,
+                            CToken&& token);
+
+namespace detail {
+
+struct async_response_transmit_dir_initiation
+{
+    template<class Handler, class ServerSocket, class ConvertibleToPath,
+             class Request, class Response, class Predicate>
+    void operator()(Handler&& handler,
+                    std::reference_wrapper<ServerSocket> socket,
+                    const ConvertibleToPath& ipath,
+                    std::reference_wrapper<const Request> imessage,
+                    std::reference_wrapper<Response> omessage,
+                    const filesystem::path& root_dir, Predicate&& filter);
+};
+
+template<class Handler, class ServerSocket, class ConvertibleToPath,
+         class Request, class Response, class Predicate>
+void async_response_transmit_dir_initiation::operator()(
+    Handler&& handler, std::reference_wrapper<ServerSocket> socketw,
+    const ConvertibleToPath& ipath,
+    std::reference_wrapper<const Request> request,
+    std::reference_wrapper<Response> response, const filesystem::path& root_dir,
+    Predicate&& filter)
+{
+    auto& socket = socketw.get();
+    const auto& imessage = request.get();
+    auto& omessage = response.get();
+
+    auto ex(asio::get_associated_executor(handler, socket.get_executor()));
+    auto alloc(asio::get_associated_allocator(handler));
 
     if (imessage.method() != "GET" && imessage.method() != "HEAD") {
         omessage.headers().emplace("allow", "GET, HEAD");
         omessage.status_code() = 405;
         omessage.reason_phrase() = "Method Not Allowed";
-        socket.async_write_response(omessage, init.completion_handler);
-        return init.result.get();
+        socket.async_write_response(omessage, std::forward<Handler>(handler));
+        return;
     }
 
     bool is_head = (imessage.method() == "HEAD");
@@ -1468,54 +1495,87 @@ async_response_transmit_dir(ServerSocket &socket,
 
         if (!detail::path_contains_file(canonical_root, canonical_file)
             || !exists(canonical_file)) {
-            auto handler = std::move(init.completion_handler);
-            ex.post([handler]() mutable {
-                    handler(system::error_code{file_server_errc
-                                ::file_not_found});
-                }, alloc);
-            return init.result.get();
+            ex.post(
+                [handler=std::forward<Handler>(handler)]() mutable {
+                    handler(system::error_code{
+                        file_server_errc::file_not_found});
+                },
+                alloc);
+            return;
         }
 
         if (!is_regular_file(canonical_file)) {
-            auto handler = std::move(init.completion_handler);
-            ex.post([handler]() mutable {
-                    handler(system::error_code{file_server_errc
-                                ::file_type_not_supported});
-                }, alloc);
-            return init.result.get();
+            ex.post(
+                [handler=std::forward<Handler>(handler)]() mutable {
+                    handler(system::error_code{
+                        file_server_errc::file_type_not_supported});
+                },
+                alloc);
+            return;
         }
 
         if (!filter(canonical_file)) {
-            auto handler = std::move(init.completion_handler);
-            ex.post([handler]() mutable {
+            ex.post(
+                [handler=std::forward<Handler>(handler)]() mutable {
                     handler(system::error_code{file_server_errc::filter_set});
-                }, alloc);
-            return init.result.get();
+                },
+                alloc);
+            return;
         }
 
-        async_response_transmit_file(socket, imessage, omessage, canonical_file,
-                                     is_head, init.completion_handler);
+        async_response_transmit_file(
+            socket, imessage, omessage, canonical_file, is_head,
+            std::forward<Handler>(handler));
     } catch (const filesystem::filesystem_error &e) {
-        auto handler = std::move(init.completion_handler);
         auto err = e.code();
-        ex.post([handler,err]() mutable { handler(err); }, alloc);
+        ex.post(
+            [handler=std::forward<Handler>(handler),err]() mutable {
+                handler(err);
+            },
+            alloc);
     } catch (const system::system_error &e) {
-        auto handler = std::move(init.completion_handler);
         auto err = e.code();
-        ex.post([handler,err]() mutable { handler(err); }, alloc);
+        ex.post(
+            [handler=std::forward<Handler>(handler),err]() mutable {
+                handler(err);
+            },
+            alloc);
     }
+}
 
-    return init.result.get();
+} // namespace detail
+
+template<class ServerSocket, class ConvertibleToPath, class Request,
+         class Response, class Predicate, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+async_response_transmit_dir(ServerSocket& socket,
+                            const ConvertibleToPath& ipath,
+                            const Request& imessage, Response& omessage,
+                            const filesystem::path& root_dir, Predicate filter,
+                            CToken&& token)
+{
+    static_assert(is_server_socket<ServerSocket>::value,
+                  "ServerSocket must fulfill the ServerSocket concept");
+    static_assert(is_request_message<Request>::value,
+                  "Request must fulfill the Request concept");
+    static_assert(is_response_message<Response>::value,
+                  "Response must fulfill the Response concept");
+
+    return boost::asio::async_initiate<CToken, void(system::error_code)>(
+        detail::async_response_transmit_dir_initiation{}, token,
+        std::ref(socket), ipath, std::ref(imessage), std::ref(omessage),
+        root_dir, std::forward<Predicate>(filter)
+    );
 }
 
 template<class ServerSocket, class ConvertibleToPath, class Request,
-         class Response, class CompletionToken>
-BOOST_ASIO_INITFN_RESULT_TYPE(CompletionToken, void(system::error_code))
-async_response_transmit_dir(ServerSocket &socket,
-                            const ConvertibleToPath &ipath,
-                            const Request &imessage, Response &omessage,
-                            const filesystem::path &root_dir,
-                            CompletionToken &&token)
+         class Response, class CToken>
+BOOST_ASIO_INITFN_RESULT_TYPE(CToken, void(system::error_code))
+async_response_transmit_dir(ServerSocket& socket,
+                            const ConvertibleToPath& ipath,
+                            const Request& imessage, Response& omessage,
+                            const filesystem::path& root_dir,
+                            CToken&& token)
 {
     static_assert(is_server_socket<ServerSocket>::value,
                   "ServerSocket must fulfill the ServerSocket concept");
