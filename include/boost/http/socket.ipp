@@ -995,7 +995,7 @@ void basic_socket<Socket, Settings>::async_write_initiation::operator()(
         auto body_size = message.get().body().size();
         for (auto i = content_length_nhexdigits ; i != 0 ; --i) {
             char hexdigit = body_size % 16;
-            if (hexdigit > 10)
+            if (hexdigit >= 10)
                 hexdigit += 'a' - 10;
             else
                 hexdigit += '0';
@@ -1142,7 +1142,7 @@ void basic_socket<Socket, Settings>::async_write_chunkext_initiation
         auto body_size = message.get().body().size();
         for (auto i = content_length_nhexdigits ; i != 0 ; --i) {
             char hexdigit = body_size % 16;
-            if (hexdigit > 10)
+            if (hexdigit >= 10)
                 hexdigit += 'a' - 10;
             else
                 hexdigit += '0';
