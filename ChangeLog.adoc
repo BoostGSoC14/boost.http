@@ -11,6 +11,7 @@ You can check any breaking changes here.
    constructors for instance). These overloads were adding complexity not worth
    keeping. I might change my mind later if requested.
 ** Using `async_initiate` everywhere.
+* Require C++14.
 
 == v0.5
 

@@ -2,7 +2,7 @@
 
 === Requirements
 
-This library is written in {cpp11} and requires a {cpp11} supporting compiler.
+This library is written in {cpp14} and requires a {cpp14} supporting compiler.
 
 This library tries to reuse standard library components when possible, but this
 is not always the case. `std::error_code`, for instance, cannot be transparently
