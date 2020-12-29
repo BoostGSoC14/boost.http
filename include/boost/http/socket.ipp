@@ -60,6 +60,9 @@ template<class Handler, class Request>
 void basic_socket<Socket, Settings>::async_read_request_initiation::operator()(
     Handler&& handler, std::reference_wrapper<Request> request)
 {
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     switch (self.parser.which()) {
     case 0: // none
         self.parser = req_parser{};
@@ -68,14 +71,16 @@ void basic_socket<Socket, Settings>::async_read_request_initiation::operator()(
     case 1: // req_parser
         break;
     case 2: // res_parser
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::wrong_direction);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::wrong_direction);
+        }, alloc);
         return;
     }
 
     if (self.istate != http::read_state::empty) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
@@ -106,21 +111,26 @@ template<class Handler, class Response>
 void basic_socket<Socket, Settings>::async_read_response_initiation::operator()(
     Handler&& handler, std::reference_wrapper<Response> response)
 {
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     switch (self.parser.which()) {
     case 0: // none
         self.parser = res_parser{};
         break;
     case 1: // req_parser
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::wrong_direction);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::wrong_direction);
+        }, alloc);
         return;
     case 2: // res_parser
         break;
     }
 
     if (self.istate != http::read_state::empty) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
@@ -149,10 +159,14 @@ template<class Handler, class Message>
 void basic_socket<Socket, Settings>::async_read_some_initiation::operator()(
     Handler&& handler, std::reference_wrapper<Message> message)
 {
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     if (self.istate != http::read_state::message_ready &&
         self.istate != http::read_state::body_ready) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
@@ -161,15 +175,17 @@ void basic_socket<Socket, Settings>::async_read_some_initiation::operator()(
         break;
     case 1: // req_parser
         if (!is_request_message<Message>::value) {
-            self.invoke_handler(std::forward<Handler>(handler),
-                                http_errc::wrong_direction);
+            ex.post([handler=std::forward<Handler>(handler)]() mutable {
+                handler(http_errc::wrong_direction);
+            }, alloc);
             return;
         }
         break;
     case 2: // res_parser
         if (!is_response_message<Message>::value) {
-            self.invoke_handler(std::forward<Handler>(handler),
-                                http_errc::wrong_direction);
+            ex.post([handler=std::forward<Handler>(handler)]() mutable {
+                handler(http_errc::wrong_direction);
+            }, alloc);
             return;
         }
         break;
@@ -200,9 +216,13 @@ void basic_socket<Socket, Settings>::async_read_chunkext_initiation::operator()(
     std::reference_wrapper<typename Message::headers_type> chunkext)
 {
     if (self.istate != http::read_state::message_ready) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order,
-                            0);
+        auto ex(boost::asio::get_associated_executor(
+            handler, self.get_executor()));
+        auto alloc(boost::asio::get_associated_allocator(handler));
+
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order, 0);
+        }, alloc);
         return;
     }
 
@@ -237,23 +257,28 @@ basic_socket<Socket, Settings>::async_write_response_initiation::operator()(
     using boost::asio::asio_handler_allocate;
     using boost::asio::asio_handler_deallocate;
 
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     if (self.parser.which() != 1) { //< !req_parser
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::wrong_direction);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::wrong_direction);
+        }, alloc);
         return;
     }
 
     auto prev_state = self.writer_helper.state;
     if (!self.writer_helper.write_message()) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
     self.istate = http::read_state::empty;
 
     const auto status_code = response.get().status_code();
-    const auto &reason_phrase = response.get().reason_phrase();
-    const auto &headers = response.get().headers();
+    const auto& reason_phrase = response.get().reason_phrase();
+    const auto& headers = response.get().headers();
 
     bool implicit_content_length
         = (headers.find("content-length") != headers.end())
@@ -288,7 +313,7 @@ basic_socket<Socket, Settings>::async_write_response_initiation::operator()(
     std::size_t content_length_ndigits = 0;
 
     // Headers
-    for (const auto &e: headers) {
+    for (const auto& e: headers) {
         // Each header is 4 buffer pieces: key + sep + value + CRLF
         // sep (": ") + CRLF is always 4 bytes.
         size += 4 + e.first.size() + e.second.size();
@@ -342,7 +367,7 @@ basic_socket<Socket, Settings>::async_write_response_initiation::operator()(
         idx += x.size();
     }
 
-    for (const auto &e: headers) {
+    for (const auto& e: headers) {
         std::memcpy(buf + idx, e.first.data(), e.first.size());
         idx += e.first.size();
 
@@ -387,14 +412,18 @@ basic_socket<Socket, Settings>::async_write_response_initiation::operator()(
     if (copy_body) {
         boost::asio::async_write(
             self.channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,&self]
-            (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
-                self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-                if (!self.is_open_)
-                    self.channel.lowest_layer().close();
-                handler(ec);
-            }
+            boost::asio::bind_executor(
+                ex,
+                [handler,buf,size,&self]
+                (const system::error_code& ec, std::size_t) mutable {
+                    asio_handler_deallocate(buf, size, &handler);
+                    self.is_open_ =
+                        self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+                    if (!self.is_open_)
+                        self.channel.lowest_layer().close();
+                    handler(ec);
+                }
+            )
         );
     } else {
         auto body_buf = boost::asio::buffer(
@@ -402,25 +431,37 @@ basic_socket<Socket, Settings>::async_write_response_initiation::operator()(
         );
         boost::asio::async_write(
             self.channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,body_buf,&self]
-            (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
-                if (ec) {
-                    handler(ec);
-                    return;
-                }
-                boost::asio::async_write(
-                    self.channel, body_buf,
-                    [handler,&self]
-                    (const system::error_code &ec, std::size_t) mutable {
-                        self.is_open_
-                            = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-                        if (!self.is_open_)
-                            self.channel.lowest_layer().close();
+            boost::asio::bind_executor(
+                ex,
+                [handler,buf,size,body_buf,&self]
+                (const system::error_code& ec, std::size_t) mutable {
+                    asio_handler_deallocate(buf, size, &handler);
+                    if (ec) {
                         handler(ec);
+                        return;
                     }
-                );
-            }
+
+                    // TODO: remap post to defer
+                    auto ex(boost::asio::get_associated_executor(
+                        handler, self.get_executor()));
+                    boost::asio::async_write(
+                        self.channel, body_buf,
+                        boost::asio::bind_executor(
+                            ex,
+                            [handler,&self](
+                                const system::error_code& ec, std::size_t
+                            ) mutable {
+                                self.is_open_ =
+                                    self.keep_alive ==
+                                    KEEP_ALIVE_KEEP_ALIVE_READ;
+                                if (!self.is_open_)
+                                    self.channel.lowest_layer().close();
+                                handler(ec);
+                            }
+                        )
+                    );
+                }
+            )
         );
     }
 }
@@ -444,18 +485,25 @@ template<class Handler>
 void basic_socket<Socket, Settings>::async_write_response_continue_initiation
 ::operator()(Handler&& handler)
 {
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     if (!self.writer_helper.write_continue()) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
     boost::asio::async_write(
         self.channel,
         detail::string_literal_buffer("HTTP/1.1 100 Continue\r\n\r\n"),
-        [handler](const system::error_code &ec, std::size_t) mutable {
-            handler(ec);
-        }
+        boost::asio::bind_executor(
+            ex,
+            [handler](const system::error_code& ec, std::size_t) mutable {
+                handler(ec);
+            }
+        )
     );
 }
 
@@ -477,29 +525,35 @@ void basic_socket<Socket, Settings>::async_write_response_metadata_initiation
     using boost::asio::asio_handler_allocate;
     using boost::asio::asio_handler_deallocate;
 
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     if (self.parser.which() != 1) { //< !req_parser
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::wrong_direction);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::wrong_direction);
+        }, alloc);
         return;
     }
 
     auto prev_state = self.writer_helper.state;
     if (!self.writer_helper.write_metadata()) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
     if (!self.modern_http) {
         self.writer_helper = prev_state;
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::native_stream_unsupported);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::native_stream_unsupported);
+        }, alloc);
         return;
     }
 
     const auto status_code = response.get().status_code();
-    const auto &reason_phrase = response.get().reason_phrase();
-    const auto &headers = response.get().headers();
+    const auto& reason_phrase = response.get().reason_phrase();
+    const auto& headers = response.get().headers();
 
     auto has_connection_close = detail::has_connection_close(headers);
 
@@ -524,7 +578,7 @@ void basic_socket<Socket, Settings>::async_write_response_metadata_initiation
         + 2;
 
     // Headers
-    for (const auto &e: headers) {
+    for (const auto& e: headers) {
         // Each header is 4 buffer pieces: key + sep + value + CRLF
         // sep (": ") + CRLF is always 4 bytes.
         size += 4 + e.first.size() + e.second.size();
@@ -564,7 +618,7 @@ void basic_socket<Socket, Settings>::async_write_response_metadata_initiation
         idx += x.size();
     }
 
-    for (const auto &e: headers) {
+    for (const auto& e: headers) {
         std::memcpy(buf + idx, e.first.data(), e.first.size());
         idx += e.first.size();
 
@@ -588,11 +642,14 @@ void basic_socket<Socket, Settings>::async_write_response_metadata_initiation
 
     boost::asio::async_write(
         self.channel, boost::asio::buffer(buf, size),
-        [handler,buf,size]
-        (const system::error_code &ec, std::size_t) mutable {
-            asio_handler_deallocate(buf, size, &handler);
-            handler(ec);
-        }
+        boost::asio::bind_executor(
+            ex,
+            [handler,buf,size]
+            (const system::error_code& ec, std::size_t) mutable {
+                asio_handler_deallocate(buf, size, &handler);
+                handler(ec);
+            }
+        )
     );
 }
 
@@ -619,27 +676,32 @@ void basic_socket<Socket, Settings>::async_write_request_initiation::operator()(
     using boost::asio::asio_handler_allocate;
     using boost::asio::asio_handler_deallocate;
 
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     switch (self.parser.which()) {
     case 0: // none
         self.parser = res_parser{};
         break;
     case 1: // req_parser
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::wrong_direction);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::wrong_direction);
+        }, alloc);
         return;
     case 2: // res_parser
         break;
     }
 
     if (self.write_state() != http::write_state::empty) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
-    const auto &method = request.get().method();
-    const auto &target = request.get().target();
-    const auto &headers = request.get().headers();
+    const auto& method = request.get().method();
+    const auto& target = request.get().target();
+    const auto& headers = request.get().headers();
 
     {
         SentMethod sent_method;
@@ -669,7 +731,7 @@ void basic_socket<Socket, Settings>::async_write_request_initiation::operator()(
     std::size_t content_length_ndigits = 0;
 
     // Headers
-    for (const auto &e: headers) {
+    for (const auto& e: headers) {
         // Each header is 4 buffer pieces: key + sep + value + CRLF
         // sep (": ") + CRLF is always 4 bytes.
         size += 4 + e.first.size() + e.second.size();
@@ -730,7 +792,7 @@ void basic_socket<Socket, Settings>::async_write_request_initiation::operator()(
         idx += 2;
     }
 
-    for (const auto &e: headers) {
+    for (const auto& e: headers) {
         std::memcpy(buf + idx, e.first.data(), e.first.size());
         idx += e.first.size();
 
@@ -757,11 +819,14 @@ void basic_socket<Socket, Settings>::async_write_request_initiation::operator()(
     if (copy_body) {
         boost::asio::async_write(
             self.channel, boost::asio::buffer(buf, size),
-            [handler,buf,size]
-            (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
-                handler(ec);
-            }
+            boost::asio::bind_executor(
+                ex,
+                [handler,buf,size]
+                (const system::error_code& ec, std::size_t) mutable {
+                    asio_handler_deallocate(buf, size, &handler);
+                    handler(ec);
+                }
+            )
         );
     } else {
         auto body_buf = boost::asio::buffer(
@@ -769,21 +834,33 @@ void basic_socket<Socket, Settings>::async_write_request_initiation::operator()(
         basic_socket& self = this->self;
         boost::asio::async_write(
             self.channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,body_buf,&self]
-            (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
-                if (ec) {
-                    handler(ec);
-                    return;
-                }
-                boost::asio::async_write(
-                    self.channel, body_buf,
-                    [handler]
-                    (const system::error_code &ec, std::size_t) mutable {
+            boost::asio::bind_executor(
+                ex,
+                [handler,buf,size,body_buf,&self]
+                (const system::error_code& ec, std::size_t) mutable {
+                    asio_handler_deallocate(buf, size, &handler);
+                    if (ec) {
                         handler(ec);
+                        return;
                     }
-                );
-            }
+
+                    auto ex(boost::asio::get_associated_executor(
+                        handler, self.get_executor()));
+
+                    // TODO: remap post to defer
+                    boost::asio::async_write(
+                        self.channel, body_buf,
+                        boost::asio::bind_executor(
+                            ex,
+                            [handler](
+                                const system::error_code& ec, std::size_t
+                            ) mutable {
+                                handler(ec);
+                            }
+                        )
+                    );
+                }
+            )
         );
     }
 }
@@ -810,41 +887,48 @@ void basic_socket<Socket, Settings>::async_write_request_metadata_initiation
     using boost::asio::asio_handler_allocate;
     using boost::asio::asio_handler_deallocate;
 
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     switch (self.parser.which()) {
     case 0: // none
         self.parser = res_parser{};
         break;
     case 1: // req_parser
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::wrong_direction);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::wrong_direction);
+        }, alloc);
         return;
     case 2: // res_parser
         break;
     }
 
     if (self.write_state() != http::write_state::empty) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
     if (self.writer_helper.state != write_state::empty) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
     if (!self.modern_http) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::native_stream_unsupported);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::native_stream_unsupported);
+        }, alloc);
         return;
     }
 
     self.writer_helper.state = write_state::metadata_issued;
 
-    const auto &method = request.get().method();
-    const auto &target = request.get().target();
-    const auto &headers = request.get().headers();
+    const auto& method = request.get().method();
+    const auto& target = request.get().target();
+    const auto& headers = request.get().headers();
 
     {
         SentMethod sent_method;
@@ -869,7 +953,7 @@ void basic_socket<Socket, Settings>::async_write_request_metadata_initiation
         + 2;
 
     // Headers
-    for (const auto &e: headers) {
+    for (const auto& e: headers) {
         // Each header is 4 buffer pieces: key + sep + value + CRLF
         // sep (": ") + CRLF is always 4 bytes.
         size += 4 + e.first.size() + e.second.size();
@@ -901,7 +985,7 @@ void basic_socket<Socket, Settings>::async_write_request_metadata_initiation
         idx += x.size();
     }
 
-    for (const auto &e: headers) {
+    for (const auto& e: headers) {
         std::memcpy(buf + idx, e.first.data(), e.first.size());
         idx += e.first.size();
 
@@ -922,10 +1006,15 @@ void basic_socket<Socket, Settings>::async_write_request_metadata_initiation
 
     boost::asio::async_write(
         self.channel, boost::asio::buffer(buf, size),
-        [handler,buf,size](const system::error_code &ec, std::size_t) mutable {
-            asio_handler_deallocate(buf, size, &handler);
-            handler(ec);
-        }
+        boost::asio::bind_executor(
+            ex,
+            [handler,buf,size](
+                const system::error_code& ec, std::size_t
+            ) mutable {
+                asio_handler_deallocate(buf, size, &handler);
+                handler(ec);
+            }
+        )
     );
 }
 
@@ -953,15 +1042,21 @@ void basic_socket<Socket, Settings>::async_write_initiation::operator()(
     using boost::asio::asio_handler_deallocate;
     using detail::string_literal_buffer;
 
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     auto prev_state = self.writer_helper.state;
     if (!self.writer_helper.write()) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
     if (message.get().body().size() == 0) {
-        self.invoke_handler(std::forward<Handler>(handler));
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(system::error_code{});
+        }, alloc);
         return;
     }
 
@@ -1022,11 +1117,14 @@ void basic_socket<Socket, Settings>::async_write_initiation::operator()(
     if (copy_body) {
         boost::asio::async_write(
             self.channel, boost::asio::buffer(buf, size),
-            [handler,buf,size]
-            (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
-                handler(ec);
-            }
+            boost::asio::bind_executor(
+                ex,
+                [handler,buf,size]
+                (const system::error_code& ec, std::size_t) mutable {
+                    asio_handler_deallocate(buf, size, &handler);
+                    handler(ec);
+                }
+            )
         );
     } else {
         auto body_buf = boost::asio::buffer(
@@ -1034,32 +1132,48 @@ void basic_socket<Socket, Settings>::async_write_initiation::operator()(
         basic_socket& self = this->self;
         boost::asio::async_write(
             self.channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,body_buf,&self]
-            (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
-                if (ec) {
-                    handler(ec);
-                    return;
-                }
-                boost::asio::async_write(
-                    self.channel, body_buf,
-                    [handler,&self]
-                    (const system::error_code &ec, std::size_t) mutable {
-                        if (ec) {
-                            handler(ec);
-                            return;
-                        }
-                        auto crlf = string_literal_buffer("\r\n");
-                        boost::asio::async_write(
-                            self.channel, crlf,
-                            [handler](const system::error_code &ec,
-                                      std::size_t) mutable {
-                                handler(ec);
-                            }
-                        );
+            boost::asio::bind_executor(
+                ex,
+                [handler,buf,size,body_buf,&self]
+                (const system::error_code& ec, std::size_t) mutable {
+                    asio_handler_deallocate(buf, size, &handler);
+                    if (ec) {
+                        handler(ec);
+                        return;
                     }
-                );
-            }
+                    auto ex(boost::asio::get_associated_executor(
+                        handler, self.get_executor()));
+                    // TODO: remap post to defer
+                    boost::asio::async_write(
+                        self.channel, body_buf,
+                        boost::asio::bind_executor(
+                            ex,
+                            [handler,&self](
+                                const system::error_code& ec, std::size_t
+                            ) mutable {
+                                if (ec) {
+                                    handler(ec);
+                                    return;
+                                }
+                                auto ex(boost::asio::get_associated_executor(
+                                    handler, self.get_executor()));
+                                auto crlf = string_literal_buffer("\r\n");
+                                // TODO: remap post to defer
+                                boost::asio::async_write(
+                                    self.channel, crlf,
+                                    boost::asio::bind_executor(
+                                        ex,
+                                        [handler](const system::error_code& ec,
+                                                  std::size_t) mutable {
+                                            handler(ec);
+                                        }
+                                    )
+                                );
+                            }
+                        )
+                    );
+                }
+            )
         );
     }
 }
@@ -1089,15 +1203,21 @@ void basic_socket<Socket, Settings>::async_write_chunkext_initiation
     using boost::asio::asio_handler_deallocate;
     using detail::string_literal_buffer;
 
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     auto prev_state = self.writer_helper.state;
     if (!self.writer_helper.write()) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
     if (message.get().body().size() == 0) {
-        self.invoke_handler(std::forward<Handler>(handler));
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(system::error_code{});
+        }, alloc);
         return;
     }
 
@@ -1116,7 +1236,7 @@ void basic_socket<Socket, Settings>::async_write_chunkext_initiation
            ? (message.get().body().size() + 2)
            : 0);
 
-    for (const auto &e: chunkext.get()) {
+    for (const auto& e: chunkext.get()) {
         // Each chunkext is 4 buffer pieces: SEMICOLON + key + EQUALS_SIGN +
         // value. EQUALS_SIGN + value is optional.
         //
@@ -1152,7 +1272,7 @@ void basic_socket<Socket, Settings>::async_write_chunkext_initiation
         idx += content_length_nhexdigits;
     }
 
-    for (const auto &e: chunkext.get()) {
+    for (const auto& e: chunkext.get()) {
         buf[idx++] = ';';
         std::memcpy(buf + idx, e.first.data(), e.first.size());
         idx += e.first.size();
@@ -1180,11 +1300,14 @@ void basic_socket<Socket, Settings>::async_write_chunkext_initiation
     if (copy_body) {
         boost::asio::async_write(
             self.channel, boost::asio::buffer(buf, size),
-            [handler,buf,size]
-            (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
-                handler(ec);
-            }
+            boost::asio::bind_executor(
+                ex,
+                [handler,buf,size]
+                (const system::error_code& ec, std::size_t) mutable {
+                    asio_handler_deallocate(buf, size, &handler);
+                    handler(ec);
+                }
+            )
         );
     } else {
         auto body_buf = boost::asio::buffer(
@@ -1192,32 +1315,48 @@ void basic_socket<Socket, Settings>::async_write_chunkext_initiation
         basic_socket& self = this->self;
         boost::asio::async_write(
             self.channel, boost::asio::buffer(buf, size),
-            [handler,buf,size,body_buf,&self]
-            (const system::error_code &ec, std::size_t) mutable {
-                asio_handler_deallocate(buf, size, &handler);
-                if (ec) {
-                    handler(ec);
-                    return;
-                }
-                boost::asio::async_write(
-                    self.channel, body_buf,
-                    [handler,&self]
-                    (const system::error_code &ec, std::size_t) mutable {
-                        if (ec) {
-                            handler(ec);
-                            return;
-                        }
-                        auto crlf = string_literal_buffer("\r\n");
-                        boost::asio::async_write(
-                            self.channel, crlf,
-                            [handler](const system::error_code &ec,
-                                      std::size_t) mutable {
-                                handler(ec);
-                            }
-                        );
+            boost::asio::bind_executor(
+                ex,
+                [handler,buf,size,body_buf,&self]
+                (const system::error_code& ec, std::size_t) mutable {
+                    asio_handler_deallocate(buf, size, &handler);
+                    if (ec) {
+                        handler(ec);
+                        return;
                     }
-                );
-            }
+                    auto ex(boost::asio::get_associated_executor(
+                        handler, self.get_executor()));
+                    // TODO: remap post to defer
+                    boost::asio::async_write(
+                        self.channel, body_buf,
+                        boost::asio::bind_executor(
+                            ex,
+                            [handler,&self](
+                                const system::error_code& ec, std::size_t
+                            ) mutable {
+                                if (ec) {
+                                    handler(ec);
+                                    return;
+                                }
+                                auto ex(boost::asio::get_associated_executor(
+                                    handler, self.get_executor()));
+                                auto crlf = string_literal_buffer("\r\n");
+                                // TODO: remap post to defer
+                                boost::asio::async_write(
+                                    self.channel, crlf,
+                                    boost::asio::bind_executor(
+                                        ex,
+                                        [handler](const system::error_code& ec,
+                                                  std::size_t) mutable {
+                                            handler(ec);
+                                        }
+                                    )
+                                );
+                            }
+                        )
+                    );
+                }
+            )
         );
     }
 }
@@ -1246,11 +1385,15 @@ void basic_socket<Socket, Settings>::async_write_trailers_initiation
     using boost::asio::asio_handler_allocate;
     using boost::asio::asio_handler_deallocate;
 
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     auto prev_rstate = self.istate;
     auto prev_wstate = self.writer_helper.state;
     if (!self.writer_helper.write_trailers()) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
@@ -1274,7 +1417,7 @@ void basic_socket<Socket, Settings>::async_write_trailers_initiation
         // Final CRLF for end of trailers
         + 2;
 
-    for (const auto &e: message.get().trailers()) {
+    for (const auto& e: message.get().trailers()) {
         // Each header is 4 buffer pieces: key + sep + value + crlf
         // sep (": ") + crlf is always 4 bytes.
         size += 4 + e.first.size() + e.second.size();
@@ -1295,7 +1438,7 @@ void basic_socket<Socket, Settings>::async_write_trailers_initiation
     std::memcpy(buf + idx, "0\r\n", 3);
     idx += 3;
 
-    for (const auto &e: message.get().trailers()) {
+    for (const auto& e: message.get().trailers()) {
         std::memcpy(buf + idx, e.first.data(), e.first.size());
         idx += e.first.size();
 
@@ -1315,17 +1458,21 @@ void basic_socket<Socket, Settings>::async_write_trailers_initiation
     basic_socket& self = this->self;
     boost::asio::async_write(
         self.channel, boost::asio::buffer(buf, size),
-        [handler,buf,size,&self]
-        (const system::error_code &ec, std::size_t) mutable {
-            asio_handler_deallocate(buf, size, &handler);
-            if (self.parser.which() == 1) {
-                // server mode
-                self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-                if (!self.is_open_)
-                    self.channel.lowest_layer().close();
+        boost::asio::bind_executor(
+            ex,
+            [handler,buf,size,&self]
+            (const system::error_code& ec, std::size_t) mutable {
+                asio_handler_deallocate(buf, size, &handler);
+                if (self.parser.which() == 1) {
+                    // server mode
+                    self.is_open_ =
+                        self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+                    if (!self.is_open_)
+                        self.channel.lowest_layer().close();
+                }
+                handler(ec);
             }
-            handler(ec);
-        }
+        )
     );
 }
 
@@ -1350,9 +1497,13 @@ void basic_socket<Socket, Settings>::async_write_end_of_message_initiation
 {
     using detail::string_literal_buffer;
 
+    auto ex(boost::asio::get_associated_executor(handler, self.get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
+
     if (!self.writer_helper.end()) {
-        self.invoke_handler(std::forward<Handler>(handler),
-                            http_errc::out_of_order);
+        ex.post([handler=std::forward<Handler>(handler)]() mutable {
+            handler(http_errc::out_of_order);
+        }, alloc);
         return;
     }
 
@@ -1373,15 +1524,19 @@ void basic_socket<Socket, Settings>::async_write_end_of_message_initiation
     basic_socket& self = this->self;
     boost::asio::async_write(
         self.channel, last_chunk,
-        [handler,&self](const system::error_code &ec, std::size_t) mutable {
-            if (self.parser.which() == 1) {
-                // server mode
-                self.is_open_ = self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
-                if (!self.is_open_)
-                    self.channel.lowest_layer().close();
+        boost::asio::bind_executor(
+            ex,
+            [handler,&self](const system::error_code& ec, std::size_t) mutable {
+                if (self.parser.which() == 1) {
+                    // server mode
+                    self.is_open_ =
+                        self.keep_alive == KEEP_ALIVE_KEEP_ALIVE_READ;
+                    if (!self.is_open_)
+                        self.channel.lowest_layer().close();
+                }
+                handler(ec);
             }
-            handler(ec);
-        }
+        )
     );
 }
 
@@ -1409,13 +1564,13 @@ basic_socket<Socket, Settings>
 }
 
 template<class Socket, class Settings>
-Socket &basic_socket<Socket, Settings>::next_layer()
+Socket& basic_socket<Socket, Settings>::next_layer()
 {
     return channel;
 }
 
 template<class Socket, class Settings>
-const Socket &basic_socket<Socket, Settings>::next_layer() const
+const Socket& basic_socket<Socket, Settings>::next_layer() const
 {
     return channel;
 }
@@ -1455,13 +1610,16 @@ void basic_socket<Socket, Settings>::lock_client_to_http10()
 template<class Socket, class Settings>
 template<bool enable_chunkext, class Message, class Handler>
 void basic_socket<Socket, Settings>
-::schedule_on_async_read_message(Handler &&handler, Message &message,
-                                 typename Message::headers_type *chunkext)
+::schedule_on_async_read_message(Handler&& handler, Message& message,
+                                 typename Message::headers_type* chunkext)
 {
     if (enable_chunkext)
         assert(chunkext != NULL);
     else
         assert(chunkext == NULL);
+
+    auto ex(boost::asio::get_associated_executor(handler, get_executor()));
+    auto alloc(boost::asio::get_associated_allocator(handler));
 
     bool server_mode;
     if (is_request_message<Message>::value
@@ -1486,48 +1644,71 @@ void basic_socket<Socket, Settings>
 
     if (used_size) {
         // Have cached some bytes from a previous read
-        auto ex(boost::asio::get_associated_executor(handler, get_executor()));
         if (server_mode) {
-            boost::asio::post(ex, [this,handler,&message,chunkext]() mutable {
-                on_async_read_message<true, enable_chunkext, req_parser>(
-                    std::forward<Handler>(handler), message, chunkext,
-                    system::error_code{}, 0
-                );
-            });
+            ex.post(
+                [this,handler=std::forward<Handler>(handler),&message,chunkext](
+                ) mutable {
+                    on_async_read_message<true, enable_chunkext, req_parser>(
+                        std::move(handler), message, chunkext,
+                        system::error_code{}, 0
+                    );
+                },
+                alloc
+            );
         } else {
-            boost::asio::post(ex, [this,handler,&message,chunkext]() mutable {
-                on_async_read_message<false, enable_chunkext, res_parser>(
-                    std::forward<Handler>(handler), message, chunkext,
-                    system::error_code{}, 0
-                );
-            });
+            ex.post(
+                [this,handler=std::forward<Handler>(handler),&message,chunkext](
+                ) mutable {
+                    on_async_read_message<false, enable_chunkext, res_parser>(
+                        std::move(handler), message, chunkext,
+                        system::error_code{}, 0
+                    );
+                },
+                alloc
+            );
         }
     } else {
         if (server_mode) {
-            // TODO (C++14): move in lambda capture list
             channel.async_read_some(
                 boost::asio::buffer(buffer + used_size),
-                [this,handler,&message,chunkext](
-                    const system::error_code &ec, std::size_t bytes_transferred
-                ) mutable {
-                    on_async_read_message<true, enable_chunkext, req_parser>(
-                        std::move(handler), message, chunkext, ec,
-                        bytes_transferred
-                    );
-                }
+                boost::asio::bind_executor(
+                    ex,
+                    [
+                        this,handler=std::forward<Handler>(handler),&message,
+                        chunkext
+                    ](
+                        const system::error_code& ec,
+                        std::size_t bytes_transferred
+                    ) mutable {
+                        on_async_read_message<
+                            true, enable_chunkext, req_parser
+                        >(
+                            std::move(handler), message, chunkext, ec,
+                            bytes_transferred
+                        );
+                    }
+                )
             );
         } else {
-            // TODO (C++14): move in lambda capture list
             channel.async_read_some(
                 boost::asio::buffer(buffer + used_size),
-                [this,handler,&message,chunkext](
-                    const system::error_code &ec, std::size_t bytes_transferred
-                ) mutable {
-                    on_async_read_message<false, enable_chunkext, res_parser>(
-                        std::move(handler), message, chunkext, ec,
-                        bytes_transferred
-                    );
-                }
+                boost::asio::bind_executor(
+                    ex,
+                    [
+                        this,handler=std::forward<Handler>(handler),&message,
+                        chunkext
+                    ](
+                        const system::error_code& ec,
+                        std::size_t bytes_transferred
+                    ) mutable {
+                        on_async_read_message<
+                            false, enable_chunkext, res_parser
+                        >(
+                            std::move(handler), message, chunkext, ec,
+                            bytes_transferred
+                        );
+                    }
+                )
             );
         }
     }
@@ -1546,7 +1727,7 @@ fill_method(Message& /*request*/, const Parser& /*parser*/)
 template<bool server_mode, class Request, class Parser>
 typename std::enable_if<is_request_message<Request>::value && server_mode,
                         boost::string_view>::type
-fill_method(Request &request, const Parser &parser)
+fill_method(Request& request, const Parser& parser)
 {
     auto value = parser.template value<token::method>();
     request.method().assign(value.data(), value.size());
@@ -1561,7 +1742,7 @@ fill_target(Message& /*request*/, const Parser& /*parser*/)
 
 template<bool server_mode, class Request, class Parser>
 typename std::enable_if<is_request_message<Request>::value && server_mode>::type
-fill_target(Request &request, const Parser &parser)
+fill_target(Request& request, const Parser& parser)
 {
     auto value = parser.template value<token::request_target>();
     request.target().assign(value.data(), value.size());
@@ -1581,7 +1762,7 @@ template<bool server_mode, class Response, class Parser>
 typename std::enable_if<is_response_message<Response>::value && !server_mode,
                         std::uint_least16_t>
 ::type
-fill_status_code(Response &response, Parser &parser,
+fill_status_code(Response& response, Parser& parser,
                  boost::string_view sent_method)
 {
     auto value = parser.template value<token::status_code>();
@@ -1599,7 +1780,7 @@ fill_reason_phrase(Message&, const Parser&)
 template<bool server_mode, class Response, class Parser>
 typename std::enable_if<is_response_message<Response>::value && !server_mode>
 ::type
-fill_reason_phrase(Response &response, const Parser &parser)
+fill_reason_phrase(Response& response, const Parser& parser)
 {
     auto value = parser.template value<token::reason_phrase>();
     response.reason_phrase().assign(value.data(), value.size());
@@ -1612,7 +1793,7 @@ puteof(Parser&)
 
 template<bool server_mode, class Parser>
 typename std::enable_if<!server_mode>::type
-puteof(Parser &parser)
+puteof(Parser& parser)
 {
     parser.puteof();
 }
@@ -1624,13 +1805,13 @@ template<>
 struct call_with_chunkext<false>
 {
     template<class Handler, class T>
-    static void call(Handler &handler, T)
+    static void call(Handler& handler, T)
     {
         handler(system::error_code{});
     }
 
     template<class Handler, class EC, class T>
-    static void call(Handler &handler, EC ec, T)
+    static void call(Handler& handler, EC ec, T)
     {
         handler(ec);
     }
@@ -1640,13 +1821,13 @@ template<>
 struct call_with_chunkext<true>
 {
     template<class Handler, class T>
-    static void call(Handler &handler, T val)
+    static void call(Handler& handler, T val)
     {
         handler(system::error_code{}, val);
     }
 
     template<class Handler, class EC, class T>
-    static void call(Handler &handler, EC ec, T val)
+    static void call(Handler& handler, EC ec, T val)
     {
         handler(ec, val);
     }
@@ -1658,16 +1839,19 @@ template<class Socket, class Settings>
 template<bool server_mode, bool enable_chunkext, class Parser, class Message,
          class Handler>
 void basic_socket<Socket, Settings>
-::on_async_read_message(Handler &&handler, Message &message,
-                        typename Message::headers_type *chunkext,
-                        const system::error_code &ec,
+::on_async_read_message(Handler&& handler, Message& message,
+                        typename Message::headers_type* chunkext,
+                        const system::error_code& ec,
                         std::size_t bytes_transferred)
 {
     using detail::string_literal_buffer;
 
+    // TODO: remap post to defer
+    auto ex(boost::asio::get_associated_executor(handler, get_executor()));
+
     if (ec) {
         if (ec == system::error_code{boost::asio::error::eof} && !server_mode) {
-            Parser &parser = get<Parser>(this->parser);
+            Parser& parser = get<Parser>(this->parser);
             detail::puteof<server_mode>(parser);
             is_open_ = false;
         } else {
@@ -1677,7 +1861,7 @@ void basic_socket<Socket, Settings>
         }
     }
 
-    Parser &parser = get<Parser>(this->parser);
+    Parser& parser = get<Parser>(this->parser);
 
     used_size += bytes_transferred;
     parser.set_buffer(boost::asio::buffer(buffer, used_size));
@@ -1701,21 +1885,26 @@ void basic_socket<Socket, Settings>
             {
                 clear_buffer();
 
-                auto error_message
-                    = string_literal_buffer("HTTP/1.1 400 Bad Request\r\n"
-                                            "Content-Length: 13\r\n"
-                                            "Connection: close\r\n"
-                                            "\r\n"
-                                            "Invalid data\n");
+                auto error_message = string_literal_buffer(
+                    "HTTP/1.1 400 Bad Request\r\n"
+                    "Content-Length: 13\r\n"
+                    "Connection: close\r\n"
+                    "\r\n"
+                    "Invalid data\n");
                 if (server_mode) {
                     boost::asio::async_write(
                         channel, boost::asio::buffer(error_message),
-                        [handler](system::error_code /*ignored_ec*/,
-                                  std::size_t /*bytes_transferred*/)
-                        mutable {
-                            detail::call_with_chunkext<enable_chunkext>::call(
-                                handler, http_errc::parsing_error, 0);
-                        }
+                        boost::asio::bind_executor(
+                            ex,
+                            [handler=std::move(handler)](
+                                system::error_code /*ignored_ec*/,
+                                std::size_t /*bytes_transferred*/
+                            ) mutable {
+                                detail::call_with_chunkext<
+                                    enable_chunkext
+                                >::call(handler, http_errc::parsing_error, 0);
+                            }
+                        )
                     );
                 } else {
                     detail::call_with_chunkext<enable_chunkext>::call(
@@ -1736,12 +1925,17 @@ void basic_socket<Socket, Settings>
                 if (server_mode) {
                     boost::asio::async_write(
                         channel, boost::asio::buffer(error_message),
-                        [handler](system::error_code /*ignored_ec*/,
-                                  std::size_t /*bytes_transferred*/)
-                        mutable {
-                            detail::call_with_chunkext<enable_chunkext>::call(
-                                handler, http_errc::parsing_error, 0);
-                        }
+                        boost::asio::bind_executor(
+                            ex,
+                            [handler=std::move(handler)](
+                                system::error_code /*ignored_ec*/,
+                                std::size_t /*bytes_transferred*/
+                            ) mutable {
+                                detail::call_with_chunkext<
+                                    enable_chunkext
+                                >::call(handler, http_errc::parsing_error, 0);
+                            }
+                        )
                     );
                 } else {
                     detail::call_with_chunkext<enable_chunkext>::call(
@@ -1763,12 +1957,17 @@ void basic_socket<Socket, Settings>
                 if (server_mode) {
                     boost::asio::async_write(
                         channel, boost::asio::buffer(error_message),
-                        [handler](system::error_code /*ignored_ec*/,
-                                  std::size_t /*bytes_transferred*/)
-                        mutable {
-                            detail::call_with_chunkext<enable_chunkext>::call(
-                                handler, http_errc::parsing_error, 0);
-                        }
+                        boost::asio::bind_executor(
+                            ex,
+                            [handler=std::move(handler)](
+                                system::error_code /*ignored_ec*/,
+                                std::size_t /*bytes_transferred*/
+                            ) mutable {
+                                detail::call_with_chunkext<
+                                    enable_chunkext
+                                >::call(handler, http_errc::parsing_error, 0);
+                            }
+                        )
                     );
                 } else {
                     detail::call_with_chunkext<enable_chunkext>::call(
@@ -1789,12 +1988,17 @@ void basic_socket<Socket, Settings>
                 if (server_mode) {
                     boost::asio::async_write(
                         channel, boost::asio::buffer(error_message),
-                        [handler](system::error_code /*ignored_ec*/,
-                                  std::size_t /*bytes_transferred*/)
-                        mutable {
-                            detail::call_with_chunkext<enable_chunkext>::call(
-                                handler, http_errc::parsing_error, 0);
-                        }
+                        boost::asio::bind_executor(
+                            ex,
+                            [handler=std::move(handler)](
+                                system::error_code /*ignored_ec*/,
+                                std::size_t /*bytes_transferred*/
+                            ) mutable {
+                                detail::call_with_chunkext<
+                                    enable_chunkext
+                                >::call(handler, http_errc::parsing_error, 0);
+                            }
+                        )
                     );
                 } else {
                     detail::call_with_chunkext<enable_chunkext>::call(
@@ -1815,12 +2019,17 @@ void basic_socket<Socket, Settings>
                 if (server_mode) {
                     boost::asio::async_write(
                         channel, boost::asio::buffer(error_message),
-                        [handler](system::error_code /*ignored_ec*/,
-                                  std::size_t /*bytes_transferred*/)
-                        mutable {
-                            detail::call_with_chunkext<enable_chunkext>::call(
-                                handler, http_errc::parsing_error, 0);
-                        }
+                        boost::asio::bind_executor(
+                            ex,
+                            [handler=std::move(handler)](
+                                system::error_code /*ignored_ec*/,
+                                std::size_t /*bytes_transferred*/
+                            ) mutable {
+                                detail::call_with_chunkext<
+                                    enable_chunkext
+                                >::call(handler, http_errc::parsing_error, 0);
+                            }
+                        )
                     );
                 } else {
                     detail::call_with_chunkext<enable_chunkext>::call(
@@ -1900,7 +2109,7 @@ void basic_socket<Socket, Settings>
                     std::size_t field_name_size = parser.token_size();
 
                     for (std::size_t i = 0 ; i != field_name_size ; ++i) {
-                        auto &ch = buf_view[field_name_begin + i];
+                        auto& ch = buf_view[field_name_begin + i];
                         ch = std::tolower(ch);
                     }
                 }
@@ -2101,16 +2310,19 @@ void basic_socket<Socket, Settings>
             return;
         }
 
-        // TODO (C++14): move in lambda capture list
         channel.async_read_some(
             boost::asio::buffer(buffer + used_size),
-            [this,handler,&message,chunkext](
-                const system::error_code &ec, std::size_t bytes_transferred
-            ) mutable {
-                on_async_read_message<server_mode, enable_chunkext, Parser>(
-                    std::move(handler), message, chunkext, ec, bytes_transferred
-                );
-            }
+            boost::asio::bind_executor(
+                ex,
+                [this,handler=std::move(handler),&message,chunkext](
+                    const system::error_code& ec, std::size_t bytes_transferred
+                ) mutable {
+                    on_async_read_message<server_mode, enable_chunkext, Parser>(
+                        std::move(handler), message, chunkext, ec,
+                        bytes_transferred
+                    );
+                }
+            )
         );
     }
 }
@@ -2128,46 +2340,11 @@ void basic_socket<Socket, Settings>::clear_buffer()
 
 template<class Socket, class Settings>
 template<class Message>
-void basic_socket<Socket, Settings>::clear_message(Message &message)
+void basic_socket<Socket, Settings>::clear_message(Message& message)
 {
     message.headers().clear();
     message.body().clear();
     message.trailers().clear();
-}
-
-template<class Socket, class Settings>
-template <typename Handler,
-          typename ErrorCode>
-void basic_socket<Socket, Settings>::invoke_handler(Handler&& handler,
-                                                    ErrorCode error)
-{
-    auto ex(boost::asio::get_associated_executor(handler, get_executor()));
-    auto alloc(boost::asio::get_associated_allocator(handler));
-    ex.post([handler, error] () mutable { handler(make_error_code(error)); },
-            alloc);
-}
-
-template<class Socket, class Settings>
-template <class Handler>
-void basic_socket<Socket, Settings>::invoke_handler(Handler&& handler)
-{
-    auto ex(boost::asio::get_associated_executor(handler, get_executor()));
-    auto alloc(boost::asio::get_associated_allocator(handler));
-    ex.post([handler] () mutable { handler(system::error_code{}); }, alloc);
-}
-
-template<class Socket, class Settings>
-template<class Handler, class ErrorCode, class Value>
-void basic_socket<Socket, Settings>::invoke_handler(Handler &&handler,
-                                                    ErrorCode error,
-                                                    Value value)
-{
-    auto ex(boost::asio::get_associated_executor(handler, get_executor()));
-    auto alloc(boost::asio::get_associated_allocator(handler));
-    ex.post([handler, error, value]() mutable {
-                handler(make_error_code(error), value);
-            },
-            alloc);
 }
 
 } // namespace boost

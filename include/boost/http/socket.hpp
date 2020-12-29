@@ -26,6 +26,8 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
+#include <boost/asio/associated_executor.hpp>
+#include <boost/asio/bind_executor.hpp>
 #include <boost/asio/async_result.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/write.hpp>
@@ -373,17 +375,6 @@ private:
 
     template<class Message>
     static void clear_message(Message &message);
-
-    template <typename Handler,
-              typename ErrorCode>
-    void invoke_handler(Handler&& handler,
-                        ErrorCode error);
-
-    template<class Handler>
-    void invoke_handler(Handler &&handler);
-
-    template<class Handler, class ErrorCode, class Value>
-    void invoke_handler(Handler &&handler, ErrorCode error, Value value);
 
     Socket channel;
     bool is_open_ = true;
