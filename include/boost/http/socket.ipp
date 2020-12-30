@@ -1884,8 +1884,11 @@ void basic_socket<Socket, Settings>
             assert(!server_mode);
             assert(ec == system::error_code{boost::asio::error::eof});
             assert(!cb_ready);
-            clear_buffer();
-            detail::call_with_chunkext<enable_chunkext>::call(handler, ec, 0);
+            if (!server_mode) {
+                clear_buffer();
+                detail::call_with_chunkext<enable_chunkext>::call(
+                    handler, ec, 0);
+            }
             break;
         case token::code::error_invalid_data:
             {
