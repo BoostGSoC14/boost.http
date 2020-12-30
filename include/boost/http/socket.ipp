@@ -1888,6 +1888,7 @@ void basic_socket<Socket, Settings>
                 clear_buffer();
                 detail::call_with_chunkext<enable_chunkext>::call(
                     handler, ec, 0);
+                return;
             }
             break;
         case token::code::error_invalid_data:
