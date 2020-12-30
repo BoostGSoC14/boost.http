@@ -1879,7 +1879,13 @@ void basic_socket<Socket, Settings>
             assert(false);
             break;
         case token::code::error_use_another_connection:
-            assert(false);
+            // It only happens if connection is closed before our message is
+            // ready.
+            assert(!server_mode);
+            assert(ec == system::error_code{boost::asio::error::eof});
+            assert(!cb_ready);
+            clear_buffer();
+            detail::call_with_chunkext<enable_chunkext>::call(handler, ec, 0);
             break;
         case token::code::error_invalid_data:
             {
