@@ -365,8 +365,8 @@ private:
     // template argument and rely on dead code optimization to not impose this
     // cost to everybody.
     template<bool server_mode, bool enable_chunkext, class Parser,
-             class Message, class Handler>
-    void on_async_read_message(Handler &&handler, Message &message,
+             class Message, class Handler, class Executor>
+    void on_async_read_message(Handler &&handler, Executor ex, Message &message,
                                typename Message::headers_type *chunkext,
                                const system::error_code &ec,
                                std::size_t bytes_transferred);

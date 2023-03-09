@@ -1646,10 +1646,13 @@ void basic_socket<Socket, Settings>
         // Have cached some bytes from a previous read
         if (server_mode) {
             ex.post(
-                [this,handler=std::forward<Handler>(handler),&message,chunkext](
+                [
+                    this,handler=std::forward<Handler>(handler),ex,&message,
+                    chunkext
+                ](
                 ) mutable {
                     on_async_read_message<true, enable_chunkext, req_parser>(
-                        std::move(handler), message, chunkext,
+                        std::move(handler), ex, message, chunkext,
                         system::error_code{}, 0
                     );
                 },
@@ -1657,10 +1660,13 @@ void basic_socket<Socket, Settings>
             );
         } else {
             ex.post(
-                [this,handler=std::forward<Handler>(handler),&message,chunkext](
+                [
+                    this,handler=std::forward<Handler>(handler),ex,&message,
+                    chunkext
+                ](
                 ) mutable {
                     on_async_read_message<false, enable_chunkext, res_parser>(
-                        std::move(handler), message, chunkext,
+                        std::move(handler), ex, message, chunkext,
                         system::error_code{}, 0
                     );
                 },
@@ -1674,7 +1680,7 @@ void basic_socket<Socket, Settings>
                 boost::asio::bind_executor(
                     ex,
                     [
-                        this,handler=std::forward<Handler>(handler),&message,
+                        this,handler=std::forward<Handler>(handler),ex,&message,
                         chunkext
                     ](
                         const system::error_code& ec,
@@ -1683,7 +1689,7 @@ void basic_socket<Socket, Settings>
                         on_async_read_message<
                             true, enable_chunkext, req_parser
                         >(
-                            std::move(handler), message, chunkext, ec,
+                            std::move(handler), ex, message, chunkext, ec,
                             bytes_transferred
                         );
                     }
@@ -1695,7 +1701,7 @@ void basic_socket<Socket, Settings>
                 boost::asio::bind_executor(
                     ex,
                     [
-                        this,handler=std::forward<Handler>(handler),&message,
+                        this,handler=std::forward<Handler>(handler),ex,&message,
                         chunkext
                     ](
                         const system::error_code& ec,
@@ -1704,7 +1710,7 @@ void basic_socket<Socket, Settings>
                         on_async_read_message<
                             false, enable_chunkext, res_parser
                         >(
-                            std::move(handler), message, chunkext, ec,
+                            std::move(handler), ex, message, chunkext, ec,
                             bytes_transferred
                         );
                     }
@@ -1837,17 +1843,16 @@ struct call_with_chunkext<true>
 
 template<class Socket, class Settings>
 template<bool server_mode, bool enable_chunkext, class Parser, class Message,
-         class Handler>
+         class Handler, class Executor>
 void basic_socket<Socket, Settings>
-::on_async_read_message(Handler&& handler, Message& message,
+::on_async_read_message(Handler&& handler, Executor ex, Message& message,
                         typename Message::headers_type* chunkext,
                         const system::error_code& ec,
                         std::size_t bytes_transferred)
 {
     using detail::string_literal_buffer;
 
-    // TODO: remap post to defer
-    auto ex(boost::asio::get_associated_executor(handler, get_executor()));
+    // TODO: remap post to defer for `ex`
 
     if (ec) {
         if (ec == system::error_code{boost::asio::error::eof} && !server_mode) {
@@ -1855,7 +1860,13 @@ void basic_socket<Socket, Settings>
             detail::puteof<server_mode>(parser);
             is_open_ = false;
         } else {
-            clear_buffer();
+            // TODO: if `this` is still alive, we should call
+            // `clear_buffer()`. The HTTP socket state should be split
+            // in two classes and a shared buffer should be used so
+            // `clear_buffer()` will work even when `this` is
+            // destroyed. Alternatively, semantics for
+            // `asio::error::operation_aborted` could be defined and a
+            // different solution might follow.
             detail::call_with_chunkext<enable_chunkext>::call(handler, ec, 0);
             return;
         }
@@ -2324,11 +2335,11 @@ void basic_socket<Socket, Settings>
             boost::asio::buffer(buffer + used_size),
             boost::asio::bind_executor(
                 ex,
-                [this,handler=std::move(handler),&message,chunkext](
+                [this,handler=std::move(handler),ex,&message,chunkext](
                     const system::error_code& ec, std::size_t bytes_transferred
                 ) mutable {
                     on_async_read_message<server_mode, enable_chunkext, Parser>(
-                        std::move(handler), message, chunkext, ec,
+                        std::move(handler), ex, message, chunkext, ec,
                         bytes_transferred
                     );
                 }
